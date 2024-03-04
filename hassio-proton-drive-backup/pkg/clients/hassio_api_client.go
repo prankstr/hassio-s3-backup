@@ -38,7 +38,9 @@ func (c *HassioApiClient) GetBackup(slug string) (*models.HassBackup, error) {
 	req.Header.Set("Authorization", "Bearer "+c.Token)
 
 	// Perform the request
-	client := &http.Client{}
+	client := &http.Client{
+		Timeout: 10 * time.Minute,
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
