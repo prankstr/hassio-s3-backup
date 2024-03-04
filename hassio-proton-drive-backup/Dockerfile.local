@@ -1,0 +1,16 @@
+FROM docker.io/golang:1.21-rc-alpine AS build
+
+WORKDIR /app
+COPY . /app
+
+RUN GO111MODULE=on CGO_ENABLED=0 go build -o proton_drive_interface
+
+##
+FROM build
+
+COPY --from=build /app/proton_drive_interface .
+COPY --from=build /app/ui/dist ./static
+COPY run.sh /
+RUN chmod a+x /run.sh
+
+CMD [ "./proton_drive_interface" ]

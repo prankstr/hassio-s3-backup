@@ -1,0 +1,27 @@
+/**
+ * plugins/vuetify.js
+ *
+ * Framework documentation: https://vuetifyjs.com`
+ */
+
+// Styles
+import '@mdi/font/css/materialdesignicons.css'
+import 'vuetify/styles'
+
+// Composables
+import { createVuetify } from 'vuetify'
+
+// https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
+export default createVuetify({
+  theme: {
+    themes: {
+      light: {
+        colors: {
+          background: '#16151d',
+          primary: '#6C4AFE',
+          secondary: '#1b1340',
+        },
+      },
+    },
+  },
+})
