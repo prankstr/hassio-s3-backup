@@ -46,7 +46,7 @@
 					<v-btn density="comfortable" variant="text" color="white" @click="revealRestore = false">
 						Close
 					</v-btn>
-					<v-btn density="comfortable" variant="text"  color="white" @click="restoreBackup = false">
+					<v-btn density="comfortable" variant="text"  color="white" @click="restoreBackup">
 						Accept
 					</v-btn>
 				</v-card-actions>
