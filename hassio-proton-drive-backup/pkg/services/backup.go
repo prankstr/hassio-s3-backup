@@ -431,11 +431,13 @@ func (s *BackupService) processHABackups(backupMap map[string]*models.Backup, ha
 			continue
 		}
 
+		// Attempt to match backup from HA with local(addon) backup by slug
 		if backup, exists := backupMap[haBackup.Slug]; exists {
-			// Existing backup, sync to Proton Drive if needed
 			if err := s.syncBackupToProtonDrive(backup); err != nil {
 				return err
 			}
+			// Attempt to match backup from HA with local by name if slug fails
+			// We can have a backup with a name but no slug if it's interrupted mid backup etc
 		} else {
 			matchedByName := false
 			for _, backup := range s.backups {
@@ -452,6 +454,7 @@ func (s *BackupService) processHABackups(backupMap map[string]*models.Backup, ha
 				}
 			}
 
+			// Create new local backup if it can't be found
 			if !matchedByName {
 				backup := s.initializeBackup(haBackup.Name)
 				s.updateBackupDetailsFromHA(backup, haBackup)
