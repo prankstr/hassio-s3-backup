@@ -23,12 +23,14 @@ type BackupService struct {
 	syncInterval time.Duration
 	stopSyncChan chan struct{}
 
-	backups        []*models.Backup
-	backupTimer    *time.Timer
-	backupInterval time.Duration
-	backupsToKeep  int
-	stopBackupChan chan struct{}
-	ongoingBackups map[string]struct{}
+	backups                []*models.Backup
+	backupTimer            *time.Timer
+	backupInterval         time.Duration
+	backupsToKeep          int
+	stopBackupChan         chan struct{}
+	nextBackupIn           time.Duration
+	nextBackupCalculatedAt time.Time
+	ongoingBackups         map[string]struct{}
 
 	mutex sync.Mutex
 }
@@ -188,7 +190,8 @@ func (s *BackupService) resetTimerForNextBackup() {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	duration := s.calculateDurationUntilNextBackup()
+	s.nextBackupIn = s.calculateDurationUntilNextBackup()
+	s.nextBackupCalculatedAt = time.Now()
 
 	if !s.backupTimer.Stop() && s.backupTimer != nil {
 		select {
@@ -197,8 +200,27 @@ func (s *BackupService) resetTimerForNextBackup() {
 		}
 	}
 
-	slog.Info("Next backup scheduled", "timeLeft", duration.String())
-	s.backupTimer.Reset(duration)
+	slog.Info("Next backup scheduled", "timeLeft", s.nextBackupIn.String())
+	s.backupTimer.Reset(s.nextBackupIn)
+}
+
+// TimeUntilNextBackup returns the time until next backup
+func (s *BackupService) TimeUntilNextBackup() string {
+	duration := time.Until(s.nextBackupCalculatedAt.Add(s.nextBackupIn))
+	seconds := int(duration.Seconds())
+	days := seconds / (24 * 3600)
+	hours := (seconds % (24 * 3600)) / 3600
+	minutes := (seconds % 3600) / 60
+
+	if days > 0 {
+		return fmt.Sprintf("%d days", days)
+	} else if hours > 0 {
+		return fmt.Sprintf("%d hours", hours)
+	} else if minutes > 0 {
+		return fmt.Sprintf("%d minutes", minutes)
+	} else {
+		return fmt.Sprintf("%d seconds", seconds)
+	}
 }
 
 // PerformBackup creates a new backup and uploads it to the remote drive

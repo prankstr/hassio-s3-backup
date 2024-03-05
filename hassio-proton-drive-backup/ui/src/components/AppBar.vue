@@ -7,11 +7,35 @@
     </v-app-bar-title>
 
     <v-spacer></v-spacer>
-
+    Next backup in {{timer}}
+    <v-divider vertical></v-divider>
     <Settings></Settings>
 
   </v-app-bar>
 </template>
 <script setup>
+import { ref, onMounted } from 'vue'
 import Settings from '@/components/Settings.vue';
+
+let timer = ref(null)
+
+// Function to fetch data and update backups ref
+const fetchData = async () => {
+  try {
+    const response = await fetch('http://replaceme.homeassistant/api/backups/timer');
+    if (response.ok) {
+      const data = await response.json();
+      timer.value = data.timer; 
+    } else {
+      console.error('Failed to fetch data');
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+onMounted(() => {
+  fetchData();
+  setInterval(fetchData, 5000);
+});
 </script>

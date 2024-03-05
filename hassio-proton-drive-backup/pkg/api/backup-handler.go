@@ -35,6 +35,30 @@ func (h *BackupHandler) HandleListBackups(w http.ResponseWriter, r *http.Request
 	w.Write(json)
 }
 
+func (h *BackupHandler) HandleTimerRequest(w http.ResponseWriter, r *http.Request) {
+	timer := h.backupService.TimeUntilNextBackup()
+
+	// Response struct
+	response := struct {
+		Timer string `json:"timer"`
+	}{
+		Timer: timer,
+	}
+
+	// Serialize the response struct to JSON
+	jsonBytes, err := json.Marshal(response)
+	if err != nil {
+		// Handle error
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(`{"error": "Internal server error"}`))
+		return
+	}
+
+	// Write the JSON response
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(jsonBytes)
+}
+
 // handleProtonDrive handles requests to /ProtonDrive
 func (h *BackupHandler) HandleBackupRequest(w http.ResponseWriter, r *http.Request) {
 	// Parse the request body
