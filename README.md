@@ -1,4 +1,5 @@
 # Home Assistant Proton Drive Backup
+![Home Page Preview](images/home.png "Home Assistant Proton Drive Backup")
 
 ## Overview
 Home Assistant Proton Drive Backup allows for the automated scheduling and synchronization of Home Assistant backups to Proton Drive. This addon emerged from my personal need for a Proton Drive-based backup solution and is heavily inspired by [Home Assistant Google Drive Backup](https://github.com/sabeechen/hassio-google-drive-backup).
