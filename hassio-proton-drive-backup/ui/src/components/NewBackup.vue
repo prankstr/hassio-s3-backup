@@ -17,7 +17,7 @@
 					<v-tooltip activator="parent">Create new backup</v-tooltip>
 				</v-btn>
 		</template>
-		<v-card class="pa-2" color="primary" variant="tonal">
+		<v-card class="pa-2" color="secondary">
 			<v-card-title class="text-white">
 				<span class="text-h5">New Backup</span>
 			</v-card-title>

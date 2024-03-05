@@ -13,7 +13,7 @@
         <template v-slot:activator="{ props }">
             <v-btn icon="mdi-cog" v-bind="props"></v-btn>
         </template>
-        <v-card class="pa-2" color="primary" variant="tonal">
+        <v-card class="pa-2" color="secondary">
             <v-card-title class="text-white">
                 <span class="text-h5">Settings</span>
             </v-card-title>
