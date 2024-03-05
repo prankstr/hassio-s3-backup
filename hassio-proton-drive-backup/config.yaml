@@ -1,10 +1,10 @@
-name: "Hassio Proton Drive Backup"
-description: "Backup your homeassistant data to Proton Drive"
+name: "Home Assistant Proton Drive Backup"
+description: "Backup your Home Assistant data to Proton Drive"
 version: "1.0.0"
 slug: "hassio_proton_drive_backup"
 init: false
 panel_title: Proton Drive Backup
-panel_icons: mdi:folder-upload
+panel_icon: mdi:folder-upload
 arch:
   - aarch64
   - amd64

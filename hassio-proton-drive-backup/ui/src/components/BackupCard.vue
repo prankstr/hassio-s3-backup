@@ -38,7 +38,7 @@
 				<v-card-item>
 					<v-card-title class="text-white text-heading-6">Restore backup?</v-card-title>
 				</v-card-item>
-				<v-card-text>
+				<v-card-text style="height: 60px" class="pb-0">
 					<p>This will do a full restore of home assistant to the backup "{{ backup.name }}"</p>
 				</v-card-text>
 				<v-card-actions class="pb-0 align-end">
@@ -55,7 +55,7 @@
 				<v-card-item>
 					<v-card-title class="text-white text-heading-6">Delete backup?</v-card-title>
 				</v-card-item>
-				<v-card-text>
+				<v-card-text style="height: 60px" class="pb-0">
 					<p>This will delete the backup "{{ backup.name }}" from home assistant and Proton Drive</p>
 				</v-card-text>
 				<v-card-actions class="pb-0 align-end">
