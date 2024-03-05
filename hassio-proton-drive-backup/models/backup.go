@@ -5,13 +5,6 @@ import "time"
 // BackupStatus is a custom type to represent the status of the backup
 type BackupStatus string
 
-/* type BackupActions interface {
-	Backup(name string) error
-	BackupAndSync(name string) error
-	ListBackups() (*[]Backup, error)
-	Sync() error
-} */
-
 const (
 	StatusDeleting  BackupStatus = "DELETING"
 	StatusPending   BackupStatus = "PENDING"
