@@ -18,6 +18,14 @@
 			</v-row>
 			<v-row class="pt-0">
 				<v-col cols="5" class="pr-0 pt-0">
+					<div class="text-white text-subtitle-1">Backups:</div>
+				</v-col>
+				<v-col class="pr-0 pt-0">
+					<div class="text-white text-subtitle-1">{{ usedByBackups }}</div>
+				</v-col>
+			</v-row>
+			<v-row class="pt-0">
+				<v-col cols="5" class="pr-0 pt-0">
 					<div class="text-white text-subtitle-1">Available Space:</div>
 				</v-col>
 				<v-col class="pr-0 pt-0">
@@ -28,15 +36,25 @@
 	</v-card>
 </template>
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, defineProps } from 'vue'
 
 const about = ref({})
+
+const props = defineProps({
+	backups: Array
+});
 
 onMounted(() => {
 	fetch('http://replaceme.homeassistant/api/drive/about')
 		.then(res => res.json())
 		.then(data => about.value = data)
 		.catch(err => console.log(err.message))
+})
+
+const usedByBackups = computed(() => {
+	const roundedSize = props.backups.reduce((totalSize, backup) => totalSize + backup.size, 0)
+  	const suffix = roundedSize < 1000 ? 'MB' : 'GB';
+	return `${roundedSize} ${suffix}`;
 })
 
 const usedSpacePercent = computed(() => {

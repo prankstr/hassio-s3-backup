@@ -6,7 +6,7 @@
       <v-row class="align-start justify-center">
         <v-col class="pt-4" sm="11" md="4">
           <div class="d-flex flex-column align-center align-md-end text-end">
-            <DriveStats class="mb-2"></DriveStats>
+            <DriveStats class="mb-2" :backups="backups"></DriveStats>
             <v-divider class="border-opacity-50" color="wite" length="375" vertical></v-divider>
             <NewBackup></NewBackup>
           </div>
