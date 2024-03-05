@@ -11,5 +11,5 @@ export PROTON_DRIVE_USER=$(bashio::config 'proton_drive_user')
 export PROTON_DRIVE_PASSWORD=$(bashio::config 'proton_drive_password')
 
 # Start application
-bashio::log.info "Starting proton_drive_interface"
-./proton_drive_interface
+bashio::log.info "Starting Home Assistant Proton Drive Backup"
+./hassio_proton_drive_backup

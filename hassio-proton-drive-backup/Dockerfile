@@ -9,12 +9,12 @@ RUN apk --no-cache add nodejs yarn --repository=http://dl-cdn.alpinelinux.org/al
     yarn && \
     yarn build
 
-RUN GO111MODULE=on CGO_ENABLED=0 go build -o proton_drive_interface
+RUN GO111MODULE=on CGO_ENABLED=0 go build -o hassio_proton_drive_backup
 
 ##
 FROM $BUILD_FROM
 
-COPY --from=build /app/proton_drive_interface .
+COPY --from=build /app/hassio_proton_drive_backup .
 COPY run.sh /
 RUN chmod a+x /run.sh
 
