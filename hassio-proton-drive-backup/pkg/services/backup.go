@@ -131,7 +131,7 @@ func (s *BackupService) startBackupSyncScheduler() {
 		for {
 			select {
 			case <-s.syncTicker.C:
-				slog.Info("Performing scheduled backup sync")
+				slog.Debug("Performing scheduled backup sync")
 
 				if err := s.syncBackups(); err != nil {
 					slog.Error("Error performing backup sync", "error", err)
@@ -298,6 +298,7 @@ func (s *BackupService) updateBackupDetailsFromHA(backup *models.Backup, haBacku
 	backup.Slug = haBackup.Slug
 	backup.Date = haBackup.Date
 	backup.Type = haBackup.Type
+	backup.Size = haBackup.Size
 
 	// If the Home Assistant date is before the backup we assume that the backup has been lost in the addon and recreate it
 	if haBackup.Date.Before(backup.Date) {
@@ -589,12 +590,19 @@ func (s *BackupService) deleteBackupFromProtonDrive(backupToDelete *models.Backu
 func (s *BackupService) RestoreBackup(slug string) error {
 	var backupToRestore *models.Backup
 
+	for _, backup := range s.backups {
+		if backup.Slug == slug {
+			backupToRestore = backup
+			break
+		}
+	}
+
 	err := s.hassioApi.RestoreBackup(backupToRestore.Slug)
 	if err != nil {
 		return fmt.Errorf("failed to restore backup in Home Assistant: %v", err)
 	}
 
-	slog.Info("Backup restored", "name", backupToRestore.Name)
+	slog.Info("Restored to backup", "name", backupToRestore.Name)
 	return nil
 }
 

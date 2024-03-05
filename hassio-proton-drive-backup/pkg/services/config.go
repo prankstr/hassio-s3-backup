@@ -75,7 +75,7 @@ func NewConfigService() *ConfigService {
 	ingressEntry := getIngressEntry(config.SupervisorToken)
 	config.IngressPath = ingressEntry
 
-	writeConfigToFile(config, "/data.config.json")
+	writeConfigToFile(config)
 
 	return &ConfigService{
 		config:           config,
@@ -112,7 +112,7 @@ func (cs *ConfigService) GetProtonDrivePassword() string {
 func (cs *ConfigService) SetBackupInterval(interval int) {
 	cs.config.BackupInterval = interval
 
-	writeConfigToFile(cs.config, "/data/config.json")
+	writeConfigToFile(cs.config)
 }
 
 func (cs *ConfigService) UpdateConfigFromAPI(configRequest models.ConfigUpdate) error {
@@ -121,7 +121,7 @@ func (cs *ConfigService) UpdateConfigFromAPI(configRequest models.ConfigUpdate) 
 
 	cs.NotifyConfigChange(cs.config)
 
-	writeConfigToFile(cs.config, "/data.config.json")
+	writeConfigToFile(cs.config)
 	return nil
 }
 
@@ -163,7 +163,7 @@ func stringFromSlogLevel(level slog.Level) string {
 }
 
 // writeConfigToFile writes a json representation of the config to a file
-func writeConfigToFile(config *models.Config, filePath string) error {
+func writeConfigToFile(config *models.Config) error {
 	// Marshal backups array to JSON
 	data, err := json.Marshal(config)
 	if err != nil {

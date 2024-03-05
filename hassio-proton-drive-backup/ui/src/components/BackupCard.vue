@@ -12,7 +12,7 @@
 			<v-row class="pb-0">
 				<v-col>
 					<div class="text-white text-body-1">{{ translateStatus(backup.status) }}</div>
-					<div class="text-white text-body-1">More info</div>
+					<div class="text-white text-body-1">{{ translateSize(backup.size) }}</div>
 				</v-col>
 			</v-row>
 			<!-- 			
@@ -81,6 +81,12 @@ const revealDelete = ref(false);
 const props = defineProps({
 	backup: Object
 });
+
+const translateSize = size => {
+  const roundedSize = Math.round((size < 1000 ? size : size / 1024) * 10) / 10;
+  const suffix = size < 1000 ? 'MB' : 'GB';
+  return `${roundedSize} ${suffix}`;
+};
 
 const translateStatus = (status) => {
 	const statusMessages = {
