@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hassio-proton-drive-backup/models"
 	"log/slog"
+	"path/filepath"
 	"strings"
 
 	protonDriveAPI "github.com/henrybear327/Proton-API-Bridge"
@@ -170,20 +171,44 @@ func (s *protonDriveService) DeleteFileByID(id string) error {
 	return nil
 }
 
-func (s *protonDriveService) ListBackupDirectory() ([]*protonDriveAPI.ProtonDirectoryData, error) {
-	dir, err := s.drive.ListDirectory(context.Background(), s.backupLink.LinkID)
+func (s *protonDriveService) ListBackupDirectory() ([]*models.ProtonDirectoryData, error) {
+	items, err := s.drive.ListDirectory(context.Background(), s.backupLink.LinkID)
 	if err != nil {
 		return nil, err
 	}
 
-	return dir, nil
+	var protonBackups []*models.ProtonDirectoryData
+	for _, item := range items {
+		if item.IsFolder {
+			continue
+		}
+
+		protonBackups = append(protonBackups, &models.ProtonDirectoryData{
+			Link: item.Link.LinkID,
+			Name: item.Name,
+		})
+	}
+
+	return protonBackups, nil
 }
 
-func (s *protonDriveService) ListDirectory(linkID string) ([]*protonDriveAPI.ProtonDirectoryData, error) {
-	dir, err := s.drive.ListDirectory(context.Background(), linkID)
+func (s *protonDriveService) ListDirectory(linkID string) ([]*models.ProtonDirectoryData, error) {
+	items, err := s.drive.ListDirectory(context.Background(), linkID)
 	if err != nil {
 		return nil, err
 	}
 
-	return dir, nil
+	var protonBackups []*models.ProtonDirectoryData
+	for _, item := range items {
+		if item.IsFolder {
+			continue
+		}
+
+		protonBackups = append(protonBackups, &models.ProtonDirectoryData{
+			Link: item.Link.LinkID,
+			Name: strings.TrimSuffix(item.Name, filepath.Ext(item.Name)),
+		})
+	}
+
+	return protonBackups, nil
 }
