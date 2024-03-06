@@ -513,6 +513,12 @@ func (s *BackupService) updateLocalBackupsFromUnifiedMap(unifiedBackupsMap map[s
 			ub.Local.Slug = ub.HA.Slug
 			ub.Local.Size = ub.HA.Size
 			ub.Local.OnlyInHA = ub.Proton == nil
+
+			if ub.Proton != nil {
+				ub.Local.UpdateStatus(models.StatusSynced)
+			} else {
+				ub.Local.UpdateStatus(models.StatusHAOnly)
+			}
 		}
 		if ub.Proton != nil {
 			ub.Local.ProtonLink = ub.Proton.Link
