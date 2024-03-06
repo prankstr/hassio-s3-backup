@@ -13,6 +13,12 @@ import (
 	"log/slog"
 )
 
+type UnifiedBackup struct {
+	Proton *models.ProtonDirectoryData
+	HA     *models.HassBackup
+	Local  *models.Backup
+}
+
 type BackupService struct {
 	hassioApi     clients.HassioApiClient
 	drive         models.Drive
@@ -238,7 +244,7 @@ func (s *BackupService) PerformBackup(name string) error {
 		s.removeOngoingBackup(backup.ID)
 		return err
 	}
-	backup.UpdateStatus(models.StatusCompleted)
+	backup.UpdateStatus(models.StatusSynced)
 	slog.Info("Backup process completed successfully", "name", backup.Name, "status", backup.Status)
 
 	if err := s.saveBackupsToFile(); err != nil {
@@ -400,7 +406,7 @@ func (s *BackupService) enforceBackupLimit() error {
 	return s.saveBackupsToFile()
 }
 
-// syncBackups makes sure the wanted state between home assistant and the remove drive is upheld
+/* // syncBackups makes sure the wanted state between home assistant and the remove drive is upheld
 func (s *BackupService) syncBackups() error {
 	s.mutex.Lock()
 	if len(s.ongoingBackups) > 0 {
@@ -424,6 +430,108 @@ func (s *BackupService) syncBackups() error {
 	}
 
 	return s.sortAndSaveBackups()
+} */
+
+// syncBackups makes sure the wanted state between home assistant and the remove drive is upheld
+func (s *BackupService) syncBackups() error {
+	s.mutex.Lock()
+	if len(s.ongoingBackups) > 0 {
+		slog.Info("Skipping synchronization due to ongoing backup")
+		return nil
+	}
+	defer s.mutex.Unlock()
+
+	// Initialize UnifiedBackups with local backups
+	unifiedBackupsMap := make(map[string]*UnifiedBackup)
+	for _, backup := range s.backups {
+		ub := &UnifiedBackup{Local: backup}
+		unifiedBackupsMap[backup.Name] = ub
+	}
+
+	// Fetch HA backups
+	haBackups, err := s.hassioApi.ListBackups()
+	if err != nil {
+		return err
+	}
+
+	// Process HA backups, merging them into the unified list
+	for _, haBackup := range haBackups {
+		if haBackup == nil || haBackup.Type == "partial" {
+			continue // Skip nil or partial backups
+		}
+
+		if ub, exists := unifiedBackupsMap[haBackup.Name]; exists {
+			// If exists, update the HA reference
+			ub.HA = haBackup
+		} else {
+			// If not exists, create a new entry
+			unifiedBackupsMap[haBackup.Name] = &UnifiedBackup{HA: haBackup}
+		}
+	}
+
+	// Fetch Proton Drive backups
+	protonBackups, err := s.drive.ListBackupDirectory()
+	if err != nil {
+		return err
+	}
+
+	// Process Proton Drive backups, merging them into the unified list
+	for _, protonBackup := range protonBackups {
+		if protonBackup == nil {
+			continue // Skip nil backups
+		}
+
+		if ub, exists := unifiedBackupsMap[protonBackup.Name]; exists {
+			// If exists, update the Proton reference
+			ub.Proton = protonBackup
+		} else {
+			// If not exists, create a new entry
+			unifiedBackupsMap[protonBackup.Name] = &UnifiedBackup{Proton: protonBackup}
+		}
+	}
+
+	// Now, with a complete map of UnifiedBackups, proceed to update/create local backups
+	return s.updateLocalBackupsFromUnifiedMap(unifiedBackupsMap)
+}
+
+func (s *BackupService) updateLocalBackupsFromUnifiedMap(unifiedBackupsMap map[string]*UnifiedBackup) error {
+	for _, ub := range unifiedBackupsMap {
+		if ub.Local == nil {
+			// Create a new local backup if it doesn't exist
+			newBackup := &models.Backup{
+				ID: s.generateBackupID(),
+				// Default values; will be updated below
+				Date: time.Now(),
+			}
+			ub.Local = newBackup
+			s.backups = append(s.backups, newBackup)
+		}
+
+		// Update the local backup with data from HA and Proton
+		if ub.HA != nil {
+			ub.Local.Name = ub.HA.Name
+			ub.Local.Slug = ub.HA.Slug
+			ub.Local.Size = ub.HA.Size
+			ub.Local.OnlyInHA = ub.Proton == nil
+		}
+		if ub.Proton != nil {
+			ub.Local.ProtonLink = ub.Proton.Link
+			ub.Local.OnlyOnProtonDrive = ub.HA == nil
+			if ub.HA == nil { // If there's no HA backup, update Name from Proton
+				attributes, err := s.drive.GetBackupAttributesByID(ub.Proton.Link)
+				if err != nil {
+					return err
+				}
+
+				ub.Local.Name = ub.Proton.Name
+				ub.Local.Size = attributes.Size
+				ub.Local.Date = attributes.Modified
+				ub.Local.UpdateStatus(models.StatusProtonOnly)
+			}
+		}
+	}
+
+	return s.sortAndSaveBackups() // Ensure this function saves the updated list of backups
 }
 
 // processHABackups iterates through the HA backups and takes necessary actions to get to the wanted state
@@ -518,7 +626,7 @@ func (s *BackupService) syncBackupToProtonDrive(backup *models.Backup) error {
 	}
 
 	backup.ProtonLink = link
-	backup.UpdateStatus(models.StatusCompleted)
+	backup.UpdateStatus(models.StatusSynced)
 	return nil
 }
 

@@ -171,6 +171,18 @@ func (s *protonDriveService) DeleteFileByID(id string) error {
 	return nil
 }
 
+func (s *protonDriveService) GetBackupAttributesByID(id string) (*models.FileAttributes, error) {
+	protonAttributes, err := s.drive.GetActiveRevisionAttrsByID(context.Background(), id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.FileAttributes{
+		Size:     float64(protonAttributes.Size) / (1024 * 1024), //convert bytes to MB
+		Modified: protonAttributes.ModificationTime,
+	}, nil
+}
+
 func (s *protonDriveService) ListBackupDirectory() ([]*models.ProtonDirectoryData, error) {
 	items, err := s.drive.ListDirectory(context.Background(), s.backupLink.LinkID)
 	if err != nil {
@@ -185,7 +197,7 @@ func (s *protonDriveService) ListBackupDirectory() ([]*models.ProtonDirectoryDat
 
 		protonBackups = append(protonBackups, &models.ProtonDirectoryData{
 			Link: item.Link.LinkID,
-			Name: item.Name,
+			Name: strings.TrimSuffix(item.Name, filepath.Ext(item.Name)),
 		})
 	}
 

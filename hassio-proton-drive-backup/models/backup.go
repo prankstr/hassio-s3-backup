@@ -6,14 +6,16 @@ import "time"
 type BackupStatus string
 
 const (
-	StatusDeleting  BackupStatus = "DELETING"
-	StatusPending   BackupStatus = "PENDING"
-	StatusRunning   BackupStatus = "RUNNING"
-	StatusCompleted BackupStatus = "COMPLETED"
-	StatusSyncing   BackupStatus = "SYNCING"
-	StatusFailed    BackupStatus = "FAILED"
-	TypeFull        string       = "full"
-	TypePartial     string       = "partial"
+	StatusDeleting   BackupStatus = "DELETING"
+	StatusPending    BackupStatus = "PENDING"
+	StatusRunning    BackupStatus = "RUNNING"
+	StatusSynced     BackupStatus = "SYNCED"
+	StatusHAOnly     BackupStatus = "HAONLY"
+	StatusProtonOnly BackupStatus = "PROTONONLY"
+	StatusSyncing    BackupStatus = "SYNCING"
+	StatusFailed     BackupStatus = "FAILED"
+	TypeFull         string       = "full"
+	TypePartial      string       = "partial"
 )
 
 // Backup represents the details and status of a backup process

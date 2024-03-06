@@ -90,7 +90,9 @@ const translateSize = size => {
 
 const translateStatus = (status) => {
 	const statusMessages = {
-		'COMPLETED': 'Completed',
+		'SYNCED': 'Synced',
+		'HAONLY': 'Only in HA',
+		'PROTONONLY': 'Only in Proton',
 		'DELETING': 'Deleting',
 		'RUNNING': 'In Progress',
 		'SYNCING': 'Uploading',
@@ -102,7 +104,7 @@ const translateStatus = (status) => {
 
 watch(() => props.backup.status, (status) => {
 	console.log("Backup status changed to:", status)
-	loading.value = status !== 'COMPLETED' && status !== 'FAILED'
+	loading.value = status !== 'SYNCED' && status !== 'FAILED' && status !== 'HAONLY' && status !== 'PROTONONLY'
 }, { immediate: true })
 
 function deleteBackup() {
