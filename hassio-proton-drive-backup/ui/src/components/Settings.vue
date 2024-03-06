@@ -11,7 +11,7 @@
     </v-snackbar>
     <v-dialog v-model="dialog" width="1024">
         <template v-slot:activator="{ props }">
-            <v-btn icon="mdi-cog" v-bind="props"></v-btn>
+            <v-btn icon="mdi-cog" v-bind="props" class="mr-1 ml-1"></v-btn>
         </template>
         <v-card class="pa-2" color="secondary">
             <v-card-title class="text-white">
