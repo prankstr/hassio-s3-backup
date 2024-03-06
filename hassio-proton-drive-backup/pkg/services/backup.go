@@ -204,23 +204,9 @@ func (s *BackupService) resetTimerForNextBackup() {
 	s.backupTimer.Reset(s.nextBackupIn)
 }
 
-// TimeUntilNextBackup returns the time until next backup
-func (s *BackupService) TimeUntilNextBackup() string {
-	duration := time.Until(s.nextBackupCalculatedAt.Add(s.nextBackupIn))
-	seconds := int(duration.Seconds())
-	days := seconds / (24 * 3600)
-	hours := (seconds % (24 * 3600)) / 3600
-	minutes := (seconds % 3600) / 60
-
-	if days > 0 {
-		return fmt.Sprintf("%d days", days)
-	} else if hours > 0 {
-		return fmt.Sprintf("%d hours", hours)
-	} else if minutes > 0 {
-		return fmt.Sprintf("%d minutes", minutes)
-	} else {
-		return fmt.Sprintf("%d seconds", seconds)
-	}
+// TimeUntilNextBackup returns the time until next backup in milliseconds
+func (s *BackupService) TimeUntilNextBackup() int64 {
+	return time.Until(s.nextBackupCalculatedAt.Add(s.nextBackupIn)).Milliseconds()
 }
 
 // PerformBackup creates a new backup and uploads it to the remote drive

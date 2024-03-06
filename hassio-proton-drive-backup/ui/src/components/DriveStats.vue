@@ -42,7 +42,7 @@ const about = ref({})
 
 const props = defineProps({
 	backups: Array
-});
+})
 
 onMounted(() => {
 	fetch('http://replaceme.homeassistant/api/drive/about')
@@ -53,8 +53,8 @@ onMounted(() => {
 
 const usedByBackups = computed(() => {
 	const roundedSize = props.backups.reduce((totalSize, backup) => totalSize + backup.size, 0)
-  	const suffix = roundedSize < 1000 ? 'MB' : 'GB';
-	return `${roundedSize} ${suffix}`;
+  	const suffix = roundedSize < 1000 ? 'MB' : 'GB'
+	return `${roundedSize} ${suffix}`
 })
 
 const usedSpacePercent = computed(() => {

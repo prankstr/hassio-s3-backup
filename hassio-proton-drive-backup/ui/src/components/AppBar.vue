@@ -7,35 +7,84 @@
     </v-app-bar-title>
 
     <v-spacer></v-spacer>
-    Next backup in {{timer}}
-    <v-divider vertical class="border-opacity-50" style="height: 40px; margin-top: 12px; margin-left: 16px;"></v-divider>
+    <v-tooltip open-delay="1000" location="bottom" :text="date">
+  		<template v-slot:activator="{ props }">
+        <p v-bind="props">Next backup in {{roundedTimer}}</p>
+      </template>
+		</v-tooltip>
+    <v-divider vertical class="border-opacity-50" style="height: 40px; margin-top: 12px; margin-left: 18px;"></v-divider>
     <Settings></Settings>
 
   </v-app-bar>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue'
-import Settings from '@/components/Settings.vue';
+import { ref, onMounted, computed } from 'vue'
+import Settings from '@/components/Settings.vue'
 
-let timer = ref(null)
+let milliseconds = ref(0)
 
-// Function to fetch data and update backups ref
-const fetchData = async () => {
+// Fetch timer in milliseconds until next backup
+const fetchTimer = async () => {
   try {
-    const response = await fetch('http://replaceme.homeassistant/api/backups/timer');
+    const response = await fetch('http://replaceme.homeassistant/api/backups/timer')
     if (response.ok) {
-      const data = await response.json();
-      timer.value = data.timer; 
+      const data = await response.json()
+      milliseconds.value = data.milliseconds;
     } else {
-      console.error('Failed to fetch data');
+      console.error('Failed to fetch data')
     }
   } catch (error) {
-    console.error(error);
+    console.error(error)
   }
 }
 
+const roundedTimer = computed(() => {
+  const seconds = Math.floor(milliseconds.value / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.ceil(hours / 24)
+
+  if (days > 0) {
+      return `${days} days`
+  } else if (hours % 24 > 0) { 
+      return `${hours % 24} hours`
+  } else if (minutes % 60 > 0) {
+      return `${minutes % 60} minutes`
+  } else {
+      return `${seconds % 60} seconds`
+  }
+})
+
+const date = computed(() => {
+  const months = ["January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"]
+  const suffixes = ["th", "st", "nd", "rd"]
+  
+  const date = new Date(Date.now() + milliseconds.value);
+  const day = date.getDate()
+  const daySuffix = suffixes[(day % 10) - 1] || suffixes[0]
+  
+  const month = months[date.getMonth()]
+  const hours = date.getHours().toString().padStart(2, '0')
+  const minutes = date.getMinutes().toString().padStart(2, '0')
+
+  return `${month} ${day}${daySuffix}, ${hours}:${minutes}`
+})
+
 onMounted(() => {
-  fetchData();
-  setInterval(fetchData, 5000);
-});
+  // Fetches timer from server of milliseconds until next backup
+  fetchTimer()
+
+  // Keep calculating the timer on the client side
+  setInterval(() => {
+    if (milliseconds.value > 0) {
+      milliseconds.value -= 1000
+    }
+  }, 1000)
+})
 </script>
+<style>
+.v-tooltip .v-overlay__content {
+    background: rgba(var(--v-theme-primary), 1) !important;
+}
+</style>

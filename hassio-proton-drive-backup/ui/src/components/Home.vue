@@ -32,7 +32,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive } from 'vue'
 
 import AppBar from '@/components/AppBar.vue'
 import DriveStats from '@/components/DriveStats.vue'
@@ -44,20 +44,20 @@ let backups = ref([])
 // Function to fetch data and update backups ref
 const fetchData = async () => {
   try {
-    const response = await fetch('http://replaceme.homeassistant/api/backups');
+    const response = await fetch('http://replaceme.homeassistant/api/backups')
     if (response.ok) {
-      const data = await response.json();
-      backups.value = data.map(backup => reactive(backup)); // Making each backup object reactive
+      const data = await response.json()
+      backups.value = data.map(backup => reactive(backup)) // Making each backup object reactive
     } else {
-      console.error('Failed to fetch data');
+      console.error('Failed to fetch data')
     }
   } catch (error) {
-    console.error(error);
+    console.error(error)
   }
 }
 
 onMounted(() => {
-  fetchData();
-  setInterval(fetchData, 5000);
-});
+  fetchData()
+  setInterval(fetchData, 5000)
+})
 </script>

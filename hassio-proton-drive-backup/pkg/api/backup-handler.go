@@ -36,21 +36,19 @@ func (h *BackupHandler) HandleListBackups(w http.ResponseWriter, r *http.Request
 }
 
 func (h *BackupHandler) HandleTimerRequest(w http.ResponseWriter, r *http.Request) {
-	timer := h.backupService.TimeUntilNextBackup()
+	milliseconds := h.backupService.TimeUntilNextBackup()
 
 	// Response struct
 	response := struct {
-		Timer string `json:"timer"`
+		Milliseconds int64 `json:"milliseconds"`
 	}{
-		Timer: timer,
+		Milliseconds: milliseconds,
 	}
 
 	// Serialize the response struct to JSON
 	jsonBytes, err := json.Marshal(response)
 	if err != nil {
-		// Handle error
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"error": "Internal server error"}`))
+		handleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
