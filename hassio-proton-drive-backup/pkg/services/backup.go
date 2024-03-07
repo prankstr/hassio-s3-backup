@@ -339,6 +339,10 @@ func (s *BackupService) addHABackupsToMap(backupMap map[string]*models.Backup) e
 
 	noUpdateNeeded := true
 	for _, haBackup := range haBackups {
+		if haBackup.Type == "partial" {
+			continue // Skip partial backups
+		}
+
 		if _, exists := backupMap[haBackup.Name]; !exists {
 			slog.Debug("Initializing backup found in Home Assistant", "name", haBackup.Name)
 			backup := s.initializeBackup(haBackup.Name)
