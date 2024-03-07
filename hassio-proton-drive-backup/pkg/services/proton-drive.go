@@ -100,7 +100,7 @@ func (s *protonDriveService) Login(username string, password string) error {
 	}
 
 	// Initialize ProtonDrive
-	slog.Debug("Logging in with username and passwordß")
+	slog.Debug("Logging in with username and password")
 	protonDrive, creds, err := protonDriveAPI.NewProtonDrive(ctx, protonConf, func(auth proton.Auth) {}, func() {})
 	if err != nil {
 		return err

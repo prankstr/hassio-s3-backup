@@ -332,40 +332,67 @@ func (s *BackupService) addHABackupsToMap(backupMap map[string]*models.Backup) e
 		return err
 	}
 
+	if len(haBackups) == 0 {
+		slog.Debug("No backups found in Home Assistant")
+		return nil
+	}
+
+	noUpdateNeeded := true
 	for _, haBackup := range haBackups {
 		if _, exists := backupMap[haBackup.Name]; !exists {
 			slog.Debug("Initializing backup found in Home Assistant", "name", haBackup.Name)
 			backup := s.initializeBackup(haBackup.Name)
 
 			s.updateBackupDetailsFromHA(backup, haBackup)
+			noUpdateNeeded = false
 		} else {
 			backupMap[haBackup.Name].MarkedForDeletion = false
+
+			// Don't really have to do this but might as well..
 			backupMap[haBackup.Name].HA = haBackup
 		}
+	}
+
+	if noUpdateNeeded {
+		slog.Debug("No updates needed for backups from Home Assistant")
 	}
 
 	return nil
 }
 
-// addDriveBackupsToMap adds drive backups to the backup map if it doesn't find one by name
+// addDriveBackupsToMap adds Drive backups to the backup map if it doesn't find one by name
 func (s *BackupService) addDriveBackupsToMap(backupMap map[string]*models.Backup) error {
 	driveBackups, err := s.drive.ListBackupDirectory()
 	if err != nil {
 		return err
 	}
 
+	if len(driveBackups) == 0 {
+		slog.Debug(fmt.Sprintf("No backups found in %s", s.driveProvider))
+		return nil
+	}
+
+	noUpdateNeeded := true
 	for _, driveBackup := range driveBackups {
 		if _, exists := backupMap[driveBackup.Name]; !exists {
-			slog.Debug(fmt.Sprintf("Initializing backup found on %s", s.driveProvider), "name", driveBackup.Name)
+			slog.Debug(fmt.Sprintf("Initializing backup found in %s", s.driveProvider), "name", driveBackup.Name)
 			backup := s.initializeBackup(driveBackup.Name)
 
 			if err := s.updateBackupDetailsFromDrive(backup, driveBackup); err != nil {
 				return err
 			}
+
+			noUpdateNeeded = false
 		} else {
 			backupMap[driveBackup.Name].MarkedForDeletion = false
+
+			// Don't really have to do this but might as well..
 			backupMap[driveBackup.Name].Drive = driveBackup
 		}
+	}
+
+	if noUpdateNeeded {
+		slog.Debug(fmt.Sprintf("No updates needed for backups from %s", s.driveProvider))
 	}
 
 	return nil
@@ -455,7 +482,7 @@ func (s *BackupService) enforceBackupLimit() error {
 
 	currentCount := len(s.backups)
 	if currentCount <= s.config.BackupsToKeep {
-		slog.Debug("No enforcement needed, within limit")
+		slog.Debug("No backup limit enforcement needed")
 		return nil
 	}
 
