@@ -6,16 +6,16 @@ import "time"
 type BackupStatus string
 
 const (
-	StatusDeleting   BackupStatus = "DELETING"
-	StatusPending    BackupStatus = "PENDING"
-	StatusRunning    BackupStatus = "RUNNING"
-	StatusSynced     BackupStatus = "SYNCED"
-	StatusHAOnly     BackupStatus = "HAONLY"
-	StatusProtonOnly BackupStatus = "PROTONONLY"
-	StatusSyncing    BackupStatus = "SYNCING"
-	StatusFailed     BackupStatus = "FAILED"
-	TypeFull         string       = "full"
-	TypePartial      string       = "partial"
+	StatusDeleting  BackupStatus = "DELETING"
+	StatusPending   BackupStatus = "PENDING"
+	StatusRunning   BackupStatus = "RUNNING"
+	StatusSynced    BackupStatus = "SYNCED"
+	StatusHAOnly    BackupStatus = "HAONLY"
+	StatusDriveOnly BackupStatus = "DRIVEONLY"
+	StatusSyncing   BackupStatus = "SYNCING"
+	StatusFailed    BackupStatus = "FAILED"
+	TypeFull        string       = "full"
+	TypePartial     string       = "partial"
 )
 
 type HAData struct {
@@ -26,15 +26,15 @@ type HAData struct {
 
 // Backup represents the details and status of a backup process
 type Backup struct {
-	ID                string               `json:"id"`                // A unique identifier for the backup
-	Name              string               `json:"name"`              // Name of the backup
-	Status            BackupStatus         `json:"status"`            // Current status of the backup
-	Date              time.Time            `json:"date"`              // When the backup process started
-	Size              float64              `json:"size"`              // Size of the backup in MB
-	ErrorMessage      string               `json:"errorMessage"`      // Error message in case of failure
-	MarkedForDeletion bool                 `json:"markedForDeletion"` // Marked for deletion
-	Proton            *ProtonDirectoryData `json:"proton"`            // Proton Drive Link to file
-	HA                *HassBackup          `json:"ha"`                // Home Assistant backup details
+	ID                string         `json:"id"`                // A unique identifier for the backup
+	Name              string         `json:"name"`              // Name of the backup
+	Status            BackupStatus   `json:"status"`            // Current status of the backup
+	Date              time.Time      `json:"date"`              // When the backup process started
+	Size              float64        `json:"size"`              // Size of the backup in MB
+	ErrorMessage      string         `json:"errorMessage"`      // Error message in case of failure
+	MarkedForDeletion bool           `json:"markedForDeletion"` // Marked for deletion
+	Drive             *DirectoryData `json:"proton"`            // Drive backup details
+	HA                *HassBackup    `json:"ha"`                // Home Assistant backup details
 }
 
 type BackupRequest struct {

@@ -16,6 +16,7 @@ import (
 type BackupService struct {
 	hassioApi     clients.HassioApiClient
 	drive         models.Drive
+	driveProvider string
 	configService *ConfigService
 	config        *models.Config
 
@@ -41,6 +42,7 @@ func NewBackupService(hassioApiClient clients.HassioApiClient, drive models.Driv
 	service := &BackupService{
 		hassioApi:     hassioApiClient,
 		drive:         drive,
+		driveProvider: "Proton Drive",
 		configService: configService,
 		config:        config,
 
@@ -74,13 +76,13 @@ func (s *BackupService) PerformBackup(name string) error {
 	backup := s.initializeBackup(name)
 	s.ongoingBackups[backup.ID] = struct{}{}
 
-	slog.Info("Backup initialization", "name", backup.Name)
-	slog.Debug("Requesting backup in Home Assistant", "Name", backup.Name)
+	slog.Info("Backup started", "BackupName", backup.Name)
+	slog.Debug("Requesting backup from Home Assistant", "BackupName", backup.Name)
 
 	backup.UpdateStatus(models.StatusRunning)
 	slug, err := s.requestHomeAssistantBackup(backup)
 	if err != nil {
-		slog.Error("Error requesting backup from Home Assistant", "name", backup.Name, "error", err)
+		slog.Error("Failed to request backup from Home Assistant", "BackupName", backup.Name, "Error", err)
 		backup.UpdateStatus(models.StatusFailed)
 		s.removeOngoingBackup(backup.ID)
 		return err
@@ -93,13 +95,13 @@ func (s *BackupService) PerformBackup(name string) error {
 	}
 
 	if err := s.processAndUploadBackup(backup); err != nil {
-		slog.Error("Error syncing backup", "name", backup.Name, "error", err)
+		slog.Error(fmt.Sprintf("Error syncing backup with %s", s.driveProvider), "name", backup.Name, "error", err)
 		backup.UpdateStatus(models.StatusFailed)
 		s.removeOngoingBackup(backup.ID)
 		return err
 	}
 	backup.UpdateStatus(models.StatusSynced)
-	slog.Info("Backup process completed successfully", "name", backup.Name, "status", backup.Status)
+	slog.Info("Backup process completed successfully", "BackupName", backup.Name, "Status", backup.Status)
 
 	if err := s.saveBackupsToFile(); err != nil {
 		slog.Error("Error saving backup state after syncing", "name", backup.Name, "error", err)
@@ -120,21 +122,19 @@ func (s *BackupService) DeleteBackup(id string) error {
 		return nil // or return an error indicating that the backup was not found
 	}
 
-	slog.Debug("Initiating backup deletion", "name", backupToDelete.Name)
+	slog.Info("Initiating backup deletion", "Backup", backupToDelete.Name, "BackupID", backupToDelete.ID)
 	backupToDelete.UpdateStatus(models.StatusDeleting)
 
 	slog.Debug("Deleting backup from Home Assistant", "ID", backupToDelete.ID)
 	if err := s.deleteBackupInHomeAssistant(backupToDelete); err != nil {
-		slog.Error("Failed to delete backup in Home Assistant", "ID", backupToDelete.ID, "error", err)
+		slog.Error("Failed to delete backup in Home Assistant", "Backup", backupToDelete.Name, "error", err)
 	} else {
 		slog.Debug("Backup deleted from Home Assistant", "ID", backupToDelete.ID)
 	}
 
-	slog.Debug("Deleting backup from Proton Drive", "ID", backupToDelete.ID)
-	if err := s.deleteBackupFromProtonDrive(backupToDelete); err != nil {
-		slog.Error("Failed to delete backup from Proton Drive", "ID", backupToDelete.ID, "error", err)
-	} else {
-		slog.Debug("Backup deleted from Proton Drive", "ID", backupToDelete.ID)
+	slog.Debug(fmt.Sprintf("Deleting backup from %s", s.driveProvider), "ID", backupToDelete.ID)
+	if err := s.deleteBackupFromDrive(backupToDelete); err != nil {
+		slog.Error(fmt.Sprintf("Failed to delete backup from %s", s.driveProvider), "Backup", backupToDelete.Name, "Error", err)
 	}
 
 	if deleteIndex != -1 {
@@ -190,7 +190,7 @@ func (s *BackupService) initializeBackup(name string) *models.Backup {
 		Name:   s.generateBackupName(name),
 		Date:   time.Now().In(s.config.Timezone),
 		Status: models.StatusPending,
-		Proton: &models.ProtonDirectoryData{},
+		Drive:  &models.DirectoryData{},
 		HA:     &models.HassBackup{},
 	}
 
@@ -225,7 +225,7 @@ func (s *BackupService) processAndUploadBackup(backup *models.Backup) error {
 		return err
 	}
 
-	backup.Proton.Link = link
+	backup.Drive.Identifier = link
 
 	return nil
 }
@@ -255,11 +255,11 @@ func (s *BackupService) deleteBackupInHomeAssistant(backupToDelete *models.Backu
 	return nil
 }
 
-// deleteBackupInHomeAssistant proton drive to delete a backup
-func (s *BackupService) deleteBackupFromProtonDrive(backupToDelete *models.Backup) error {
-	err := s.drive.DeleteFileByID(backupToDelete.Proton.Link)
+// deleteBackupFromDrived deletes a backup from the remote drive
+func (s *BackupService) deleteBackupFromDrive(backupToDelete *models.Backup) error {
+	err := s.drive.DeleteFileByID(backupToDelete.Drive.Identifier)
 	if err != nil {
-		return handleBackupError(s, "failed to delete backup from Proton Drive", backupToDelete, err)
+		return handleBackupError(s, "failed to delete backup from Drive", backupToDelete, err)
 	}
 	return nil
 }
@@ -286,8 +286,8 @@ func (s *BackupService) syncBackups() error {
 		return err
 	}
 
-	// Fetch Proton Drive backups
-	if err := s.addProtonBackupsToMap(backupMap); err != nil {
+	// Fetch Drive backups
+	if err := s.addDriveBackupsToMap(backupMap); err != nil {
 		return err
 	}
 
@@ -296,27 +296,27 @@ func (s *BackupService) syncBackups() error {
 		if !backup.MarkedForDeletion {
 			filteredBackups = append(filteredBackups, backup)
 		} else {
-			slog.Info("Deleting backup", "name", backup.Name, "ID", backup.ID)
+			slog.Info("Deleting local(addon) backup", "name", backup.Name, "ID", backup.ID)
 		}
 	}
 	s.backups = filteredBackups
 
-	// Function to set status to HAOnly, ProtonOnly or synced
+	// Function to set status to HAONLY, DRIVEONLY or SYNCED
 	for _, backup := range s.backups {
 		if backup.HA.Slug == "" {
-			backup.UpdateStatus(models.StatusProtonOnly)
-		} else if backup.Proton.Link == "" {
+			backup.UpdateStatus(models.StatusDriveOnly)
+		} else if backup.Drive.Identifier == "" {
 			backup.UpdateStatus(models.StatusHAOnly)
 		} else {
 			backup.UpdateStatus(models.StatusSynced)
 		}
 	}
 
-	// Sync to Proton Drive
+	// Sync to Drive
 	for _, backup := range s.backups {
 		if backup.Status == models.StatusHAOnly {
-			if err := s.syncBackupToProtonDrive(backup); err != nil {
-				slog.Error("Error syncing backup to Proton Drive", "name", backup.Name, "error", err)
+			if err := s.syncBackupToDrive(backup); err != nil {
+				slog.Error(fmt.Sprintf("Error syncing backup to %s", s.driveProvider), "name", backup.Name, "error", err)
 				return err
 			}
 		}
@@ -327,17 +327,14 @@ func (s *BackupService) syncBackups() error {
 
 // addHABackupsToMap adds Home Assistant backups to the backup map if it doesn't find one by name
 func (s *BackupService) addHABackupsToMap(backupMap map[string]*models.Backup) error {
-	startTimeHA := time.Now()
-
 	haBackups, err := s.hassioApi.ListBackups()
 	if err != nil {
 		return err
 	}
 
-	slog.Info(fmt.Sprintf("Found %d backups in Home Assistant", len(haBackups)))
 	for _, haBackup := range haBackups {
 		if _, exists := backupMap[haBackup.Name]; !exists {
-			slog.Info("Initializing backup from Home Assistant", "name", haBackup.Name)
+			slog.Debug("Initializing backup found in Home Assistant", "name", haBackup.Name)
 			backup := s.initializeBackup(haBackup.Name)
 
 			s.updateBackupDetailsFromHA(backup, haBackup)
@@ -347,39 +344,29 @@ func (s *BackupService) addHABackupsToMap(backupMap map[string]*models.Backup) e
 		}
 	}
 
-	endTimeHA := time.Now()
-	slog.Info(fmt.Sprintf("Fetching HA backups took: %s", endTimeHA.Sub(startTimeHA)))
 	return nil
 }
 
-// addProtonBackupsToMap adds Proton drive backups to the backup map if it doesn't find one by name
-func (s *BackupService) addProtonBackupsToMap(backupMap map[string]*models.Backup) error {
-	startTimeProton := time.Now()
-
-	slog.Info("Fetching Proton Drive backups")
-	protonBackups, err := s.drive.ListBackupDirectory()
+// addDriveBackupsToMap adds drive backups to the backup map if it doesn't find one by name
+func (s *BackupService) addDriveBackupsToMap(backupMap map[string]*models.Backup) error {
+	driveBackups, err := s.drive.ListBackupDirectory()
 	if err != nil {
 		return err
 	}
 
-	slog.Info(fmt.Sprintf("Found %d backups on Proton Drive", len(protonBackups)))
-	for _, protonBackup := range protonBackups {
-		if _, exists := backupMap[protonBackup.Name]; !exists {
-			slog.Info("Initializing backup from Proton Drive", "name", protonBackup.Name)
-			backup := s.initializeBackup(protonBackup.Name)
+	for _, driveBackup := range driveBackups {
+		if _, exists := backupMap[driveBackup.Name]; !exists {
+			slog.Debug(fmt.Sprintf("Initializing backup found on %s", s.driveProvider), "name", driveBackup.Name)
+			backup := s.initializeBackup(driveBackup.Name)
 
-			if err := s.updateBackupDetailsFromProton(backup, protonBackup); err != nil {
-				slog.Error("Error updating backup details from Proton Drive", "name", protonBackup.Name, "error", err)
+			if err := s.updateBackupDetailsFromDrive(backup, driveBackup); err != nil {
 				return err
 			}
 		} else {
-			backupMap[protonBackup.Name].MarkedForDeletion = false
-			backupMap[protonBackup.Name].Proton = protonBackup
+			backupMap[driveBackup.Name].MarkedForDeletion = false
+			backupMap[driveBackup.Name].Drive = driveBackup
 		}
 	}
-
-	endTimeProton := time.Now()
-	slog.Info(fmt.Sprintf("Fetching Proton Drive backups took: %s", endTimeProton.Sub(startTimeProton)))
 
 	return nil
 }
@@ -398,17 +385,16 @@ func (s *BackupService) sortAndSaveBackups() error {
 	return nil
 }
 
-// syncBackupToProtonDrive uploads a backup to proton drive if needed
-func (s *BackupService) syncBackupToProtonDrive(backup *models.Backup) error {
-	if backup.Proton.Link == "" {
-		slog.Info("Syncing backup to ProtonDrive", "name", backup.Name)
+// syncBackupToDrive uploads a backup to the drive if needed
+func (s *BackupService) syncBackupToDrive(backup *models.Backup) error {
+	if backup.Drive.Identifier == "" {
+		slog.Info(fmt.Sprintf("Syncing backup to %s", s.driveProvider), "name", backup.Name)
 	} else {
-		exists := s.drive.FileExists(backup.Proton.Link)
+		exists := s.drive.FileExists(backup.Drive.Identifier)
 		if !exists {
-			slog.Info("Syncing backup to ProtonDrive", "name", backup.Name)
+			slog.Info(fmt.Sprintf("Syncing backup to %s", s.driveProvider), "name", backup.Name)
 		} else {
-			slog.Debug("Backup already exists on ProtonDrive, skipping upload:", "name", backup.Name)
-			return nil // No need to upload if it already exists on ProtonDrive
+			return nil
 		}
 	}
 
@@ -425,7 +411,7 @@ func (s *BackupService) syncBackupToProtonDrive(backup *models.Backup) error {
 		return handleBackupError(s, "failed to sync backup", backup, err)
 	}
 
-	backup.Proton.Link = link
+	backup.Drive.Identifier = link
 	backup.UpdateStatus(models.StatusSynced)
 	return nil
 }
@@ -439,18 +425,18 @@ func (s *BackupService) updateBackupDetailsFromHA(backup *models.Backup, haBacku
 }
 
 // updateBackupDetailsFromHA updates the backup with information from HA
-func (s *BackupService) updateBackupDetailsFromProton(backup *models.Backup, protonBackup *models.ProtonDirectoryData) error {
-	slog.Info("Fetching backup attributes from Proton Drive", "name", protonBackup.Name)
-	attributes, err := s.drive.GetBackupAttributesByID(protonBackup.Link)
+func (s *BackupService) updateBackupDetailsFromDrive(backup *models.Backup, driveBackup *models.DirectoryData) error {
+	slog.Info(fmt.Sprintf("Fetching backup attributes from %s", s.driveProvider), "name", backup.Name)
+	attributes, err := s.drive.GetBackupAttributesByID(driveBackup.Identifier)
 	if err != nil {
 		return err
 	}
 
-	slog.Info("Attributes fetched", "name", protonBackup.Name, "size", attributes.Size, "modified", attributes.Modified)
+	slog.Info("Attributes fetched", "name", driveBackup.Name, "size", attributes.Size, "modified", attributes.Modified)
 
-	backup.Proton.Link = protonBackup.Link
-	backup.Proton.Name = protonBackup.Name
-	backup.Name = protonBackup.Name
+	backup.Drive.Identifier = driveBackup.Identifier
+	backup.Drive.Name = driveBackup.Name
+	backup.Name = driveBackup.Name
 	backup.Date = attributes.Modified
 	backup.Size = attributes.Size
 
@@ -671,7 +657,7 @@ func (s *BackupService) uploadBackup(backup *models.Backup) (string, error) {
 	id, err := s.drive.UploadFileByPath(fmt.Sprintf("%s.%s", backup.Name, "tar"), path)
 	if err != nil {
 		backup.UpdateStatus(models.StatusFailed)
-		slog.Error(err.Error())
+		slog.Error(fmt.Sprintf("Error uploading backup to %s", s.driveProvider), err)
 		return "", err
 	}
 

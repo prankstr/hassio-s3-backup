@@ -2,9 +2,9 @@ package models
 
 import "time"
 
-type ProtonDirectoryData struct {
-	Link string `json:"Link"` // Proton Drive Link to file
-	Name string `json:"Name"` // Name of the backup
+type DirectoryData struct {
+	Identifier string `json:"Link"` // Unique identifier
+	Name       string `json:"Name"` // Name of the item
 }
 
 type FileAttributes struct {
@@ -18,7 +18,7 @@ type Drive interface {
 	UploadFileByPath(name string, path string) (string, error)
 	DeleteFileByID(id string) error
 	GetBackupAttributesByID(linkID string) (*FileAttributes, error)
-	ListDirectory(linkID string) ([]*ProtonDirectoryData, error)
-	ListBackupDirectory() ([]*ProtonDirectoryData, error)
+	ListDirectory(linkID string) ([]*DirectoryData, error)
+	ListBackupDirectory() ([]*DirectoryData, error)
 	FileExists(linkID string) bool
 }

@@ -183,42 +183,42 @@ func (s *protonDriveService) GetBackupAttributesByID(id string) (*models.FileAtt
 	}, nil
 }
 
-func (s *protonDriveService) ListBackupDirectory() ([]*models.ProtonDirectoryData, error) {
+func (s *protonDriveService) ListBackupDirectory() ([]*models.DirectoryData, error) {
 	items, err := s.drive.ListDirectory(context.Background(), s.backupLink.LinkID)
 	if err != nil {
 		return nil, err
 	}
 
-	var protonBackups []*models.ProtonDirectoryData
+	var protonBackups []*models.DirectoryData
 	for _, item := range items {
 		if item.IsFolder {
 			continue
 		}
 
-		protonBackups = append(protonBackups, &models.ProtonDirectoryData{
-			Link: item.Link.LinkID,
-			Name: strings.TrimSuffix(item.Name, filepath.Ext(item.Name)),
+		protonBackups = append(protonBackups, &models.DirectoryData{
+			Identifier: item.Link.LinkID,
+			Name:       strings.TrimSuffix(item.Name, filepath.Ext(item.Name)),
 		})
 	}
 
 	return protonBackups, nil
 }
 
-func (s *protonDriveService) ListDirectory(linkID string) ([]*models.ProtonDirectoryData, error) {
+func (s *protonDriveService) ListDirectory(linkID string) ([]*models.DirectoryData, error) {
 	items, err := s.drive.ListDirectory(context.Background(), linkID)
 	if err != nil {
 		return nil, err
 	}
 
-	var protonBackups []*models.ProtonDirectoryData
+	var protonBackups []*models.DirectoryData
 	for _, item := range items {
 		if item.IsFolder {
 			continue
 		}
 
-		protonBackups = append(protonBackups, &models.ProtonDirectoryData{
-			Link: item.Link.LinkID,
-			Name: strings.TrimSuffix(item.Name, filepath.Ext(item.Name)),
+		protonBackups = append(protonBackups, &models.DirectoryData{
+			Identifier: item.Link.LinkID,
+			Name:       strings.TrimSuffix(item.Name, filepath.Ext(item.Name)),
 		})
 	}
 
