@@ -8,11 +8,12 @@
 
     <v-spacer></v-spacer>
     <v-tooltip open-delay="1000" location="bottom" :text="date">
-  		<template v-slot:activator="{ props }">
-        <p v-bind="props">Next backup in {{roundedTimer}}</p>
+      <template v-slot:activator="{ props }">
+        <p v-bind="props">Next backup in {{ roundedTimer }}</p>
       </template>
-		</v-tooltip>
-    <v-divider vertical class="border-opacity-50" style="height: 40px; margin-top: 12px; margin-left: 18px;"></v-divider>
+    </v-tooltip>
+    <v-divider vertical class="border-opacity-50"
+      style="height: 40px; margin-top: 12px; margin-left: 18px;"></v-divider>
     <Settings></Settings>
 
   </v-app-bar>
@@ -44,26 +45,34 @@ const roundedTimer = computed(() => {
   const hours = Math.floor(minutes / 60)
   const days = Math.ceil(hours / 24)
 
-  if (days > 0) {
-      return `${days} days`
-  } else if (hours % 24 > 0) { 
-      return `${hours % 24} hours`
-  } else if (minutes % 60 > 0) {
-      return `${minutes % 60} minutes`
+  if (days === 1) {
+    return "1 day";
+  } else if (days > 1) {
+    return `${days} days`;
+  } else if (hours % 24 === 1) {
+    return "1 hour";
+  } else if (hours % 24 > 1) {
+    return `${hours % 24} hours`;
+  } else if (minutes % 60 === 1) {
+    return "1 minute";
+  } else if (minutes % 60 > 1) {
+    return `${minutes % 60} minutes`;
+  } else if (seconds % 60 === 1) {
+    return "1 second";
   } else {
-      return `${seconds % 60} seconds`
+    return `${seconds % 60} seconds`;
   }
 })
 
 const date = computed(() => {
   const months = ["January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"]
+    "July", "August", "September", "October", "November", "December"]
   const suffixes = ["th", "st", "nd", "rd"]
-  
+
   const date = new Date(Date.now() + milliseconds.value);
   const day = date.getDate()
   const daySuffix = suffixes[(day % 10) - 1] || suffixes[0]
-  
+
   const month = months[date.getMonth()]
   const hours = date.getHours().toString().padStart(2, '0')
   const minutes = date.getMinutes().toString().padStart(2, '0')
@@ -85,6 +94,6 @@ onMounted(() => {
 </script>
 <style>
 .v-tooltip .v-overlay__content {
-    background: rgba(var(--v-theme-primary), 1) !important;
+  background: rgba(var(--v-theme-primary), 1) !important;
 }
 </style>
