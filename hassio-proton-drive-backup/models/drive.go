@@ -3,8 +3,8 @@ package models
 import "time"
 
 type ProtonDirectoryData struct {
-	Link string
-	Name string
+	Link string `json:"Link"` // Proton Drive Link to file
+	Name string `json:"Name"` // Name of the backup
 }
 
 type FileAttributes struct {

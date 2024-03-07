@@ -16,7 +16,7 @@ func NewSyncService(drive models.Drive) *SyncService {
 }
 
 func (s SyncService) Sync(backup *models.Backup) (string, error) {
-	path := fmt.Sprintf("%s/%s.%s", "/backup", backup.Slug, "tar")
+	path := fmt.Sprintf("%s/%s.%s", "/backup", backup.HA.Slug, "tar")
 
 	fmt.Println("Syncing backup to ProtonDrive: ", backup.Name, " from path: ", path)
 	backup.Status = models.StatusSyncing

@@ -18,19 +18,23 @@ const (
 	TypePartial      string       = "partial"
 )
 
+type HAData struct {
+	Slug string    `json:"slug"`
+	Date time.Time `json:"date"`
+	Size float64   `json:"size"`
+}
+
 // Backup represents the details and status of a backup process
 type Backup struct {
-	ID                string       `json:"id"`                // A unique identifier for the backup
-	Name              string       `json:"name"`              // Name of the backup
-	Status            BackupStatus `json:"status"`            // Current status of the backup
-	Date              time.Time    `json:"date"`              // When the backup process started
-	Type              string       `json:"type"`              // Type of backup (full or partial)
-	ErrorMessage      string       `json:"errorMessage"`      // Error message in case of failure
-	Size              float64      `json:"size"`              // Size of the backup file
-	Slug              string       `json:"slug"`              // Backup slug from Home assistant
-	ProtonLink        string       `json:"protonLink"`        // Proton Drive Link to file
-	OnlyInHA          bool         `json:"onlyInHa"`          // If backup should only be in HA
-	OnlyOnProtonDrive bool         `json:"onlyOnProtonDrive"` // If backup should only be on proton drive
+	ID                string               `json:"id"`                // A unique identifier for the backup
+	Name              string               `json:"name"`              // Name of the backup
+	Status            BackupStatus         `json:"status"`            // Current status of the backup
+	Date              time.Time            `json:"date"`              // When the backup process started
+	Size              float64              `json:"size"`              // Size of the backup in MB
+	ErrorMessage      string               `json:"errorMessage"`      // Error message in case of failure
+	MarkedForDeletion bool                 `json:"markedForDeletion"` // Marked for deletion
+	Proton            *ProtonDirectoryData `json:"proton"`            // Proton Drive Link to file
+	HA                *HassBackup          `json:"ha"`                // Home Assistant backup details
 }
 
 type BackupRequest struct {
