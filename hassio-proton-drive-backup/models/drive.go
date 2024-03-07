@@ -3,7 +3,7 @@ package models
 import "time"
 
 type DirectoryData struct {
-	Identifier string `json:"Link"` // Unique identifier
+	Identifier string `json:"Link"` // Proton Drive Link to file
 	Name       string `json:"Name"` // Name of the item
 }
 
