@@ -479,17 +479,14 @@ func (s *BackupService) sortAndSaveBackups() error {
 
 // syncBackupToDrive uploads a backup to the drive if needed
 func (s *BackupService) syncBackupToDrive(backup *models.Backup) error {
-	if backup.Drive == nil {
-		slog.Info(fmt.Sprintf("Syncing backup to %s", s.driveProvider), "name", backup.Name)
-	} else {
+	if backup.Drive != nil {
 		exists := s.drive.FileExists(backup.Drive.Identifier)
-		if !exists {
-			slog.Info(fmt.Sprintf("Syncing backup to %s", s.driveProvider), "name", backup.Name)
-		} else {
+		if exists {
 			return nil
 		}
 	}
 
+	slog.Info(fmt.Sprintf("Syncing backup to %s", s.driveProvider), "name", backup.Name)
 	backup.UpdateStatus(models.StatusSyncing)
 	link, err := s.uploadBackup(backup)
 	if err != nil {
@@ -503,7 +500,12 @@ func (s *BackupService) syncBackupToDrive(backup *models.Backup) error {
 		return handleBackupError(s, "failed to sync backup", backup, err)
 	}
 
-	backup.Drive.Identifier = link
+	// Ensure backup.Drive is updated with the new upload details
+	backup.Drive = &models.DirectoryData{
+		Name:       backup.Name,
+		Identifier: link,
+	}
+
 	backup.UpdateStatus(models.StatusSynced)
 	return nil
 }
