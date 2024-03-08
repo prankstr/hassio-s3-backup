@@ -344,7 +344,7 @@ func (s *BackupService) addHABackupsToMap(backupMap map[string]*models.Backup) e
 		}
 
 		if _, exists := backupMap[haBackup.Name]; !exists {
-			slog.Debug("Initializing backup found in Home Assistant", "name", haBackup.Name)
+			slog.Info("Found untracked backup in Home Assistant", "name", haBackup.Name)
 			backup := s.initializeBackup(haBackup.Name)
 
 			s.updateBackupDetailsFromHA(backup, haBackup)
@@ -379,7 +379,7 @@ func (s *BackupService) addDriveBackupsToMap(backupMap map[string]*models.Backup
 	noUpdateNeeded := true
 	for _, driveBackup := range driveBackups {
 		if _, exists := backupMap[driveBackup.Name]; !exists {
-			slog.Debug(fmt.Sprintf("Initializing backup found in %s", s.driveProvider), "name", driveBackup.Name)
+			slog.Info(fmt.Sprintf("Found untracked backup on %s", s.driveProvider), "name", driveBackup.Name)
 			backup := s.initializeBackup(driveBackup.Name)
 
 			if err := s.updateBackupDetailsFromDrive(backup, driveBackup); err != nil {
