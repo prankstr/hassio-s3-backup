@@ -9,7 +9,10 @@
     <v-spacer></v-spacer>
     <v-tooltip open-delay="400" location="bottom" :text="date">
       <template v-slot:activator="{ props }">
-        <p v-bind="props">Next backup in {{ roundedTimer }}</p>
+        <p v-if="milliseconds > 0" v-bind="props">Next backup in {{ roundedTimer }}</p>
+        
+        <!-- Just assuming everything is going alright here.. :) -->
+        <p v-else v-bind="props">Backup in progress</p>
       </template>
     </v-tooltip>
     <v-divider vertical class="border-opacity-50"
@@ -60,7 +63,7 @@ const roundedTimer = computed(() => {
   } else if (seconds % 60 === 1) {
     return "1 second";
   } else {
-    return `${seconds % 60} seconds`;
+    return `now`;
   }
 })
 
