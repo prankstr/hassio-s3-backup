@@ -14,7 +14,7 @@
 				<v-btn style="max-width: 450px; width: 100%" class="mt-2" color="primary" append-icon="mdi-plus"
 					v-bind="props">
 					New
-					<v-tooltip activator="parent">Create new backup</v-tooltip>
+					<v-tooltip open-delay="400" location="bottom" activator="parent">Create new backup</v-tooltip>
 				</v-btn>
 		</template>
 		<v-card class="pa-2" color="secondary">

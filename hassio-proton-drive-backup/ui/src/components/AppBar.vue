@@ -7,7 +7,7 @@
     </v-app-bar-title>
 
     <v-spacer></v-spacer>
-    <v-tooltip open-delay="1000" location="bottom" :text="date">
+    <v-tooltip open-delay="400" location="bottom" :text="date">
       <template v-slot:activator="{ props }">
         <p v-bind="props">Next backup in {{ roundedTimer }}</p>
       </template>

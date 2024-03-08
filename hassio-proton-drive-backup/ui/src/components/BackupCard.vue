@@ -19,13 +19,13 @@
 		</v-card-text>
 		<v-card-actions>
 			<v-spacer></v-spacer>
-			<v-tooltip open-delay="1000" location="bottom" text="Delete backup">
+			<v-tooltip open-delay="400" location="bottom" text="Delete backup">
   				<template v-slot:activator="{ props }">
 					<v-btn v-bind="props" density="comfortable" color="white" variant="text" icon="mdi-delete"
 				@click="revealDelete = true"></v-btn>
 				</template>
 			</v-tooltip>
-			<v-tooltip open-delay="1000" location="bottom" text="Restore to this backup">
+			<v-tooltip open-delay="400" location="bottom" text="Restore to this backup">
   				<template v-slot:activator="{ props }">
 					<v-btn v-bind="props" density="comfortable" color="white" variant="text" icon="mdi-backup-restore"
 				@click="revealRestore = true"></v-btn>
