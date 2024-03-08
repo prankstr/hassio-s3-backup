@@ -18,12 +18,14 @@ It's still early days so a lot.. Some of the most noteworthy:
 
 - **You have to use your Proton Drive username and password, no 2FA support.**
   - Proton Drive does currently not support any type of application credentials, hence you have you use your owner username and password to login. 2FA is not supported as it wouldn't allow uploading the backups on a schedule without manual intervention. Might add a manual sync mode in the future.
+- **No sensors or monitoring**
+  - The addon doesn't create any sensors in Home Assistant or provide other means for monitoring the backup.
+- **No generational backups**
+  - If you need to save backups for longer you'd have to move them out of the backup directoy so they're no longer managed by the addon.
 - **Only supports full backups and restores.**
   - All partial backups are ignored for now. Partial restore can be done from Home Assistants own interface if needed.
 - **Handles all full backups, even the ones created outside of the addon.**
   - Any full backup in home assistant will be recognized by the addon and synced to Proton Drive and it's currently not possible to set a backup to only exist in Home Assistant or Proton Drive.
-- **Doesn't handle orphaned backups in Proton Drive.**
-  - If the addon looses track of a backup in Proton Drive it won't be added back. So it won't be cleaned up by the addon or possible to restore to this backup from the addon, it can however be downloaded manually and restored to of course.
 
 ## Installation
 
