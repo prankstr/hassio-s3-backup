@@ -46,6 +46,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 
+const emit = defineEmits(['settingsUpdated'])
 const dialog = ref(false)
 const backupInterval = ref(0)
 const backupsToKeep = ref(0)
@@ -83,6 +84,7 @@ function updateConfig() {
         .then(response => {
             dialog.value = false
             snackbar.value = true
+            emit("settingsUpdated")
         })
         .catch(error => {
             snackbarMsg.value = "Error when updating config: " + error

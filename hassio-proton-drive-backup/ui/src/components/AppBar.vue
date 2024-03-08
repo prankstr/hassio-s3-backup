@@ -14,7 +14,7 @@
     </v-tooltip>
     <v-divider vertical class="border-opacity-50"
       style="height: 40px; margin-top: 12px; margin-left: 18px;"></v-divider>
-    <Settings></Settings>
+    <Settings @settingsUpdated="fetchTimer"></Settings>
 
   </v-app-bar>
 </template>
