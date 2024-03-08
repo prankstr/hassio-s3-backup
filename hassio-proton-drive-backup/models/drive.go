@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"io"
+	"time"
+)
 
 // DirectoryData represents the details of a directory item
 type DirectoryData struct {
@@ -20,6 +23,7 @@ type Drive interface {
 	About() ([]byte, error)                                         // Get information about the drive
 	UploadFileByPath(name string, path string) (string, error)      // Upload a file to the drive
 	DeleteFileByID(id string) error                                 // Delete a file from the drive
+	DownloadFileByID(id string) (io.ReadCloser, error)              // Download a file from the drive
 	GetBackupAttributesByID(linkID string) (*FileAttributes, error) // Get the attributes of a file
 	ListDirectory(linkID string) ([]*DirectoryData, error)          // List the contents of a directory
 	ListBackupDirectory() ([]*DirectoryData, error)                 // List the contents of the backup directory

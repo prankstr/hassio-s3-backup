@@ -101,7 +101,25 @@ func (h *BackupHandler) HandleRestoreBackupRequest(w http.ResponseWriter, r *htt
 		return
 	}
 
-	err = h.backupService.RestoreBackup(requestBody.Slug)
+	err = h.backupService.RestoreBackup(requestBody.ID)
+	if err != nil {
+		handleError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// handleRestoreBackup handles requests to /download, downloading a backup
+func (h *BackupHandler) HandleDownloadBackupRequest(w http.ResponseWriter, r *http.Request) {
+	// Parse the request body
+	requestBody, err := parseRequest(r)
+	if err != nil {
+		handleError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	err = h.backupService.DownloadBackup(requestBody.ID)
 	if err != nil {
 		handleError(w, err, http.StatusInternalServerError)
 		return

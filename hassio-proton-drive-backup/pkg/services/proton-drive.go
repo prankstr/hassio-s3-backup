@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hassio-proton-drive-backup/models"
+	"io"
 	"log/slog"
 	"path/filepath"
 	"strings"
@@ -173,6 +174,16 @@ func (s *protonDriveService) DeleteFileByID(id string) error {
 	}
 
 	return nil
+}
+
+// DownloadFileByID downloads a file from the drive
+func (s *protonDriveService) DownloadFileByID(id string) (io.ReadCloser, error) {
+	reader, _, _, err := s.drive.DownloadFileByID(context.Background(), id, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	return reader, nil
 }
 
 // GetBackupAttributesByID returns the attributes of a file

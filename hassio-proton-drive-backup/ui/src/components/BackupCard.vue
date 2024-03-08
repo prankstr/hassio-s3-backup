@@ -20,18 +20,23 @@
 		<v-card-actions>
 			<v-spacer></v-spacer>
 			<v-tooltip open-delay="400" location="bottom" text="Delete backup">
-  				<template v-slot:activator="{ props }">
+				<template v-slot:activator="{ props }">
 					<v-btn v-bind="props" density="comfortable" color="white" variant="text" icon="mdi-delete"
-				@click="revealDelete = true"></v-btn>
+						@click="revealDelete = true"></v-btn>
 				</template>
 			</v-tooltip>
-			<v-tooltip open-delay="400" location="bottom" text="Restore to this backup">
-  				<template v-slot:activator="{ props }">
+			<v-tooltip v-if="backup.status!='DRIVEONLY'" open-delay="400" location="bottom" text="Restore to this backup">
+				<template v-slot:activator="{ props }">
 					<v-btn v-bind="props" density="comfortable" color="white" variant="text" icon="mdi-backup-restore"
-				@click="revealRestore = true"></v-btn>
+						@click="revealRestore = true"></v-btn>
 				</template>
 			</v-tooltip>
-			<v-btn density="comfortable" color="white" variant="text" icon="mdi-download" @click="reveal = true"></v-btn>
+			<v-tooltip v-if="backup.status==='DRIVEONLY'" open-delay="400" location="bottom" text="Download backup to Home Assistant">
+				<template v-slot:activator="{ props }">
+					<v-btn v-bind="props" density="comfortable" color="white" variant="text" icon="mdi-download"
+						@click="revealDownload = true"></v-btn>
+				</template>
+			</v-tooltip>
 		</v-card-actions>
 		<v-expand-transition>
 			<v-card v-if="revealRestore" class="v-card--reveal" color="primary">
@@ -46,7 +51,7 @@
 					<v-btn density="comfortable" variant="text" color="white" @click="revealRestore = false">
 						Close
 					</v-btn>
-					<v-btn density="comfortable" variant="text"  color="white" @click="restoreBackup">
+					<v-btn density="comfortable" variant="text" color="white" @click="restoreBackup">
 						Accept
 					</v-btn>
 				</v-card-actions>
@@ -63,7 +68,24 @@
 					<v-btn density="comfortable" variant="text" color="white" @click="revealDelete = false">
 						Close
 					</v-btn>
-					<v-btn density="comfortable" variant="text"  color="white" @click="deleteBackup">
+					<v-btn density="comfortable" variant="text" color="white" @click="deleteBackup">
+						Accept
+					</v-btn>
+				</v-card-actions>
+			</v-card>
+			<v-card v-if="revealDownload" class="v-card--reveal" color="primary">
+				<v-card-item>
+					<v-card-title class="text-white text-heading-6">Download Backup?</v-card-title>
+				</v-card-item>
+				<v-card-text style="height: 60px" class="pb-0">
+					<p>Do you want to download this backup to Home Assistant?</p>
+				</v-card-text>
+				<v-card-actions class="pb-0 align-end">
+					<v-spacer></v-spacer>
+					<v-btn density="comfortable" variant="text" color="white" @click="revealDownload = false">
+						Close
+					</v-btn>
+					<v-btn density="comfortable" variant="text" color="white" @click="downloadBackup">
 						Accept
 					</v-btn>
 				</v-card-actions>
@@ -77,15 +99,16 @@ import { ref, watch, defineProps } from 'vue'
 const loading = ref(false)
 const revealRestore = ref(false)
 const revealDelete = ref(false)
+const revealDownload = ref(false)
 
 const props = defineProps({
 	backup: Object
 })
 
 const translateSize = size => {
-  const roundedSize = Math.round((size < 1000 ? size : size / 1024) * 10) / 10
-  const suffix = size < 1000 ? 'MB' : 'GB'
-  return `${roundedSize} ${suffix}`
+	const roundedSize = Math.round((size < 1000 ? size : size / 1024) * 10) / 10
+	const suffix = size < 1000 ? 'MB' : 'GB'
+	return `${roundedSize} ${suffix}`
 }
 
 const translateStatus = (status) => {
@@ -103,7 +126,6 @@ const translateStatus = (status) => {
 }
 
 watch(() => props.backup.status, (status) => {
-	console.log("Backup status changed to:", status)
 	loading.value = status !== 'SYNCED' && status !== 'FAILED' && status !== 'HAONLY' && status !== 'DRIVEONLY'
 }, { immediate: true })
 
@@ -132,7 +154,7 @@ function restoreBackup() {
 	fetch('http://replaceme.homeassistant/api/backups/restore', {
 		method: 'POST',
 		body: JSON.stringify({
-			"slug": props.backup.slug
+			"slug": props.backup.id
 		})
 	})
 		.then(response => {
@@ -140,6 +162,26 @@ function restoreBackup() {
 		})
 		.catch(error => {
 			console.log(error)
+		})
+}
+
+function downloadBackup() {
+	revealDownload.value = false
+	loading.value = true
+
+	fetch('http://replaceme.homeassistant/api/backups/download', {
+		method: 'POST',
+		body: JSON.stringify({
+			"id": props.backup.id
+		})
+	})
+		.then(response => {
+			console.log(response)
+			loading.value = false
+		})
+		.catch(error => {
+			console.log(error)
+			loading.value = false
 		})
 }
 
@@ -154,6 +196,6 @@ function restoreBackup() {
 }
 
 .v-tooltip .v-overlay__content {
-    background: rgba(var(--v-theme-primary), 1) !important;
+	background: rgba(var(--v-theme-primary), 1) !important;
 }
 </style>

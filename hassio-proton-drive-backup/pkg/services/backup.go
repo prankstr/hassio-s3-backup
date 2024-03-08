@@ -2,10 +2,13 @@ package services
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"hassio-proton-drive-backup/models"
 	"hassio-proton-drive-backup/pkg/clients"
+	"io"
 	"os"
+	"path/filepath"
 	"sort"
 	"sync"
 	"time"
@@ -154,22 +157,73 @@ func (s *BackupService) DeleteBackup(id string) error {
 }
 
 // RestoreBackup calls home assistant to restore a backup
-func (s *BackupService) RestoreBackup(slug string) error {
+func (s *BackupService) RestoreBackup(id string) error {
 	var backupToRestore *models.Backup
 
 	for _, backup := range s.backups {
-		if backup.HA.Slug == slug {
+		if backup.ID == id {
 			backupToRestore = backup
 			break
 		}
 	}
 
+	slog.Info("Attempting to restore to backup", "name", backupToRestore.Name)
 	err := s.hassioApi.RestoreBackup(backupToRestore.HA.Slug)
 	if err != nil {
 		return fmt.Errorf("failed to restore backup in Home Assistant: %v", err)
 	}
 
 	slog.Info("Restored to backup", "name", backupToRestore.Name)
+	return nil
+}
+
+// DownloadBackup downloads a backup to the specified directory
+func (s *BackupService) DownloadBackup(id string) error {
+	var backup *models.Backup
+
+	for _, b := range s.backups {
+		if b.ID == id {
+			backup = b
+			break
+		}
+	}
+
+	if backup == nil {
+		return errors.New("backup not found")
+	}
+
+	slog.Info("Downloading backup to Home Assistant", "backup", backup.Name)
+	backup.UpdateStatus(models.StatusSyncing)
+
+	// Download the backup file
+	reader, err := s.drive.DownloadFileByID(backup.Drive.Identifier)
+	if err != nil {
+		slog.Error("Failed to download backup", "backup", backup.Name, "error", err)
+		backup.UpdateStatus(models.StatusDriveOnly)
+		return err
+	}
+	defer reader.Close()
+
+	// Write the backup file to disk
+	filePath := filepath.Join("/backup", backup.Name+".tar")
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		slog.Error("Failed to open file for writing", "backup", backup.Name, "filePath", filePath, "error", err)
+		backup.UpdateStatus(models.StatusDriveOnly)
+		return err
+	}
+	defer file.Close()
+
+	// Copy the downloaded file to disk
+	if _, err := io.Copy(file, reader); err != nil {
+		slog.Error("Failed to write backup to disk", "backup", backup.Name, "filePath", filePath, "error", err)
+		backup.UpdateStatus(models.StatusDriveOnly)
+		return err
+	}
+
+	slog.Info("Backup downloaded successfully", "backup", backup.Name, "filePath", filePath)
+	backup.UpdateStatus(models.StatusSynced)
+
 	return nil
 }
 
