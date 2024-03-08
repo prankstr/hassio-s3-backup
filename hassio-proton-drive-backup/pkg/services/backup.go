@@ -244,8 +244,8 @@ func (s *BackupService) initializeBackup(name string) *models.Backup {
 		Name:   s.generateBackupName(name),
 		Date:   time.Now().In(s.config.Timezone),
 		Status: models.StatusPending,
-		Drive:  &models.DirectoryData{},
-		HA:     &models.HassBackup{},
+		Drive:  nil,
+		HA:     nil,
 	}
 
 	s.backups = append([]*models.Backup{backup}, s.backups...)
@@ -328,10 +328,12 @@ func (s *BackupService) syncBackups() error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	// Initialize UnifiedBackups with local backups
+	// Initialize backupMap with local backups and nullify certain fields
 	backupMap := make(map[string]*models.Backup)
 	for _, backup := range s.backups {
 		backup.MarkedForDeletion = true
+		backup.HA = nil
+		backup.Drive = nil
 		backupMap[backup.Name] = backup
 	}
 
@@ -355,20 +357,24 @@ func (s *BackupService) syncBackups() error {
 	}
 	s.backups = filteredBackups
 
-	// Function to set status to HAONLY, DRIVEONLY or SYNCED
+	// Set status to HAONLY, DRIVEONLY or SYNCED
 	for _, backup := range s.backups {
-		if backup.HA.Slug == "" {
-			backup.UpdateStatus(models.StatusDriveOnly)
-		} else if backup.Drive.Identifier == "" {
-			backup.UpdateStatus(models.StatusHAOnly)
-		} else {
+		backupInHA := backup.HA != nil
+		backupInDrive := backup.Drive != nil
+
+		if backupInHA && backupInDrive {
 			backup.UpdateStatus(models.StatusSynced)
+		} else if backupInHA {
+			backup.UpdateStatus(models.StatusHAOnly)
+		} else if backupInDrive {
+			backup.UpdateStatus(models.StatusDriveOnly)
 		}
 	}
 
 	// Sync to Drive
 	for _, backup := range s.backups {
 		if backup.Status == models.StatusHAOnly {
+			slog.Info(fmt.Sprintf("Backup only found in HA, syncing to %s", s.driveProvider), "name", backup.Name)
 			if err := s.syncBackupToDrive(backup); err != nil {
 				slog.Error(fmt.Sprintf("Error syncing backup to %s", s.driveProvider), "name", backup.Name, "error", err)
 				return err
@@ -400,8 +406,9 @@ func (s *BackupService) addHABackupsToMap(backupMap map[string]*models.Backup) e
 		if _, exists := backupMap[haBackup.Name]; !exists {
 			slog.Info("Found untracked backup in Home Assistant", "name", haBackup.Name)
 			backup := s.initializeBackup(haBackup.Name)
-
 			s.updateBackupDetailsFromHA(backup, haBackup)
+
+			backupMap[haBackup.Name] = backup
 			noUpdateNeeded = false
 		} else {
 			backupMap[haBackup.Name].MarkedForDeletion = false
@@ -472,7 +479,7 @@ func (s *BackupService) sortAndSaveBackups() error {
 
 // syncBackupToDrive uploads a backup to the drive if needed
 func (s *BackupService) syncBackupToDrive(backup *models.Backup) error {
-	if backup.Drive.Identifier == "" {
+	if backup.Drive == nil {
 		slog.Info(fmt.Sprintf("Syncing backup to %s", s.driveProvider), "name", backup.Name)
 	} else {
 		exists := s.drive.FileExists(backup.Drive.Identifier)
@@ -503,8 +510,7 @@ func (s *BackupService) syncBackupToDrive(backup *models.Backup) error {
 
 // updateBackupDetailsFromHA updates the backup with information from HA
 func (s *BackupService) updateBackupDetailsFromHA(backup *models.Backup, haBackup *models.HassBackup) {
-	backup.HA.Slug = haBackup.Slug
-	backup.HA.Type = haBackup.Type
+	backup.HA = haBackup
 	backup.Date = haBackup.Date
 	backup.Size = haBackup.Size
 }
@@ -519,8 +525,7 @@ func (s *BackupService) updateBackupDetailsFromDrive(backup *models.Backup, driv
 
 	slog.Info("Attributes fetched", "name", driveBackup.Name, "size", attributes.Size, "modified", attributes.Modified)
 
-	backup.Drive.Identifier = driveBackup.Identifier
-	backup.Drive.Name = driveBackup.Name
+	backup.Drive = driveBackup
 	backup.Name = driveBackup.Name
 	backup.Date = attributes.Modified
 	backup.Size = attributes.Size
