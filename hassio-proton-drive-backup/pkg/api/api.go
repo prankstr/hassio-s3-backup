@@ -35,7 +35,6 @@ func NewAPI(configService *services.ConfigService) (*Api, error) {
 	ConfigHandler := NewConfigHandler(configService)
 
 	// Define routes
-	//router.Handle("/api/backups", http.HandlerFunc(backupHandler.HandleListBackupRequest))
 	router.Handle("/api/backups/new/full", http.HandlerFunc(backupHandler.HandleBackupRequest))
 	router.Handle("/api/backups/delete", http.HandlerFunc(backupHandler.HandleDeleteBackupRequest))
 	router.Handle("/api/backups/restore", http.HandlerFunc(backupHandler.HandleRestoreBackupRequest))

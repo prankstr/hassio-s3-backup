@@ -6,23 +6,15 @@ import "time"
 type BackupStatus string
 
 const (
-	StatusDeleting  BackupStatus = "DELETING"
-	StatusPending   BackupStatus = "PENDING"
-	StatusRunning   BackupStatus = "RUNNING"
-	StatusSynced    BackupStatus = "SYNCED"
-	StatusHAOnly    BackupStatus = "HAONLY"
-	StatusDriveOnly BackupStatus = "DRIVEONLY"
-	StatusSyncing   BackupStatus = "SYNCING"
-	StatusFailed    BackupStatus = "FAILED"
-	TypeFull        string       = "full"
-	TypePartial     string       = "partial"
+	StatusDeleting  BackupStatus = "DELETING"  // Backup in being deleted
+	StatusPending   BackupStatus = "PENDING"   // Backup is initalized but no action taken
+	StatusRunning   BackupStatus = "RUNNING"   // Backup is being created in Home Assistant
+	StatusSynced    BackupStatus = "SYNCED"    // Backup is present in both Home Assistant and drive
+	StatusHAOnly    BackupStatus = "HAONLY"    // Backup is only present in  Home Assistant
+	StatusDriveOnly BackupStatus = "DRIVEONLY" // Backup is only present on drive
+	StatusSyncing   BackupStatus = "SYNCING"   // Backups is being uploaded to drive
+	StatusFailed    BackupStatus = "FAILED"    // Backup process failed somewhere
 )
-
-type HAData struct {
-	Slug string    `json:"slug"`
-	Date time.Time `json:"date"`
-	Size float64   `json:"size"`
-}
 
 // Backup represents the details and status of a backup process
 type Backup struct {
@@ -35,6 +27,13 @@ type Backup struct {
 	MarkedForDeletion bool           `json:"markedForDeletion"` // Marked for deletion
 	Drive             *DirectoryData `json:"proton"`            // Drive backup details
 	HA                *HassBackup    `json:"ha"`                // Home Assistant backup details
+}
+
+// HAData is a selection of metadata from the HA backups
+type HAData struct {
+	Slug string    `json:"slug"`
+	Date time.Time `json:"date"`
+	Size float64   `json:"size"`
 }
 
 type BackupRequest struct {

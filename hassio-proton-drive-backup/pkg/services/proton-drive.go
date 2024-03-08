@@ -116,6 +116,7 @@ func (s *protonDriveService) Login(username string, password string) error {
 	return nil
 }
 
+// FileExists returns true if a file exists
 func (s *protonDriveService) FileExists(linkID string) bool {
 	ctx := context.Background()
 
@@ -138,6 +139,7 @@ func (s *protonDriveService) FileExists(linkID string) bool {
 	return true
 }
 
+// About returns information about the drive
 func (s *protonDriveService) About() ([]byte, error) {
 	// Access h.ProtonDriveService for /ProtonDrive logic
 	res, _ := s.drive.About(context.Background())
@@ -151,6 +153,7 @@ func (s *protonDriveService) About() ([]byte, error) {
 	return data, nil
 }
 
+// UploadFileByPath uploads a file to the drive
 func (s *protonDriveService) UploadFileByPath(name string, path string) (string, error) {
 	// Create a new file
 	linkID, _, err := s.drive.UploadFileByPath(context.Background(), s.backupLink, name, path, 0)
@@ -161,6 +164,7 @@ func (s *protonDriveService) UploadFileByPath(name string, path string) (string,
 	return linkID, nil
 }
 
+// DeleteFileByID deletes a file from the drive
 func (s *protonDriveService) DeleteFileByID(id string) error {
 	// Delete the backup
 	err := s.drive.MoveFileToTrashByID(context.Background(), id)
@@ -171,6 +175,7 @@ func (s *protonDriveService) DeleteFileByID(id string) error {
 	return nil
 }
 
+// GetBackupAttributesByID returns the attributes of a file
 func (s *protonDriveService) GetBackupAttributesByID(id string) (*models.FileAttributes, error) {
 	protonAttributes, err := s.drive.GetActiveRevisionAttrsByID(context.Background(), id)
 	if err != nil {
@@ -183,6 +188,7 @@ func (s *protonDriveService) GetBackupAttributesByID(id string) (*models.FileAtt
 	}, nil
 }
 
+// ListBackupDirectory returns a list items in the backup directory
 func (s *protonDriveService) ListBackupDirectory() ([]*models.DirectoryData, error) {
 	items, err := s.drive.ListDirectory(context.Background(), s.backupLink.LinkID)
 	if err != nil {
@@ -204,6 +210,7 @@ func (s *protonDriveService) ListBackupDirectory() ([]*models.DirectoryData, err
 	return protonBackups, nil
 }
 
+// ListDirectory returns a list of items in a directory
 func (s *protonDriveService) ListDirectory(linkID string) ([]*models.DirectoryData, error) {
 	items, err := s.drive.ListDirectory(context.Background(), linkID)
 	if err != nil {

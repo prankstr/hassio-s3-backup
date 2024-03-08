@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// hassioClient is the concrete implementation of HassioClient
+// HassioApiClient is a client for the Hassio API
 type HassioApiClient struct {
 	Token string
 	URL   string
@@ -25,7 +25,7 @@ func NewHassioApiClient(token string) HassioApiClient {
 	}
 }
 
-// ListBackups queries hassio for all current backups
+// GetBackup queries hassio for a specific backup
 func (c *HassioApiClient) GetBackup(slug string) (*models.HassBackup, error) {
 	// API endpoint to list all backups
 	url := fmt.Sprintf("http://supervisor/backups/%s/info", slug)
@@ -67,7 +67,7 @@ func (c *HassioApiClient) GetBackup(slug string) (*models.HassBackup, error) {
 	return &backupResponse.Data, nil
 }
 
-// ListBackups queries hassio for all current backups
+// ListBackups queries hassio for a list of all backups
 func (c *HassioApiClient) ListBackups() ([]*models.HassBackup, error) {
 	// API endpoint to list all backups
 	url := "http://supervisor/backups"
@@ -97,7 +97,7 @@ func (c *HassioApiClient) ListBackups() ([]*models.HassBackup, error) {
 	return backupResponse.Data.Backups, nil
 }
 
-// BackupFull handles requests to /ProtonDrive
+// BackupFull requests a full backup from Home Assistant
 func (c *HassioApiClient) BackupFull(name string) (string, error) {
 	jsonBody := []byte(fmt.Sprintf(`{"name": "%s"}`, name))
 	bodyReader := bytes.NewReader(jsonBody)
@@ -135,6 +135,7 @@ func (c *HassioApiClient) BackupFull(name string) (string, error) {
 	return response.Data.Slug, nil
 }
 
+// DeleteBackup requests a backup to be deleted from Home Assistant
 func (c *HassioApiClient) DeleteBackup(slug string) error {
 	url := fmt.Sprintf("http://supervisor/backups/%s", slug)
 
@@ -154,6 +155,7 @@ func (c *HassioApiClient) DeleteBackup(slug string) error {
 	return nil
 }
 
+// RestoreBackup requests a backup to be restored in Home Assistant
 func (c *HassioApiClient) RestoreBackup(slug string) error {
 	url := fmt.Sprintf("http://supervisor/backups/%s/restore/full", slug)
 

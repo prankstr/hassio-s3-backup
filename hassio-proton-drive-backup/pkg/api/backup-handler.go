@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-// BackupHandler handles requests to the /ProtonDrive and /bye endpoints
+// BackupHandler is a struct to handle requests to concering backups
 type BackupHandler struct {
 	backupService *services.BackupService
 }
@@ -20,6 +20,7 @@ func NewBackupHandler(backupService *services.BackupService) BackupHandler {
 	}
 }
 
+// HandleListBackups handles requests to /backups, returning a list of backups
 func (h *BackupHandler) HandleListBackups(w http.ResponseWriter, r *http.Request) {
 	backups := h.backupService.ListBackups()
 
@@ -35,31 +36,28 @@ func (h *BackupHandler) HandleListBackups(w http.ResponseWriter, r *http.Request
 	w.Write(json)
 }
 
+// handleTimer handles requests to /timer, returning the time until the next backup
 func (h *BackupHandler) HandleTimerRequest(w http.ResponseWriter, r *http.Request) {
 	milliseconds := h.backupService.TimeUntilNextBackup()
 
-	// Response struct
 	response := struct {
 		Milliseconds int64 `json:"milliseconds"`
 	}{
 		Milliseconds: milliseconds,
 	}
 
-	// Serialize the response struct to JSON
 	jsonBytes, err := json.Marshal(response)
 	if err != nil {
 		handleError(w, err, http.StatusInternalServerError)
 		return
 	}
 
-	// Write the JSON response
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(jsonBytes)
 }
 
-// handleProtonDrive handles requests to /ProtonDrive
+// handleBackup handles requests to /backup, createing a new backup
 func (h *BackupHandler) HandleBackupRequest(w http.ResponseWriter, r *http.Request) {
-	// Parse the request body
 	requestBody, err := parseRequest(r)
 	if err != nil {
 		handleError(w, err, http.StatusBadRequest)
@@ -71,16 +69,14 @@ func (h *BackupHandler) HandleBackupRequest(w http.ResponseWriter, r *http.Reque
 		if err != nil {
 			handleError(w, err, http.StatusInternalServerError)
 			return
-		} else {
-			// Notify user of success
 		}
 	}()
 
 	w.WriteHeader(http.StatusAccepted)
 }
 
+// handleDeleteBackup handles requests to /delete, deleting a backup
 func (h *BackupHandler) HandleDeleteBackupRequest(w http.ResponseWriter, r *http.Request) {
-	// Parse the request body
 	requestBody, err := parseRequest(r)
 	if err != nil {
 		handleError(w, err, http.StatusBadRequest)
@@ -96,6 +92,7 @@ func (h *BackupHandler) HandleDeleteBackupRequest(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusOK)
 }
 
+// handleRestoreBackup handles requests to /restore, restoring a backup
 func (h *BackupHandler) HandleRestoreBackupRequest(w http.ResponseWriter, r *http.Request) {
 	// Parse the request body
 	requestBody, err := parseRequest(r)

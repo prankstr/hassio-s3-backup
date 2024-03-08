@@ -14,11 +14,13 @@ import (
 	"hassio-proton-drive-backup/models"
 )
 
+// ConfigService is a struct to handle the application configuration
 type ConfigService struct {
 	config           *models.Config
 	configChangeChan chan *models.Config
 }
 
+// logLevels is a map of string to slog.Level
 var logLevels map[string]slog.Level = map[string]slog.Level{
 	"Error": slog.LevelError,
 	"Warn":  slog.LevelWarn,
@@ -83,6 +85,7 @@ func NewConfigService() *ConfigService {
 	}
 }
 
+// NotifyConfigChange sends a new config to the configChangeChan
 func (cs *ConfigService) NotifyConfigChange(newConfig *models.Config) {
 	slog.Info("Config updated, notifying")
 	cs.configChangeChan <- newConfig
@@ -93,28 +96,34 @@ func (cs *ConfigService) GetConfig() *models.Config {
 	return cs.config
 }
 
+// GetBackupDirectory returns the directory where backups are stored
 func (cs *ConfigService) GetBackupInterval() time.Duration {
 	return (time.Duration(cs.config.BackupInterval) * time.Hour) * 24
 }
 
+// GetBackupsToKeep returns the number of backups to keep
 func (cs *ConfigService) GetBackupsToKeep() int {
 	return cs.config.BackupsToKeep
 }
 
+// GetProtonDriveUser returns the ProtonDrive username
 func (cs *ConfigService) GetProtonDriveUser() string {
 	return cs.config.ProtonDriveUser
 }
 
+// GetProtonDrivePassword returns the ProtonDrive password
 func (cs *ConfigService) GetProtonDrivePassword() string {
 	return cs.config.ProtonDrivePassword
 }
 
+// SetBackupsToKeep sets the number of backups to keep
 func (cs *ConfigService) SetBackupInterval(interval int) {
 	cs.config.BackupInterval = interval
 
 	writeConfigToFile(cs.config)
 }
 
+// SetBackupsToKeep sets the number of backups to keep
 func (cs *ConfigService) UpdateConfigFromAPI(configRequest models.ConfigUpdate) error {
 	cs.config.BackupInterval = configRequest.BackupInterval
 	cs.config.BackupsToKeep = configRequest.BackupsToKeep
@@ -138,6 +147,7 @@ func getEnvOrDefault(key string, currentValue, defaultValue string) string {
 	return defaultValue
 }
 
+// Helper function to get environment variable or return a default
 func getEnvOrDefaultInt(key string, currentValue, defaultValue int) int {
 	if value, exists := os.LookupEnv(key); exists {
 		if intValue, err := strconv.Atoi(value); err == nil {

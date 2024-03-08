@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Config is a struct to represent the configuration of the addon
 type Config struct {
 	Hostname        string         // Hostname is the hostname of the machine running the addon
 	IngressPath     string         // IngressPath is the path where the ingress endpoint is exposed
@@ -22,6 +23,7 @@ type Config struct {
 	BackupsToKeep  int `json:"backupsToKeep"`  // NumberOfBackups is the number of backups to keep
 }
 
+// ConfigUpdate is a struct to represent the configuration update
 type ConfigUpdate struct {
 	BackupInterval int `json:"backupInterval"`
 	BackupsToKeep  int `json:"backupsToKeep"`

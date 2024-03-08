@@ -7,19 +7,19 @@ import (
 	"net/http"
 )
 
-// ConfigHandler handles requests to the /ProtonDrive and /bye endpoints
+// ConfigHandler is a struct to handle requests to concering config
 type ConfigHandler struct {
 	cs *services.ConfigService
 }
 
-// NewDriveHandler initializes and returns a new ProtonDriveHandler
+// NewConfigHandler initializes and returns a new ConfigHandler
 func NewConfigHandler(configService *services.ConfigService) ConfigHandler {
 	return ConfigHandler{
 		cs: configService,
 	}
 }
 
-// handleProtonDrive handles requests to /ProtonDrive
+// HandleGetConfig handles requests to /config, returning the current config
 func (h *ConfigHandler) HandleGetConfig(w http.ResponseWriter, r *http.Request) {
 	config := h.cs.GetConfig()
 
@@ -38,7 +38,7 @@ func (h *ConfigHandler) HandleGetConfig(w http.ResponseWriter, r *http.Request) 
 	w.Write(res)
 }
 
-// handleProtonDrive handles requests to /ProtonDrive
+// HandleUpdateConfig handles requests to /config/update, updating the config
 func (h *ConfigHandler) HandleUpdateConfig(w http.ResponseWriter, r *http.Request) {
 	var requestBody models.ConfigUpdate
 
