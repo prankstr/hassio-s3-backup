@@ -11,11 +11,11 @@
 	</v-snackbar>
 	<v-dialog v-model="dialog" width="1024">
 		<template v-slot:activator="{ props }">
-				<v-btn style="max-width: 450px; width: 100%" class="mt-2" color="primary" append-icon="mdi-plus"
-					v-bind="props">
-					New
-					<v-tooltip open-delay="400" location="bottom" activator="parent">Create new backup</v-tooltip>
-				</v-btn>
+			<v-btn style="max-width: 450px; width: 100%" class="mt-2" color="primary" append-icon="mdi-plus"
+				v-bind="props" @click="generateBackupName">
+				New
+				<v-tooltip open-delay="400" location="bottom" activator="parent">Create new backup</v-tooltip>
+			</v-btn>
 		</template>
 		<v-card class="pa-2" color="secondary">
 			<v-card-title class="text-white">
@@ -44,14 +44,48 @@
 	</v-dialog>
 </template>
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 
 const dialog = ref(false)
 const loading = ref(false)
 const snackbar = ref(false)
 const backupName = ref("")
-const snackbarMsg = ref("Awesome! New backup created")
+const backupNameFormat = ref("")
+const snackbarMsg = ref("Awesome! New backup created 🚀")
 
+onMounted(() => {
+	getConfig()
+})
+
+function generateBackupName() {
+  let format = backupNameFormat.value || 'Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}';
+  const now = new Date(); // Uses the system's local timezone
+
+  const replacements = {
+    '{year}': String(now.getFullYear()),
+    '{month}': String(now.getMonth() + 1).padStart(2, '0'), // Months are 0-indexed
+    '{day}': String(now.getDate()).padStart(2, '0'),
+    '{hr24}': String(now.getHours()).padStart(2, '0'),
+    '{min}': String(now.getMinutes()).padStart(2, '0'),
+    '{sec}': String(now.getSeconds()).padStart(2, '0'),
+  };
+
+  for (const [placeholder, value] of Object.entries(replacements)) {
+    const placeholderRegex = new RegExp(placeholder, 'g');
+    format = format.replace(placeholderRegex, value); // Accumulate replacements in format
+  }
+
+  backupName.value = format; // Assign the final value to the reactive reference
+}
+
+function getConfig() {
+	fetch('http://replaceme.homeassistant/api/config')
+		.then(res => res.json())
+		.then(data => {
+			backupNameFormat.value = data.backupNameFormat
+		})
+		.catch(err => console.log(err.message))
+}
 
 function triggerBackup() {
 	loading.value = true
