@@ -20,6 +20,10 @@
             <v-card-text class="text-white">
                 <v-container>
                     <v-row>
+                        <v-col cols="12">
+                            <v-text-field v-model=backupNameFormat class="mb-0" label="Name format" persistent-hint
+                                hint="Default: Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}"></v-text-field>
+                        </v-col>
                         <v-col cols="6">
                             <v-text-field v-model=backupsInHA class="mb-0" label="Number of backups to keep in Home Assistant" persistent-hint
                                 hint="The amount of backups to keep in Home Assistant. Defaults to 4"></v-text-field>
@@ -54,11 +58,12 @@ import { ref, onMounted, watch } from 'vue'
 
 const emit = defineEmits(['settingsUpdated'])
 const dialog = ref(false)
+const backupNameFormat = ref("")
 const backupInterval = ref(0)
 const backupsInHA = ref(0)
 const backupsOnDrive = ref(0)
 const snackbar = ref(false)
-const snackbarMsg = ref("Config updated")
+const snackbarMsg = ref("Config updated 🔥")
 
 onMounted(() => {
     getConfig()
@@ -74,6 +79,7 @@ function getConfig() {
     fetch('http://replaceme.homeassistant/api/config')
 		.then(res => res.json())
 		.then(data => {
+            backupNameFormat.value = data.backupNameFormat
             backupInterval.value = data.backupInterval
             backupsInHA.value = data.backupsInHA
             backupsOnDrive.value = data.backupsOnDrive
@@ -85,6 +91,7 @@ function updateConfig() {
     fetch('http://replaceme.homeassistant/api/config/update', {
         method: 'POST',
         body: JSON.stringify({
+            "backupNameFormat": backupNameFormat.value,
             "backupInterval": parseInt(backupInterval.value, 10),
             "backupsInHA": parseInt(backupsInHA.value, 10),
             "backupsOnDrive": parseInt(backupsOnDrive.value, 10)

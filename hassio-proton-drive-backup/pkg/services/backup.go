@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -541,7 +542,7 @@ func (s *BackupService) sortAndSaveBackups() error {
 	return nil
 }
 
-// syncBackupToDrive uploads a backup to the drive if needed
+/* // syncBackupToDrive uploads a backup to the drive if needed
 func (s *BackupService) syncBackupToDrive(backup *models.Backup) error {
 	if backup.Drive != nil {
 		exists := s.drive.FileExists(backup.Drive.Identifier)
@@ -573,7 +574,7 @@ func (s *BackupService) syncBackupToDrive(backup *models.Backup) error {
 	backup.UpdateStatus(models.StatusSynced)
 	return nil
 }
-
+*/
 // updateBackupDetailsFromHA updates the backup with information from HA
 func (s *BackupService) updateBackupDetailsFromHA(backup *models.Backup, haBackup *models.HassBackup) {
 	backup.HA = haBackup
@@ -748,19 +749,24 @@ func (s *BackupService) resetTimerForNextBackup() {
 func (s *BackupService) listenForConfigChanges(configChan <-chan *models.Config) {
 	for range configChan {
 		newInterval := s.configService.GetBackupInterval()
+		newBackupNameFormat := s.configService.GetBackupNameFormat()
+		newBackupsInHA := s.configService.GetBackupsInHA()
+		newBackupsOnDrive := s.configService.GetBackupsOnDrive()
+
 		if newInterval != s.backupInterval {
 			s.backupInterval = newInterval
 			s.resetTimerForNextBackup()
 			slog.Info("Backup configuration updated", "new backupInterval", newInterval.String())
 		}
 
-		newBackupsInHA := s.configService.GetBackupsInHA()
-		newBackupsOnDrive := s.configService.GetBackupsOnDrive()
-
 		if newBackupsInHA != s.backupsInHA || newBackupsOnDrive != s.backupsOnDrive {
 			s.backupsInHA = newBackupsInHA
 			s.backupsOnDrive = newBackupsOnDrive
 			s.syncBackups()
+		}
+
+		if newBackupNameFormat != s.config.BackupNameFormat {
+			slog.Info("Backup configuration updated", "new backupNameFormat", newBackupNameFormat)
 		}
 
 		if newBackupsInHA != s.backupsInHA {
@@ -828,10 +834,16 @@ func (s *BackupService) generateBackupName(requestName string) string {
 		return requestName
 	}
 
+	format := s.config.BackupNameFormat
 	now := time.Now().In(s.config.Timezone)
-	formattedDate := now.Format("2006-01-02 15:04:05")
+	format = strings.ReplaceAll(format, "{year}", now.Format("2006"))
+	format = strings.ReplaceAll(format, "{month}", now.Format("01"))
+	format = strings.ReplaceAll(format, "{day}", now.Format("02"))
+	format = strings.ReplaceAll(format, "{hr24}", now.Format("15"))
+	format = strings.ReplaceAll(format, "{min}", now.Format("04"))
+	format = strings.ReplaceAll(format, "{sec}", now.Format("05"))
 
-	return fmt.Sprintf("Full Backup %s", formattedDate)
+	return format
 }
 
 // removeOngoingBackup remeves the backup with provided ID from the list of ongoing bacups

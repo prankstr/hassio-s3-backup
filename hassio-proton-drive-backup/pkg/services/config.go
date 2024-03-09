@@ -44,6 +44,7 @@ func NewConfigService() *ConfigService {
 	config.BackupDirectory = getEnvOrDefault("BACKUP_DIRECTORY", config.BackupDirectory, "Home Assistant Backups")
 	config.DataDirectory = getEnvOrDefault("DATA_DIRECTORY", config.DataDirectory, "/data")
 	config.BackupsInHA = getEnvOrDefaultInt("BACKUPS_IN_HA", config.BackupsInHA, 4)
+	config.BackupNameFormat = getEnvOrDefault("BACKUP_NAME_FORMAT", config.BackupNameFormat, "Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}")
 	config.BackupsOnDrive = getEnvOrDefaultInt("BACKUPS_ON_DRIVE", config.BackupsOnDrive, 4)
 	config.BackupInterval = getEnvOrDefaultInt("BACKUP_INTERVAL", config.BackupInterval, 3)
 	config.ProtonDriveUser = getEnvOrDefault("PROTON_DRIVE_USER", config.ProtonDriveUser, "")
@@ -102,6 +103,11 @@ func (cs *ConfigService) GetBackupInterval() time.Duration {
 	return (time.Duration(cs.config.BackupInterval) * time.Hour) * 24
 }
 
+// GetBackupNameFormat returns the format to use for the backup name
+func (cs *ConfigService) GetBackupNameFormat() string {
+	return cs.config.BackupNameFormat
+}
+
 // GetBackupsToKeep returns the number of backups to keep
 func (cs *ConfigService) GetBackupsInHA() int {
 	return cs.config.BackupsInHA
@@ -131,6 +137,7 @@ func (cs *ConfigService) SetBackupInterval(interval int) {
 
 // SetBackupsToKeep sets the number of backups to keep
 func (cs *ConfigService) UpdateConfigFromAPI(configRequest models.ConfigUpdate) error {
+	cs.config.BackupNameFormat = configRequest.BackupNameFormat
 	cs.config.BackupInterval = configRequest.BackupInterval
 	cs.config.BackupsInHA = configRequest.BackupsInHA
 	cs.config.BackupsOnDrive = configRequest.BackupsOnDrive

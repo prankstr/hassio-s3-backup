@@ -24,18 +24,15 @@ func (h *ConfigHandler) HandleGetConfig(w http.ResponseWriter, r *http.Request) 
 	config := h.cs.GetConfig()
 
 	responseConfig := models.ConfigUpdate{
-		BackupInterval: config.BackupInterval,
-		BackupsInHA:    config.BackupsInHA,
-		BackupsOnDrive: config.BackupsOnDrive,
+		BackupNameFormat: config.BackupNameFormat,
+		BackupInterval:   config.BackupInterval,
+		BackupsInHA:      config.BackupsInHA,
+		BackupsOnDrive:   config.BackupsOnDrive,
 	}
 
-	// Access h.ProtonDriveService for /ProtonDrive logic
 	res, _ := json.Marshal(responseConfig)
 
-	// Set the Content-Type header to indicate JSON
 	w.Header().Set("Content-Type", "application/json")
-
-	// Write the JSON response
 	w.Write(res)
 }
 
