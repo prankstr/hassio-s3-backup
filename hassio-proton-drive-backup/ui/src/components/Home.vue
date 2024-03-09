@@ -11,7 +11,7 @@
             <NewBackup></NewBackup>
           </div>
         </v-col>
-        <!-- <v-divider class="border-opacity-50" color="wite" vertical></v-divider> -->
+        <!-- <v-divider class="border-opacity-50" color="white" vertical></v-divider> -->
         <v-col cols="auto" md="7" class="pt-4">
           <v-row class="justify-center justify-md-start">
             <v-col cols="11" md="6" v-for="(backup, i) in backups" :key="backup.id">
@@ -20,6 +20,20 @@
               </div>
             </v-col>
           </v-row>
+
+          <v-row v-if="pinnedBackups.length > 0"  class="justify-center justify-md-start">
+            <v-col cols="11" class="pb-0">
+              <div class="d-flex flex-column align-center align-md-start">
+                <h2>Pinned Backups</h2>
+              </div>
+            </v-col>
+            <v-col cols="11" md="6" v-for="(backup, i) in pinnedBackups" key="backup.id">
+              <div class="d-flex flex-column align-center">
+                <BackupCard :backup=backup></BackupCard>
+              </div>
+            </v-col>
+          </v-row>
+
         </v-col>
       </v-row>
 
@@ -32,14 +46,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, computed, reactive } from 'vue'
 
 import AppBar from '@/components/AppBar.vue'
 import DriveStats from '@/components/DriveStats.vue'
 import NewBackup from '@/components/NewBackup.vue'
 import BackupCard from '@/components/BackupCard.vue'
 
-let backups = ref([])
+let backupList = ref([])
 
 // Function to fetch data and update backups ref
 const fetchData = async () => {
@@ -47,7 +61,7 @@ const fetchData = async () => {
     const response = await fetch('http://replaceme.homeassistant/api/backups')
     if (response.ok) {
       const data = await response.json()
-      backups.value = data.map(backup => reactive(backup)) // Making each backup object reactive
+      backupList.value = data.map(backup => reactive(backup)) // Making each backup object reactive
     } else {
       console.error('Failed to fetch data')
     }
@@ -55,6 +69,14 @@ const fetchData = async () => {
     console.error(error)
   }
 }
+
+const backups = computed(() => {
+  return backupList.value.filter(backup => !backup.pinned)
+})
+
+const pinnedBackups = computed(() => {
+  return backupList.value.filter(backup => backup.pinned)
+})
 
 onMounted(() => {
   fetchData()

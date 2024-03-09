@@ -43,7 +43,8 @@ func NewConfigService() *ConfigService {
 	config.SupervisorToken = getEnvOrDefault("SUPERVISOR_TOKEN", config.SupervisorToken, "")
 	config.BackupDirectory = getEnvOrDefault("BACKUP_DIRECTORY", config.BackupDirectory, "Home Assistant Backups")
 	config.DataDirectory = getEnvOrDefault("DATA_DIRECTORY", config.DataDirectory, "/data")
-	config.BackupsToKeep = getEnvOrDefaultInt("BACKUPS_TO_KEEP", config.BackupsToKeep, 4)
+	config.BackupsInHA = getEnvOrDefaultInt("BACKUPS_IN_HA", config.BackupsInHA, 4)
+	config.BackupsOnDrive = getEnvOrDefaultInt("BACKUPS_ON_DRIVE", config.BackupsOnDrive, 4)
 	config.BackupInterval = getEnvOrDefaultInt("BACKUP_INTERVAL", config.BackupInterval, 3)
 	config.ProtonDriveUser = getEnvOrDefault("PROTON_DRIVE_USER", config.ProtonDriveUser, "")
 	config.ProtonDrivePassword = getEnvOrDefault("PROTON_DRIVE_PASSWORD", config.ProtonDrivePassword, "")
@@ -102,8 +103,13 @@ func (cs *ConfigService) GetBackupInterval() time.Duration {
 }
 
 // GetBackupsToKeep returns the number of backups to keep
-func (cs *ConfigService) GetBackupsToKeep() int {
-	return cs.config.BackupsToKeep
+func (cs *ConfigService) GetBackupsInHA() int {
+	return cs.config.BackupsInHA
+}
+
+// GetBackupsOnDrive returns the number of backups to keep on the drive
+func (cs *ConfigService) GetBackupsOnDrive() int {
+	return cs.config.BackupsOnDrive
 }
 
 // GetProtonDriveUser returns the ProtonDrive username
@@ -126,7 +132,8 @@ func (cs *ConfigService) SetBackupInterval(interval int) {
 // SetBackupsToKeep sets the number of backups to keep
 func (cs *ConfigService) UpdateConfigFromAPI(configRequest models.ConfigUpdate) error {
 	cs.config.BackupInterval = configRequest.BackupInterval
-	cs.config.BackupsToKeep = configRequest.BackupsToKeep
+	cs.config.BackupsInHA = configRequest.BackupsInHA
+	cs.config.BackupsOnDrive = configRequest.BackupsOnDrive
 
 	cs.NotifyConfigChange(cs.config)
 

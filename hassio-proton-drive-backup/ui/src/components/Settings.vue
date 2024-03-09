@@ -21,9 +21,15 @@
                 <v-container>
                     <v-row>
                         <v-col cols="6">
-                            <v-text-field v-model=backupsToKeep class="mb-0" label="Number of backups" persistent-hint
-                                hint="The amount of backups to keep. Defaults to 4"></v-text-field>
+                            <v-text-field v-model=backupsInHA class="mb-0" label="Number of backups to keep in Home Assistant" persistent-hint
+                                hint="The amount of backups to keep in Home Assistant. Defaults to 4"></v-text-field>
                         </v-col>
+                        <v-col cols="6">
+                            <v-text-field v-model=backupsOnDrive class="mb-0" label="Number of backups to keep on Proton Drive" persistent-hint
+                                hint="The amount of backups to keep on Proton Drive. Defaults to 4"></v-text-field>
+                        </v-col>
+                    </v-row>
+                    <v-row>
                         <v-col cols="6">
                             <v-text-field v-model=backupInterval class="mb-0" label="Time between backups" persistent-hint
                                 hint="The amount of time between backups. Defaults to 3 days."></v-text-field>
@@ -49,7 +55,8 @@ import { ref, onMounted, watch } from 'vue'
 const emit = defineEmits(['settingsUpdated'])
 const dialog = ref(false)
 const backupInterval = ref(0)
-const backupsToKeep = ref(0)
+const backupsInHA = ref(0)
+const backupsOnDrive = ref(0)
 const snackbar = ref(false)
 const snackbarMsg = ref("Config updated")
 
@@ -68,7 +75,8 @@ function getConfig() {
 		.then(res => res.json())
 		.then(data => {
             backupInterval.value = data.backupInterval
-            backupsToKeep.value = data.backupsToKeep
+            backupsInHA.value = data.backupsInHA
+            backupsOnDrive.value = data.backupsOnDrive
         })
 		.catch(err => console.log(err.message))
 }
@@ -78,7 +86,8 @@ function updateConfig() {
         method: 'POST',
         body: JSON.stringify({
             "backupInterval": parseInt(backupInterval.value, 10),
-            "backupsToKeep": parseInt(backupsToKeep.value, 10)
+            "backupsInHA": parseInt(backupsInHA.value, 10),
+            "backupsOnDrive": parseInt(backupsOnDrive.value, 10)
         })
     })
         .then(response => {

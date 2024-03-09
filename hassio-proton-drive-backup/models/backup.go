@@ -18,15 +18,18 @@ const (
 
 // Backup represents the details and status of a backup process
 type Backup struct {
-	ID                string         `json:"id"`                // A unique identifier for the backup
-	Name              string         `json:"name"`              // Name of the backup
-	Status            BackupStatus   `json:"status"`            // Current status of the backup
-	Date              time.Time      `json:"date"`              // When the backup process started
-	Size              float64        `json:"size"`              // Size of the backup in MB
-	ErrorMessage      string         `json:"errorMessage"`      // Error message in case of failure
-	MarkedForDeletion bool           `json:"markedForDeletion"` // Marked for deletion
-	Drive             *DirectoryData `json:"proton"`            // Drive backup details
-	HA                *HassBackup    `json:"ha"`                // Home Assistant backup details
+	ID           string         `json:"id"`           // A unique identifier for the backup
+	Name         string         `json:"name"`         // Name of the backup
+	Status       BackupStatus   `json:"status"`       // Current status of the backup
+	Date         time.Time      `json:"date"`         // When the backup process started
+	Size         float64        `json:"size"`         // Size of the backup in MB
+	Slug         string         `json:"slug"`         // Backup slug from Home assistant
+	ErrorMessage string         `json:"errorMessage"` // Error message in case of failure
+	KeepInHA     bool           `json:"keepInHA"`     // Keep the backup in Home Assistant
+	KeepOnDrive  bool           `json:"keepOnDrive"`  // Keep the backup in drive
+	Pinned       bool           `json:"pinned"`       // Keep the backup indefinitely
+	Drive        *DirectoryData `json:"proton"`       // Drive backup details
+	HA           *HassBackup    `json:"ha"`           // Home Assistant backup details
 }
 
 // HAData is a selection of metadata from the HA backups

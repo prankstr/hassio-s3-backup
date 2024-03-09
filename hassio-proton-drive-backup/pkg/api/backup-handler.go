@@ -128,6 +128,42 @@ func (h *BackupHandler) HandleDownloadBackupRequest(w http.ResponseWriter, r *ht
 	w.WriteHeader(http.StatusOK)
 }
 
+// handlePinBackup handles requests to /pin, pinning a backup
+func (h *BackupHandler) HandlePinBackupRequest(w http.ResponseWriter, r *http.Request) {
+	// Parse the request body
+	requestBody, err := parseRequest(r)
+	if err != nil {
+		handleError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	err = h.backupService.PinBackup(requestBody.ID)
+	if err != nil {
+		handleError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+// handleUnpinBackup handles requests to /unpin, unpinning a backup
+func (h *BackupHandler) HandleUnpinBackupRequest(w http.ResponseWriter, r *http.Request) {
+	// Parse the request body
+	requestBody, err := parseRequest(r)
+	if err != nil {
+		handleError(w, err, http.StatusBadRequest)
+		return
+	}
+
+	err = h.backupService.UnpinBackup(requestBody.ID)
+	if err != nil {
+		handleError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 // parseRequest decodes the JSON request body into a BackupRequest struct
 func parseRequest(r *http.Request) (*models.BackupRequest, error) {
 	var requestBody models.BackupRequest

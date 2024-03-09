@@ -25,7 +25,8 @@ func (h *ConfigHandler) HandleGetConfig(w http.ResponseWriter, r *http.Request) 
 
 	responseConfig := models.ConfigUpdate{
 		BackupInterval: config.BackupInterval,
-		BackupsToKeep:  config.BackupsToKeep,
+		BackupsInHA:    config.BackupsInHA,
+		BackupsOnDrive: config.BackupsOnDrive,
 	}
 
 	// Access h.ProtonDriveService for /ProtonDrive logic

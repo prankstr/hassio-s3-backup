@@ -5,7 +5,7 @@
 		</template>
 
 		<v-card-item>
-			<v-card-title class="text-white text-heading-6">{{ backup.name }}</v-card-title>
+				<v-card-title class="text-white text-heading-6">{{ backup.name }}</v-card-title>
 		</v-card-item>
 
 		<v-card-text>
@@ -18,20 +18,38 @@
 
 		</v-card-text>
 		<v-card-actions>
+
+			<v-tooltip v-if=!backup.pinned open-delay="400" location="bottom"
+					text="Pin this backup, keeping it indefinately in Home Assistant and Proton">
+				<template v-slot:activator="{ props }">
+					<v-btn v-bind="props" density="comfortable" color="white" variant="text" icon="mdi-pin"
+						@click="pinBackup"></v-btn>
+				</template>
+			</v-tooltip>
+			<v-tooltip v-if=backup.pinned open-delay="400" location="bottom" text="Unpin this backup">
+				<template v-slot:activator="{ props }">
+					<v-btn v-bind="props" density="comfortable" color="green" variant="text" icon="mdi-pin"
+						@click="unpinBackup"></v-btn>
+				</template>
+			</v-tooltip>
+
 			<v-spacer></v-spacer>
+
 			<v-tooltip open-delay="400" location="bottom" text="Delete backup">
 				<template v-slot:activator="{ props }">
 					<v-btn v-bind="props" density="comfortable" color="white" variant="text" icon="mdi-delete"
 						@click="revealDelete = true"></v-btn>
 				</template>
 			</v-tooltip>
-			<v-tooltip v-if="backup.status!='DRIVEONLY'" open-delay="400" location="bottom" text="Restore to this backup">
+			<v-tooltip v-if="backup.status != 'DRIVEONLY'" open-delay="400" location="bottom"
+				text="Restore to this backup">
 				<template v-slot:activator="{ props }">
 					<v-btn v-bind="props" density="comfortable" color="white" variant="text" icon="mdi-backup-restore"
 						@click="revealRestore = true"></v-btn>
 				</template>
 			</v-tooltip>
-			<v-tooltip v-if="backup.status==='DRIVEONLY'" open-delay="400" location="bottom" text="Download backup to Home Assistant">
+			<v-tooltip v-if="backup.status === 'DRIVEONLY'" open-delay="400" location="bottom"
+				text="Download backup to Home Assistant">
 				<template v-slot:activator="{ props }">
 					<v-btn v-bind="props" density="comfortable" color="white" variant="text" icon="mdi-download"
 						@click="revealDownload = true"></v-btn>
@@ -44,7 +62,9 @@
 					<v-card-title class="text-white text-heading-6">Restore backup?</v-card-title>
 				</v-card-item>
 				<v-card-text style="height: 60px" class="pb-0">
-					<p>This will do a full restore of Home Assistant to the backup "{{ backup.name }}". For a partial restore please use the Home Assistant UI.</p>
+					<p>This will do a full restore of Home Assistant to the backup "{{ backup.name }}". For a partial
+						restore
+						please use the Home Assistant UI.</p>
 				</v-card-text>
 				<v-card-actions class="pb-0 align-end">
 					<v-spacer></v-spacer>
@@ -182,6 +202,36 @@ function downloadBackup() {
 		.catch(error => {
 			console.log(error)
 			loading.value = false
+		})
+}
+
+function pinBackup() {
+	fetch('http://replaceme.homeassistant/api/backups/pin', {
+		method: 'POST',
+		body: JSON.stringify({
+			"id": props.backup.id
+		})
+	})
+		.then(response => {
+			console.log(response)
+		})
+		.catch(error => {
+			console.log(error)
+		})
+}
+
+function unpinBackup() {
+	fetch('http://replaceme.homeassistant/api/backups/unpin', {
+		method: 'POST',
+		body: JSON.stringify({
+			"id": props.backup.id
+		})
+	})
+		.then(response => {
+			console.log(response)
+		})
+		.catch(error => {
+			console.log(error)
 		})
 }
 

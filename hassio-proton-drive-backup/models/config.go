@@ -20,11 +20,13 @@ type Config struct {
 	ProtonDrivePassword string
 
 	BackupInterval int `json:"backupInterval"` // BackupInterval is the interval in days at which backups are performed
-	BackupsToKeep  int `json:"backupsToKeep"`  // NumberOfBackups is the number of backups to keep
+	BackupsInHA    int `json:"backupsInHA"`    // NumberOfBackups is the number of backups to keep
+	BackupsOnDrive int `json:"backupsOnDrive"` // NumberOfBackupsOnDrive is the number of backups to keep on the drive
 }
 
 // ConfigUpdate is a struct to represent the configuration update
 type ConfigUpdate struct {
 	BackupInterval int `json:"backupInterval"`
-	BackupsToKeep  int `json:"backupsToKeep"`
+	BackupsInHA    int `json:"backupsInHA"`
+	BackupsOnDrive int `json:"backupsOnDrive"`
 }

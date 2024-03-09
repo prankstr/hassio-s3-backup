@@ -39,6 +39,8 @@ func NewAPI(configService *services.ConfigService) (*Api, error) {
 	router.Handle("/api/backups/delete", http.HandlerFunc(backupHandler.HandleDeleteBackupRequest))
 	router.Handle("/api/backups/restore", http.HandlerFunc(backupHandler.HandleRestoreBackupRequest))
 	router.Handle("/api/backups/download", http.HandlerFunc(backupHandler.HandleDownloadBackupRequest))
+	router.Handle("/api/backups/pin", http.HandlerFunc(backupHandler.HandlePinBackupRequest))
+	router.Handle("/api/backups/unpin", http.HandlerFunc(backupHandler.HandleUnpinBackupRequest))
 	router.Handle("/api/backups/timer", http.HandlerFunc(backupHandler.HandleTimerRequest))
 	router.Handle("/api/backups", http.HandlerFunc(backupHandler.HandleListBackups))
 	router.Handle("/api/config", http.HandlerFunc(ConfigHandler.HandleGetConfig))
