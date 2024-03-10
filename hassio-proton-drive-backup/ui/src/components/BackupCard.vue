@@ -120,6 +120,7 @@ const loading = ref(false)
 const revealRestore = ref(false)
 const revealDelete = ref(false)
 const revealDownload = ref(false)
+const emit=defineEmits(['backupChange'])
 
 const props = defineProps({
 	backup: Object
@@ -160,7 +161,7 @@ function deleteBackup() {
 		})
 	})
 		.then(response => {
-			console.log(response)
+			emit('backupChange')
 		})
 		.catch(error => {
 			console.log(error)
@@ -177,8 +178,7 @@ function restoreBackup() {
 			"slug": props.backup.id
 		})
 	})
-		.then(response => {
-			console.log(response)
+		.then(() => {
 		})
 		.catch(error => {
 			console.log(error)
@@ -195,9 +195,9 @@ function downloadBackup() {
 			"id": props.backup.id
 		})
 	})
-		.then(response => {
-			console.log(response)
+		.then(() => {
 			loading.value = false
+			emit('backupChange')
 		})
 		.catch(error => {
 			console.log(error)
@@ -213,7 +213,9 @@ function pinBackup() {
 		})
 	})
 		.then(response => {
-			console.log(response)
+			if (response.ok) {
+				emit('backupChange')
+			}
 		})
 		.catch(error => {
 			console.log(error)
@@ -228,7 +230,9 @@ function unpinBackup() {
 		})
 	})
 		.then(response => {
-			console.log(response)
+			if (response.ok) {
+				emit('backupChange')
+			}
 		})
 		.catch(error => {
 			console.log(error)

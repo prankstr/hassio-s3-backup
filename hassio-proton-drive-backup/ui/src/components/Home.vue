@@ -6,9 +6,9 @@
       <v-row class="align-start justify-center">
         <v-col class="pt-4" sm="11" md="4">
           <div class="d-flex flex-column align-center align-md-end text-end">
-            <DriveStats class="mb-2" :backups="backups"></DriveStats>
+            <DriveStats class="mb-2" :backups="backupList"></DriveStats>
             <v-divider class="border-opacity-50" color="wite" length="375" vertical></v-divider>
-            <NewBackup></NewBackup>
+            <NewBackup @backupCreated="fetchData"></NewBackup>
           </div>
         </v-col>
         <!-- <v-divider class="border-opacity-50" color="white" vertical></v-divider> -->
@@ -16,7 +16,7 @@
           <v-row class="justify-center justify-md-start">
             <v-col cols="11" md="6" v-for="(backup, i) in backups" :key="backup.id">
               <div class="d-flex flex-column align-center">
-                <BackupCard :backup=backup></BackupCard>
+                <BackupCard @backupChange="fetchData" :backup=backup></BackupCard>
               </div>
             </v-col>
           </v-row>
@@ -29,7 +29,7 @@
             </v-col>
             <v-col cols="11" md="6" v-for="(backup, i) in pinnedBackups" key="backup.id">
               <div class="d-flex flex-column align-center">
-                <BackupCard :backup=backup></BackupCard>
+                <BackupCard @backupChange="fetchData" :backup=backup></BackupCard>
               </div>
             </v-col>
           </v-row>

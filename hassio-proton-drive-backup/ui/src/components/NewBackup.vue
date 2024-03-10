@@ -44,13 +44,14 @@
 	</v-dialog>
 </template>
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const dialog = ref(false)
 const loading = ref(false)
 const snackbar = ref(false)
 const backupName = ref("")
 const backupNameFormat = ref("")
+const emit = defineEmits(['backupCreated'])
 const snackbarMsg = ref("Awesome! New backup created 🚀")
 
 onMounted(() => {
@@ -100,11 +101,12 @@ function triggerBackup() {
     	    loading.value = false
     	    if (!response.ok) {
     	        return response.text().then(text => { throw new Error(text || 'Server returned an error') })
-    	    }
+    	    } 
     	})
-		.then(data => {
+		.then(() =>{
 			dialog.value = false
 			snackbar.value = true
+			emit("backupCreated")
 		})
 		.catch(error => {
 			snackbarMsg.value = "⚠️ " + error
