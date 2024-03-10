@@ -293,7 +293,7 @@ func (s *BackupService) NameExists(name string) bool {
 func (s *BackupService) initializeBackup(name string) *models.Backup {
 	backup := &models.Backup{
 		ID:          s.generateBackupID(),
-		Name:        name,
+		Name:        s.generateBackupName(name),
 		Date:        time.Now().In(s.config.Timezone),
 		Status:      models.StatusPending,
 		KeepInHA:    true,
@@ -391,11 +391,7 @@ func (s *BackupService) syncBackups() error {
 	}
 
 	// Mark backups for deletion if needed
-	if err := s.markHABackupsForDeletion(); err != nil {
-		return err
-	}
-
-	if err := s.markDriveBackupsForDeletion(); err != nil {
+	if err := s.markExcessBackupsForDeletion(); err != nil {
 		return err
 	}
 
@@ -484,6 +480,7 @@ func (s *BackupService) syncHABackups(backupMap map[string]*models.Backup) error
 					slog.Info("Deleted backup from Home Assistant", "name", haBackup.Name)
 				}
 			} else {
+
 				backupMap[haBackup.Name].HA = haBackup
 			}
 		}
@@ -614,70 +611,57 @@ func (s *BackupService) updateBackupDetailsFromDrive(backup *models.Backup, driv
 	return nil
 }
 
-// markHABackupsForDeletion marks the oldest backups for deletion if the number of backups exceed BackupsInHA
-func (s *BackupService) markHABackupsForDeletion() error {
-	// Filter and sort HA backups by creation date
-	var backupsInHA []*models.Backup
+func (s *BackupService) markExcessBackupsForDeletion() error {
+	// Filter non-pinned backups and sort by date, oldest first.
+	nonPinnedBackups := []*models.Backup{}
 	for _, backup := range s.backups {
-		if backup.HA != nil && !backup.Pinned {
-			backupsInHA = append(backupsInHA, backup)
+		if !backup.Pinned {
+			nonPinnedBackups = append(nonPinnedBackups, backup)
 		}
 	}
-
-	sort.Slice(backupsInHA, func(i, j int) bool {
-		return backupsInHA[i].Date.Before(backupsInHA[j].Date)
+	sort.Slice(nonPinnedBackups, func(i, j int) bool {
+		return nonPinnedBackups[i].Date.Before(nonPinnedBackups[j].Date)
 	})
 
-	currentCount := len(backupsInHA)
-	if currentCount <= s.config.BackupsInHA {
-		slog.Debug("No backup limit enforcement needed for Home Assistant", "CurrentCount", currentCount, "Limit", s.config.BackupsInHA)
-		return nil
+	// Execute marking for HA backups if a limit is set.
+	if s.config.BackupsInHA > 0 {
+		if err := s.markForDeletion(nonPinnedBackups, s.config.BackupsInHA, true); err != nil {
+			return err // Handle the error appropriately.
+		}
+	} else {
+		slog.Debug("Skipping deletion for Home Assistant backups; limit is set to 0.")
 	}
 
-	slog.Debug("Excessive backups found in Home Assistant", "CurrentCount", currentCount, "Limit", s.config.BackupsInHA)
-
-	// Calculate the number of backups to mark for deletion
-	excessCount := currentCount - s.config.BackupsInHA
-	for i := 0; i < excessCount; i++ {
-		if !backupsInHA[i].Pinned {
-			slog.Debug("Marking backup for deletion in Home Assistant", "name", backupsInHA[i].Name)
-			backupsInHA[i].KeepInHA = false
+	// Execute marking for Drive backups if a limit is set.
+	if s.config.BackupsOnDrive > 0 {
+		if err := s.markForDeletion(nonPinnedBackups, s.config.BackupsOnDrive, false); err != nil {
+			return err // Handle the error appropriately.
 		}
+	} else {
+		slog.Debug("Skipping deletion for Drive backups; limit is set to 0.")
 	}
 
 	return nil
 }
 
-// markDriveBackupsForDeletion marks the oldest backups for deletion if the number of backups exceed BackupsOnDrive
-func (s *BackupService) markDriveBackupsForDeletion() error {
-	var backupsOnDrive []*models.Backup
-	for _, backup := range s.backups {
-		if backup.Drive != nil && !backup.Pinned {
-			backupsOnDrive = append(backupsOnDrive, backup)
-		}
-	}
-
-	sort.Slice(backupsOnDrive, func(i, j int) bool {
-		return backupsOnDrive[i].Date.Before(backupsOnDrive[j].Date)
-	})
-
-	currentCount := len(backupsOnDrive)
-	if currentCount <= s.config.BackupsOnDrive {
-		slog.Debug(fmt.Sprintf("No backup limit enforcement needed for %s", s.driveProvider), "CurrentCount", currentCount, "Limit", s.config.BackupsOnDrive)
+// markForDeletion marks the oldest excess backups for deletion based on the given limit.
+// The updateHA argument specifies whether to update KeepInHA or KeepOnDrive.
+func (s *BackupService) markForDeletion(backups []*models.Backup, limit int, updateHA bool) error {
+	excessCount := len(backups) - limit
+	// Ensure we don't process negative excess or when no limit is set (limit = 0).
+	if excessCount <= 0 {
 		return nil
 	}
 
-	slog.Debug(fmt.Sprintf("Excessive backups found on %s", s.driveProvider), "CurrentCount", currentCount, "Limit", s.config.BackupsOnDrive)
-
-	// Calculate the number of backups to mark for deletion
-	excessCount := currentCount - s.config.BackupsOnDrive
-	for i := 0; i < excessCount; i++ {
-		if !backupsOnDrive[i].Pinned {
-			slog.Debug(fmt.Sprintf("Marking backup for deletion from %s", s.driveProvider), "name", backupsOnDrive[i].Name)
-			backupsOnDrive[i].KeepOnDrive = false
+	for _, backup := range backups[:excessCount] {
+		if updateHA {
+			backup.KeepInHA = false
+			slog.Debug("Marking backup for deletion in Home Assistant", "name", backup.Name)
+		} else {
+			backup.KeepOnDrive = false
+			slog.Debug("Marking backup for deletion on Drive", "name", backup.Name)
 		}
 	}
-
 	return nil
 }
 
