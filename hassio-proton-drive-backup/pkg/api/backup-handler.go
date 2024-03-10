@@ -64,6 +64,11 @@ func (h *BackupHandler) HandleBackupRequest(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if h.backupService.NameExists(requestBody.Name) {
+		handleError(w, fmt.Errorf("a backup with the name \"%s\" already exists", requestBody.Name), http.StatusBadRequest)
+		return
+	}
+
 	go func() {
 		err := h.backupService.PerformBackup(requestBody.Name)
 		if err != nil {

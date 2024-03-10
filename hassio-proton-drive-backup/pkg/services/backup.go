@@ -276,11 +276,24 @@ func (s *BackupService) TimeUntilNextBackup() int64 {
 	return time.Until(s.nextBackupCalculatedAt.Add(s.nextBackupIn)).Milliseconds()
 }
 
+// nameExists checks if a slice contains a specific key-value pair
+func (s *BackupService) NameExists(name string) bool {
+	generatedName := s.generateBackupName(name)
+
+	for _, backup := range s.backups {
+		if backup.Name == generatedName {
+			return true
+		}
+	}
+
+	return false
+}
+
 // initializeBackup return a new internal backup object
 func (s *BackupService) initializeBackup(name string) *models.Backup {
 	backup := &models.Backup{
 		ID:          s.generateBackupID(),
-		Name:        s.generateBackupName(name),
+		Name:        name,
 		Date:        time.Now().In(s.config.Timezone),
 		Status:      models.StatusPending,
 		KeepInHA:    true,

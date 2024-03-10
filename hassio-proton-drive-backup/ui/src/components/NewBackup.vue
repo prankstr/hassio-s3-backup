@@ -96,15 +96,20 @@ function triggerBackup() {
 			"name": backupName.value
 		})
 	})
-		.then(response => {
-			console.log(response)
-			loading.value = false
+    	.then(response => {
+    	    loading.value = false
+    	    if (!response.ok) {
+    	        return response.text().then(text => { throw new Error(text || 'Server returned an error') })
+    	    }
+    	    return response.json()
+    	})
+		.then(data => {
 			dialog.value = false
 			snackbar.value = true
 		})
 		.catch(error => {
-			snackbarMsg.value = "Error when creating backup: " + error
-			console.log(error)
+			snackbarMsg.value = "⚠️ " + error
+			snackbar.value = true
 		});
 }
 
