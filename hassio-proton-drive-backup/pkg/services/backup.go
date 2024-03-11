@@ -416,29 +416,60 @@ func (s *BackupService) syncBackups() error {
 	s.backups = filteredBackups
 
 	// Set status to HAONLY, DRIVEONLY or SYNCED
+	backupsOnDrive := 0
 	for _, backup := range s.backups {
 		backupInHA := backup.HA != nil
 		backupInDrive := backup.Drive != nil
 
 		if backupInHA && backupInDrive {
 			backup.UpdateStatus(models.StatusSynced)
+			backupsOnDrive++
 		} else if backupInHA {
 			backup.UpdateStatus(models.StatusHAOnly)
 		} else if backupInDrive {
 			backup.UpdateStatus(models.StatusDriveOnly)
+			backupsOnDrive++
 		}
 	}
 
-	/* 	// Sync to Drive
-	   	for _, backup := range s.backups {
-	   		if backup.Status == models.StatusHAOnly {
-	   			slog.Info(fmt.Sprintf("Backup only found in HA, syncing to %s", s.driveProvider), "name", backup.Name)
-	   			if err := s.syncBackupToDrive(backup); err != nil {
-	   				slog.Error(fmt.Sprintf("Error syncing backup to %s", s.driveProvider), "name", backup.Name, "error", err)
-	   				return err
-	   			}
-	   		}
-	   	} */
+	// Sync to Drive if needed
+	if s.backupsOnDrive == 0 {
+		for _, backup := range s.backups {
+			if backup.Status == models.StatusHAOnly {
+				slog.Info(fmt.Sprintf("Backup only found in HA, syncing to %s", s.driveProvider), "name", backup.Name)
+				if err := s.syncBackupToDrive(backup); err != nil {
+					slog.Error(fmt.Sprintf("Error syncing backup to %s", s.driveProvider), "name", backup.Name, "error", err)
+					return err
+				}
+			}
+		}
+	} else if backupsOnDrive < s.backupsOnDrive && len(s.backups) > s.backupsOnDrive {
+		// Calculate the number of backups needed to be uploaded to match s.backupsOnDrive
+		uploadCount := s.backupsOnDrive - backupsOnDrive
+
+		// Filter HAOnly backups
+		haOnlyBackups := make([]*models.Backup, 0)
+		for _, backup := range s.backups {
+			if backup.Status == models.StatusHAOnly {
+				haOnlyBackups = append(haOnlyBackups, backup)
+			}
+		}
+
+		// Check if there are enough HAOnly backups to upload
+		if len(haOnlyBackups) < uploadCount {
+			uploadCount = len(haOnlyBackups)
+		}
+
+		// Upload the latest 'uploadCount' backups
+		for _, backup := range haOnlyBackups[:uploadCount] {
+			slog.Info(fmt.Sprintf("Backup only found in HA, syncing to %s", s.driveProvider), "name", backup.Name)
+			if err := s.syncBackupToDrive(backup); err != nil {
+				slog.Error(fmt.Sprintf("Error syncing backup to %s", s.driveProvider), "name", backup.Name, "error", err)
+				return err
+			}
+		}
+
+	}
 
 	return s.sortAndSaveBackups()
 }
@@ -552,7 +583,7 @@ func (s *BackupService) sortAndSaveBackups() error {
 	return nil
 }
 
-/* // syncBackupToDrive uploads a backup to the drive if needed
+// syncBackupToDrive uploads a backup to the drive if needed
 func (s *BackupService) syncBackupToDrive(backup *models.Backup) error {
 	if backup.Drive != nil {
 		exists := s.drive.FileExists(backup.Drive.Identifier)
@@ -584,7 +615,7 @@ func (s *BackupService) syncBackupToDrive(backup *models.Backup) error {
 	backup.UpdateStatus(models.StatusSynced)
 	return nil
 }
-*/
+
 // updateBackupDetailsFromHA updates the backup with information from HA
 func (s *BackupService) updateBackupDetailsFromHA(backup *models.Backup, haBackup *models.HassBackup) {
 	backup.HA = haBackup
