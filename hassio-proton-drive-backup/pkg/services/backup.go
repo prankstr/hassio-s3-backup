@@ -842,6 +842,21 @@ func (s *BackupService) listenForConfigChanges(configChan <-chan *models.Config)
 	}
 }
 
+func (s *BackupService) ResetBackups() error {
+	file, err := os.Create("/data/backups.json")
+	if err != nil {
+		return err
+	}
+
+	defer file.Close()
+
+	s.backups = []*models.Backup{}
+
+	s.syncBackups()
+
+	return nil
+}
+
 // loadBackupsFromFile populates the addons initial list of backups from a file on disk
 func (s *BackupService) loadBackupsFromFile() {
 	path := fmt.Sprintf("%s/backups.json", s.config.DataDirectory)

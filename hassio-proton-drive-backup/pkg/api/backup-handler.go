@@ -169,6 +169,17 @@ func (h *BackupHandler) HandleUnpinBackupRequest(w http.ResponseWriter, r *http.
 	w.WriteHeader(http.StatusOK)
 }
 
+// handleResetBackups handles requests to /reset, resetting all backups
+func (h *BackupHandler) HandleResetBackupsRequest(w http.ResponseWriter, r *http.Request) {
+	err := h.backupService.ResetBackups()
+	if err != nil {
+		handleError(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 // parseRequest decodes the JSON request body into a BackupRequest struct
 func parseRequest(r *http.Request) (*models.BackupRequest, error) {
 	var requestBody models.BackupRequest
