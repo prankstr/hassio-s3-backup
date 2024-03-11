@@ -16,13 +16,15 @@ type Config struct {
 	LogLevel        slog.Level     // LogLevel is the log level to use
 	Timezone        *time.Location // Timezone that will be used to for backup times
 
-	ProtonDriveUser     string
-	ProtonDrivePassword string
-
 	BackupNameFormat string `json:"backupNameFormat"` // BackupNameFormat is the format to use for the backup name
 	BackupInterval   int    `json:"backupInterval"`   // BackupInterval is the interval in days at which backups are performed
 	BackupsInHA      int    `json:"backupsInHA"`      // NumberOfBackups is the number of backups to keep
 	BackupsOnDrive   int    `json:"backupsOnDrive"`   // NumberOfBackupsOnDrive is the number of backups to keep on the drive
+}
+
+type Credentials struct {
+	Username string
+	Password string
 }
 
 // ConfigUpdate is a struct to represent the configuration update

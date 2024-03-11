@@ -17,6 +17,7 @@ import (
 // ConfigService is a struct to handle the application configuration
 type ConfigService struct {
 	config           *models.Config
+	creds            *models.Credentials
 	configChangeChan chan *models.Config
 }
 
@@ -37,6 +38,7 @@ func NewConfigService() *ConfigService {
 		slog.Error("Error reading config file: ", err)
 		config = &models.Config{} // Initialize with an empty config
 	}
+	creds := &models.Credentials{} // Initialize with an empty config
 
 	// Set defaults or override with environment variables if they are set
 	config.Hostname = getEnvOrDefault("HOSTNAME", config.Hostname, "localhost:9101")
@@ -47,8 +49,10 @@ func NewConfigService() *ConfigService {
 	config.BackupNameFormat = getEnvOrDefault("BACKUP_NAME_FORMAT", config.BackupNameFormat, "Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}")
 	config.BackupsOnDrive = getEnvOrDefaultInt("BACKUPS_ON_DRIVE", config.BackupsOnDrive, 0)
 	config.BackupInterval = getEnvOrDefaultInt("BACKUP_INTERVAL", config.BackupInterval, 3)
-	config.ProtonDriveUser = getEnvOrDefault("PROTON_DRIVE_USER", config.ProtonDriveUser, "")
-	config.ProtonDrivePassword = getEnvOrDefault("PROTON_DRIVE_PASSWORD", config.ProtonDrivePassword, "")
+
+	//
+	creds.Username = getEnvOrDefault("PROTON_DRIVE_USER", "", "")
+	creds.Password = getEnvOrDefault("PROTON_DRIVE_PASSWORD", "", "")
 
 	defaultTimezone := "UTC"
 	timezoneStr := getEnvOrDefault("TZ", config.Timezone.String(), defaultTimezone)
@@ -83,6 +87,7 @@ func NewConfigService() *ConfigService {
 
 	return &ConfigService{
 		config:           config,
+		creds:            creds,
 		configChangeChan: make(chan *models.Config),
 	}
 }
@@ -120,12 +125,12 @@ func (cs *ConfigService) GetBackupsOnDrive() int {
 
 // GetProtonDriveUser returns the ProtonDrive username
 func (cs *ConfigService) GetProtonDriveUser() string {
-	return cs.config.ProtonDriveUser
+	return cs.creds.Username
 }
 
 // GetProtonDrivePassword returns the ProtonDrive password
 func (cs *ConfigService) GetProtonDrivePassword() string {
-	return cs.config.ProtonDrivePassword
+	return cs.creds.Password
 }
 
 // SetBackupsToKeep sets the number of backups to keep
