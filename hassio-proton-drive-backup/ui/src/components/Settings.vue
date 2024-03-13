@@ -21,23 +21,24 @@
                 <v-container>
                     <v-row>
                         <v-col cols="12">
-                            <v-text-field v-model=backupNameFormat class="mb-0" label="Name format" persistent-hint
+                            <v-text-field v-model="localConfig.backupNameFormat" class="mb-0" label="Name format"
+                                persistent-hint
                                 hint="Default: Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}"></v-text-field>
                         </v-col>
                         <v-col cols="6">
-                            <v-text-field v-model=backupsInHA class="mb-0"
+                            <v-text-field  v-model.number="localConfig.backupsInHA" type="number" class="mb-0"
                                 label="Number of backups to keep in Home Assistant" persistent-hint
                                 hint="The amount of backups to keep in Home Assistant. Defaults to 4"></v-text-field>
                         </v-col>
                         <v-col cols="6">
-                            <v-text-field v-model=backupsOnDrive class="mb-0"
+                            <v-text-field v-model.number="localConfig.backupsOnDrive" type="number" class="mb-0"
                                 label="Number of backups to keep on Proton Drive" persistent-hint
                                 hint="The amount of backups to keep on Proton Drive. Defaults to 4"></v-text-field>
                         </v-col>
                     </v-row>
                     <v-row>
                         <v-col cols="6">
-                            <v-text-field v-model=backupInterval class="mb-0" label="Time between backups"
+                            <v-text-field v-model.number="localConfig.backupInterval" type="number" class="mb-0" label="Time between backups"
                                 persistent-hint
                                 hint="The amount of time between backups. Defaults to 3 days."></v-text-field>
                         </v-col>
@@ -52,7 +53,7 @@
                 <v-btn color="white" variant="text" @click="dialog = false">
                     Close
                 </v-btn>
-                <v-btn color="white" variant="text" @click="updateConfig">
+                <v-btn color="white" variant="text" @click="saveChanges">
                     Save
                 </v-btn>
             </v-card-actions>
@@ -82,74 +83,35 @@
     </v-dialog>
 </template>
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, watch } from 'vue'
+import { useConfigStore } from '@/stores/config'
 
 const emit = defineEmits(['settingsUpdated'])
 const dialog = ref(false)
-const backupNameFormat = ref("")
-const backupInterval = ref(0)
-const backupsInHA = ref(0)
-const backupsOnDrive = ref(0)
 const snackbar = ref(false)
 const snackbarMsg = ref("Config updated 🔥")
 const revealResetData = ref(false)
 
-onMounted(() => {
-    getConfig()
-})
+const store = useConfigStore()
 
-watch(dialog, (open) => {
-    if (open) {
-        getConfig()
-    }
-})
+const localConfig = ref({})
 
-function getConfig() {
-    fetch('http://replaceme.homeassistant/api/config')
-        .then(res => res.json())
-        .then(data => {
-            backupNameFormat.value = data.backupNameFormat
-            backupInterval.value = data.backupInterval
-            backupsInHA.value = data.backupsInHA
-            backupsOnDrive.value = data.backupsOnDrive
-        })
-        .catch(err => console.log(err.message))
-}
+watch(() => store.config, (newConfig) => {
+  localConfig.value = JSON.parse(JSON.stringify(newConfig));
+}, { deep: true })
 
-function updateConfig() {
-    fetch('http://replaceme.homeassistant/api/config/update', {
-        method: 'POST',
-        body: JSON.stringify({
-            "backupNameFormat": backupNameFormat.value,
-            "backupInterval": parseInt(backupInterval.value, 10),
-            "backupsInHA": parseInt(backupsInHA.value, 10),
-            "backupsOnDrive": parseInt(backupsOnDrive.value, 10)
-        })
-    })
-        .then(response => {
+function saveChanges() {
+    store.saveConfig(localConfig.value).then(({ success, error }) => {
+        if (!success) {
+            console.error("Error when updating config", error)
+            snackbarMsg.value = "Error when updating config: " + error.message
+            snackbar.value = true
+        } else {
             dialog.value = false
             snackbar.value = true
             emit("settingsUpdated")
-        })
-        .catch(error => {
-            snackbarMsg.value = "Error when updating config: " + error
-            console.log(error)
-        });
-}
-
-function resetData() {
-    fetch('http://replaceme.homeassistant/api/backups/reset', {
-        method: 'POST'
+        }
     })
-        .then(response => {
-            revealResetData.value = false
-            snackbar.value = true
-            emit("settingsUpdated")
-        })
-        .catch(error => {
-            snackbarMsg.value = "Error when resetting data: " + error
-            console.log(error)
-        });
 }
 
 </script>

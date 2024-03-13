@@ -258,6 +258,7 @@ func (s *BackupService) PinBackup(id string) error {
 			backup.KeepInHA = true
 			backup.KeepOnDrive = true
 			backup.Pinned = true
+			slog.Info("Backup pinned", "name", backup.Name)
 			return s.saveBackupsToFile()
 		}
 	}
@@ -270,6 +271,7 @@ func (s *BackupService) UnpinBackup(id string) error {
 	for _, backup := range s.backups {
 		if backup.ID == id {
 			backup.Pinned = false
+			slog.Info("Backup unpinned", "name", backup.Name)
 			return s.saveBackupsToFile()
 		}
 	}

@@ -36,7 +36,7 @@
 				<v-btn color="white" variant="text" @click="dialog = false">
 					Exit
 				</v-btn>
-				<v-btn color="white" variant="text" @click="triggerBackup" :loading="loading">
+				<v-btn color="white" variant="text" @click="triggerBackup">
 					Create
 				</v-btn>
 			</template>
@@ -44,22 +44,21 @@
 	</v-dialog>
 </template>
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
+import { useConfigStore } from '@/stores/config'
+import { useBackupsStore } from '@/stores/backups'
 
 const dialog = ref(false)
-const loading = ref(false)
 const snackbar = ref(false)
 const backupName = ref("")
-const backupNameFormat = ref("")
 const emit = defineEmits(['backupCreated'])
 const snackbarMsg = ref("Awesome! New backup created 🚀")
 
-onMounted(() => {
-	getConfig()
-})
+const cs = useConfigStore()
+const bs = useBackupsStore()
 
 function generateBackupName() {
-  let format = backupNameFormat.value || 'Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}';
+  let format = cs.config.backupNameFormat || 'Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}';
   const now = new Date(); // Uses the system's local timezone
 
   const replacements = {
@@ -79,39 +78,16 @@ function generateBackupName() {
   backupName.value = format; // Assign the final value to the reactive reference
 }
 
-function getConfig() {
-	fetch('http://replaceme.homeassistant/api/config')
-		.then(res => res.json())
-		.then(data => {
-			backupNameFormat.value = data.backupNameFormat
-		})
-		.catch(err => console.log(err.message))
-}
-
 function triggerBackup() {
-	loading.value = true
-
-	fetch('http://replaceme.homeassistant/api/backups/new/full', {
-		method: 'POST',
-		body: JSON.stringify({
-			"name": backupName.value
-		})
-	})
-    	.then(response => {
-    	    loading.value = false
-    	    if (!response.ok) {
-    	        return response.text().then(text => { throw new Error(text || 'Server returned an error') })
-    	    } 
-    	})
-		.then(() =>{
-			dialog.value = false
-			snackbar.value = true
-			emit("backupCreated")
-		})
-		.catch(error => {
+	bs.createBackup(backupName.value).then(({ success, error }) => {
+        if (!success) {
 			snackbarMsg.value = "⚠️ " + error
 			snackbar.value = true
-		});
+        } else {
+            dialog.value = false
+            snackbar.value = true
+        }
+    })
 }
 
 </script>

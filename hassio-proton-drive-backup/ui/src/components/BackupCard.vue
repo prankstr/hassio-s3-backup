@@ -115,12 +115,15 @@
 </template>
 <script setup>
 import { ref, watch, defineProps } from 'vue'
+import { useBackupsStore } from '@/stores/backups'
+
+const bs = useBackupsStore()
 
 const loading = ref(false)
 const revealRestore = ref(false)
 const revealDelete = ref(false)
 const revealDownload = ref(false)
-const emit=defineEmits(['backupChange'])
+const emit=defineEmits(['change'])
 
 const props = defineProps({
 	backup: Object
@@ -154,18 +157,16 @@ function deleteBackup() {
 	revealDelete.value = false
 	loading.value = true
 
-	fetch('http://replaceme.homeassistant/api/backups/delete', {
-		method: 'POST',
-		body: JSON.stringify({
-			"id": props.backup.id
-		})
-	})
-		.then(response => {
-			emit('backupChange')
-		})
-		.catch(error => {
-			console.log(error)
-		})
+    bs.deleteBackup(props.backup.id).then(({ success, error }) => {
+        if (!success) {
+            snackbarMsg.value = error.message
+            snackbar.value = true
+        } else {
+            dialog.value = false
+            snackbar.value = true
+            emit("change")
+        }
+    })
 }
 
 function restoreBackup() {
@@ -206,37 +207,21 @@ function downloadBackup() {
 }
 
 function pinBackup() {
-	fetch('http://replaceme.homeassistant/api/backups/pin', {
-		method: 'POST',
-		body: JSON.stringify({
-			"id": props.backup.id
-		})
+	bs.pinBackup(props.backup.id).then(({ success, error }) => {
+/* 		if (!success) {
+			snackbarMsg.value = error.message
+			snackbar.value = true
+		} */
 	})
-		.then(response => {
-			if (response.ok) {
-				emit('backupChange')
-			}
-		})
-		.catch(error => {
-			console.log(error)
-		})
 }
 
 function unpinBackup() {
-	fetch('http://replaceme.homeassistant/api/backups/unpin', {
-		method: 'POST',
-		body: JSON.stringify({
-			"id": props.backup.id
-		})
+	bs.unpinBackup(props.backup.id).then(({ success, error }) => {
+/* 		if (!success) {
+			snackbarMsg.value = error.message
+			snackbar.value = true
+		} */
 	})
-		.then(response => {
-			if (response.ok) {
-				emit('backupChange')
-			}
-		})
-		.catch(error => {
-			console.log(error)
-		})
 }
 
 </script>

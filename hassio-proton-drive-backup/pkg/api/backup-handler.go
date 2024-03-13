@@ -22,6 +22,7 @@ func NewBackupHandler(backupService *services.BackupService) BackupHandler {
 
 // HandleListBackups handles requests to /backups, returning a list of backups
 func (h *BackupHandler) HandleListBackups(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Handling list backups request")
 	backups := h.backupService.ListBackups()
 
 	// Marshal the backups into JSON
@@ -82,13 +83,19 @@ func (h *BackupHandler) HandleBackupRequest(w http.ResponseWriter, r *http.Reque
 
 // handleDeleteBackup handles requests to /delete, deleting a backup
 func (h *BackupHandler) HandleDeleteBackupRequest(w http.ResponseWriter, r *http.Request) {
-	requestBody, err := parseRequest(r)
-	if err != nil {
-		handleError(w, err, http.StatusBadRequest)
-		return
+	id := r.PathValue("id")
+
+	if id == "" {
+		requestBody, err := parseRequest(r)
+		if err != nil {
+			handleError(w, err, http.StatusBadRequest)
+			return
+		}
+
+		id = requestBody.ID
 	}
 
-	err = h.backupService.DeleteBackup(requestBody.ID)
+	err := h.backupService.DeleteBackup(id)
 	if err != nil {
 		handleError(w, err, http.StatusInternalServerError)
 		return
@@ -99,14 +106,19 @@ func (h *BackupHandler) HandleDeleteBackupRequest(w http.ResponseWriter, r *http
 
 // handleRestoreBackup handles requests to /restore, restoring a backup
 func (h *BackupHandler) HandleRestoreBackupRequest(w http.ResponseWriter, r *http.Request) {
-	// Parse the request body
-	requestBody, err := parseRequest(r)
-	if err != nil {
-		handleError(w, err, http.StatusBadRequest)
-		return
+	id := r.PathValue("id")
+
+	if id == "" {
+		requestBody, err := parseRequest(r)
+		if err != nil {
+			handleError(w, err, http.StatusBadRequest)
+			return
+		}
+
+		id = requestBody.ID
 	}
 
-	err = h.backupService.RestoreBackup(requestBody.ID)
+	err := h.backupService.RestoreBackup(id)
 	if err != nil {
 		handleError(w, err, http.StatusInternalServerError)
 		return
@@ -117,14 +129,19 @@ func (h *BackupHandler) HandleRestoreBackupRequest(w http.ResponseWriter, r *htt
 
 // handleRestoreBackup handles requests to /download, downloading a backup
 func (h *BackupHandler) HandleDownloadBackupRequest(w http.ResponseWriter, r *http.Request) {
-	// Parse the request body
-	requestBody, err := parseRequest(r)
-	if err != nil {
-		handleError(w, err, http.StatusBadRequest)
-		return
+	id := r.PathValue("id")
+
+	if id == "" {
+		requestBody, err := parseRequest(r)
+		if err != nil {
+			handleError(w, err, http.StatusBadRequest)
+			return
+		}
+
+		id = requestBody.ID
 	}
 
-	err = h.backupService.DownloadBackup(requestBody.ID)
+	err := h.backupService.DownloadBackup(id)
 	if err != nil {
 		handleError(w, err, http.StatusInternalServerError)
 		return
@@ -135,14 +152,19 @@ func (h *BackupHandler) HandleDownloadBackupRequest(w http.ResponseWriter, r *ht
 
 // handlePinBackup handles requests to /pin, pinning a backup
 func (h *BackupHandler) HandlePinBackupRequest(w http.ResponseWriter, r *http.Request) {
-	// Parse the request body
-	requestBody, err := parseRequest(r)
-	if err != nil {
-		handleError(w, err, http.StatusBadRequest)
-		return
+	id := r.PathValue("id")
+
+	if id == "" {
+		requestBody, err := parseRequest(r)
+		if err != nil {
+			handleError(w, err, http.StatusBadRequest)
+			return
+		}
+
+		id = requestBody.ID
 	}
 
-	err = h.backupService.PinBackup(requestBody.ID)
+	err := h.backupService.PinBackup(id)
 	if err != nil {
 		handleError(w, err, http.StatusInternalServerError)
 		return
@@ -153,14 +175,19 @@ func (h *BackupHandler) HandlePinBackupRequest(w http.ResponseWriter, r *http.Re
 
 // handleUnpinBackup handles requests to /unpin, unpinning a backup
 func (h *BackupHandler) HandleUnpinBackupRequest(w http.ResponseWriter, r *http.Request) {
-	// Parse the request body
-	requestBody, err := parseRequest(r)
-	if err != nil {
-		handleError(w, err, http.StatusBadRequest)
-		return
+	id := r.PathValue("id")
+
+	if id == "" {
+		requestBody, err := parseRequest(r)
+		if err != nil {
+			handleError(w, err, http.StatusBadRequest)
+			return
+		}
+
+		id = requestBody.ID
 	}
 
-	err = h.backupService.UnpinBackup(requestBody.ID)
+	err := h.backupService.UnpinBackup(id)
 	if err != nil {
 		handleError(w, err, http.StatusInternalServerError)
 		return

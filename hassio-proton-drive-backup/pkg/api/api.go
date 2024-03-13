@@ -32,22 +32,24 @@ func NewAPI(configService *services.ConfigService) (*Api, error) {
 	backupService := services.NewBackupService(hassioApiClient, &driveService, configService)
 	backupHandler := NewBackupHandler(backupService)
 
-	ConfigHandler := NewConfigHandler(configService)
+	configHandler := NewConfigHandler(configService)
 
 	// Define routes
-	router.Handle("/api/backups/new/full", http.HandlerFunc(backupHandler.HandleBackupRequest))
-	router.Handle("/api/backups/delete", http.HandlerFunc(backupHandler.HandleDeleteBackupRequest))
-	router.Handle("/api/backups/restore", http.HandlerFunc(backupHandler.HandleRestoreBackupRequest))
-	router.Handle("/api/backups/download", http.HandlerFunc(backupHandler.HandleDownloadBackupRequest))
-	router.Handle("/api/backups/pin", http.HandlerFunc(backupHandler.HandlePinBackupRequest))
-	router.Handle("/api/backups/unpin", http.HandlerFunc(backupHandler.HandleUnpinBackupRequest))
-	router.Handle("/api/backups/timer", http.HandlerFunc(backupHandler.HandleTimerRequest))
-	router.Handle("/api/backups/reset", http.HandlerFunc(backupHandler.HandleResetBackupsRequest))
-	router.Handle("/api/backups", http.HandlerFunc(backupHandler.HandleListBackups))
-	router.Handle("/api/config", http.HandlerFunc(ConfigHandler.HandleGetConfig))
-	router.Handle("/api/config/update", http.HandlerFunc(ConfigHandler.HandleUpdateConfig))
+	router.HandleFunc("GET /api/backups", backupHandler.HandleListBackups)
+	router.HandleFunc("GET /api/backups/{id}/download", backupHandler.HandleDownloadBackupRequest)
+	router.HandleFunc("GET /api/backups/timer", backupHandler.HandleTimerRequest)
+	router.HandleFunc("GET /api/backups/reset", backupHandler.HandleResetBackupsRequest)
+	router.HandleFunc("POST /api/backups/new/full", backupHandler.HandleBackupRequest)
+	router.HandleFunc("POST /api/backups/{id}/pin", backupHandler.HandlePinBackupRequest)
+	router.HandleFunc("POST /api/backups/{id}/unpin", backupHandler.HandleUnpinBackupRequest)
+	router.HandleFunc("POST /api/backups/{id}/restore", backupHandler.HandleRestoreBackupRequest)
+	router.HandleFunc("DELETE /api/backups/{id}", backupHandler.HandleDeleteBackupRequest)
 
-	router.Handle("/api/drive/about", http.HandlerFunc(driveHandler.HandleAbout))
+	router.HandleFunc("GET /api/config", configHandler.HandleGetConfig)
+	router.HandleFunc("POST /api/config/update", configHandler.HandleUpdateConfig)
+
+	router.HandleFunc("GET /api/drive/about", driveHandler.HandleAbout)
+
 	return &Api{
 		Router: router,
 	}, nil
