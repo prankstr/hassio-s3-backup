@@ -69,19 +69,27 @@ const roundedTimer = computed(() => {
 
 const date = computed(() => {
   const months = ["January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"]
-  const suffixes = ["th", "st", "nd", "rd"]
+    "July", "August", "September", "October", "November", "December"];
+  const suffixes = ["th", "st", "nd", "rd"];
 
   const date = new Date(Date.now() + milliseconds.value);
-  const day = date.getDate()
-  const daySuffix = suffixes[(day % 10) - 1] || suffixes[0]
+  const day = date.getDate();
+  let daySuffix;
 
-  const month = months[date.getMonth()]
-  const hours = date.getHours().toString().padStart(2, '0')
-  const minutes = date.getMinutes().toString().padStart(2, '0')
+  // Handle special cases for 11th through 20th
+  if (day % 100 >= 11 && day % 100 <= 20) {
+    daySuffix = "th";
+  } else {
+    // Apply standard suffix selection based on the last digit of the day
+    daySuffix = suffixes[Math.min(day % 10, 3)] || "th";
+  }
 
-  return `${month} ${day}${daySuffix}, ${hours}:${minutes}`
-})
+  const month = months[date.getMonth()];
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+
+  return `${month} ${day}${daySuffix}, ${hours}:${minutes}`;
+});
 
 onMounted(() => {
   // Fetches timer from server of milliseconds until next backup
