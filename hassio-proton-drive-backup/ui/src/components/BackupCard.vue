@@ -5,7 +5,7 @@
 		</template>
 
 		<v-card-item>
-				<v-card-title class="text-white text-heading-6">{{ backup.name }}</v-card-title>
+			<v-card-title class="text-white text-heading-6">{{ backup.name }}</v-card-title>
 		</v-card-item>
 
 		<v-card-text>
@@ -20,7 +20,7 @@
 		<v-card-actions>
 
 			<v-tooltip v-if=!backup.pinned open-delay="400" location="bottom"
-					text="Pin this backup, keeping it indefinately in Home Assistant and Proton">
+				text="Pin this backup, keeping it indefinately in Home Assistant and Proton">
 				<template v-slot:activator="{ props }">
 					<v-btn v-bind="props" density="comfortable" color="white" variant="text" icon="mdi-pin"
 						@click="pinBackup"></v-btn>
@@ -116,14 +116,16 @@
 <script setup>
 import { ref, watch, defineProps } from 'vue'
 import { useBackupsStore } from '@/stores/backups'
+import { useSnackbarStore } from '@/stores/snackbar'
 
 const bs = useBackupsStore()
+const snackbarStore = useSnackbarStore()
 
 const loading = ref(false)
 const revealRestore = ref(false)
 const revealDelete = ref(false)
 const revealDownload = ref(false)
-const emit=defineEmits(['change'])
+const emit = defineEmits(['change'])
 
 const props = defineProps({
 	backup: Object
@@ -157,16 +159,16 @@ function deleteBackup() {
 	revealDelete.value = false
 	loading.value = true
 
-    bs.deleteBackup(props.backup.id).then(({ success, error }) => {
-        if (!success) {
-            snackbarMsg.value = error.message
-            snackbar.value = true
-        } else {
-            dialog.value = false
-            snackbar.value = true
-            emit("change")
-        }
-    })
+	bs.deleteBackup(props.backup.id).then(({ success, error }) => {
+		if (!success) {
+			snackbarMsg.value = error.message
+			snackbar.value = true
+		} else {
+			dialog.value = false
+			snackbar.value = true
+			emit("change")
+		}
+	})
 }
 
 function restoreBackup() {
@@ -208,19 +210,19 @@ function downloadBackup() {
 
 function pinBackup() {
 	bs.pinBackup(props.backup.id).then(({ success, error }) => {
-/* 		if (!success) {
-			snackbarMsg.value = error.message
-			snackbar.value = true
-		} */
+		if (!success) {
+			snackbarStore.showMessage('⚠️ error.message')
+		}
+		snackbarStore.showMessage('📌 Backup pinned!')
 	})
 }
 
 function unpinBackup() {
 	bs.unpinBackup(props.backup.id).then(({ success, error }) => {
-/* 		if (!success) {
-			snackbarMsg.value = error.message
-			snackbar.value = true
-		} */
+		if (!success) {
+			snackbarStore.showMessage('⚠️ error.message')
+		}
+		snackbarStore.showMessage('Backup unpinned!')
 	})
 }
 

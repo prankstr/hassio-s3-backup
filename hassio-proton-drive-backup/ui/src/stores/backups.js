@@ -46,12 +46,11 @@ export const useBackupsStore = defineStore('backups', {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        "name": backupName.value
+                        "name": name
                     })
                 })
 
                 if (response.status === 202) {
-                    const data = await response.json()
                     this.fetchBackups()
                     return { success: true }
                 } else {

@@ -172,6 +172,8 @@ func (s *BackupService) DeleteBackup(id string) error {
 		return err
 	}
 
+	s.resetTimerForNextBackup()
+
 	slog.Debug("Backup deletion process completed", "name", backupToDelete.Name)
 	return nil
 }

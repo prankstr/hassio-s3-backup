@@ -1,5 +1,6 @@
 <template>
   <AppBar></AppBar>
+  <Snackbar></Snackbar>
   <v-container style="max-width: 1600px; min-width: 1100;" fluid class="fill-height">
     <v-responsive class="fill-height">
 
@@ -36,7 +37,6 @@
 
         </v-col>
       </v-row>
-
     </v-responsive>
   </v-container>
 
@@ -53,6 +53,7 @@ import NewBackup from '@/components/NewBackup.vue'
 import BackupCard from '@/components/BackupCard.vue'
 import DriveStats from '@/components/DriveStats.vue'
 import BackupStats from '@/components/BackupStats.vue'
+import Snackbar from '@/components/Snackbar.vue'
 import { useConfigStore } from '@/stores/config'
 import { useBackupsStore } from '@/stores/backups'
 
@@ -62,6 +63,10 @@ const bs = useBackupsStore()
 onMounted(() => {
   cs.fetchConfig()
   bs.fetchBackups()
+
+  setInterval(() => {
+    bs.fetchBackups()
+  }, 5000)
 })
 
 </script>

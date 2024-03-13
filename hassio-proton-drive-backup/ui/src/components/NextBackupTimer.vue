@@ -38,9 +38,7 @@ const roundedTimer = computed(() => {
     const hours = Math.floor(minutes / 60)
     const days = Math.ceil(hours / 24)
 
-    if (days === 1) {
-        return "1 day";
-    } else if (days > 1) {
+    if (days > 1) {
         return `${days} days`;
     } else if (hours % 24 === 1) {
         return "1 hour";
@@ -81,8 +79,8 @@ const date = computed(() => {
     return `${month} ${day}${daySuffix}, ${hours}:${minutes}`;
 });
 
-watch(() => store.config.backupInterval, fetchTimer);
-watch(() => store.backups, fetchTimer);
+watch(() => cs.config.backupInterval, fetchTimer);
+watch(() => bs.backups, fetchTimer);
 
 onMounted(() => {
     fetchTimer()
