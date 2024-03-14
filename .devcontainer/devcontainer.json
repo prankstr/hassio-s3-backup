@@ -12,7 +12,12 @@
     // Configure properties specific to VS Code.
     "vscode": {
       // Add the IDs of extensions you want installed when the container is created.
-      "extensions": ["golang.go", "Vue.volar"]
+      "extensions": [
+        "golang.go",
+        "Vue.volar",
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ]
     }
   },
 	"features": {
