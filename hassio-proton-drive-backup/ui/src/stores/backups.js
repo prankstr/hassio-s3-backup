@@ -154,7 +154,7 @@ export const useBackupsStore = defineStore('backups', {
                 })
 
                 if (response.status === 200) {
-                    this.backup = [];
+                    this.backup = []
                     return { success: true }
                   } else {
                     throw new Error('Failed to reset data')

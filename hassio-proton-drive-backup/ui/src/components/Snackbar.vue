@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { useSnackbarStore } from '@/stores/snackbar'; // Adjust the path as needed
+import { useSnackbarStore } from '@/stores/snackbar'
 
-const snackbar = useSnackbarStore();
+const snackbar = useSnackbarStore()
 </script>

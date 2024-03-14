@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { defineStore } from 'pinia'
 
 export const useSnackbarStore = defineStore('snackbar', {
   state: () => ({
@@ -10,14 +10,14 @@ export const useSnackbarStore = defineStore('snackbar', {
   }),
   actions: {
     show(options = {}) {
-        this.$reset();
+        this.$reset()
   
-        Object.assign(this, options);
+        Object.assign(this, options)
   
-        this.visible = true;
+        this.visible = true
     },
     hideMessage() {
-      this.visible = false;
+      this.visible = false
     },
   },
-});
+})

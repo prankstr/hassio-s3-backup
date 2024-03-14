@@ -48,8 +48,8 @@ const bs = useBackupsStore()
 const snackbar = useSnackbarStore()
 
 function generateBackupName() {
-  let format = cs.config.backupNameFormat || 'Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}';
-  const now = new Date(); // Uses the system's local timezone
+  let format = cs.config.backupNameFormat || 'Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}'
+  const now = new Date() // Uses the system's local timezone
 
   const replacements = {
     '{year}': String(now.getFullYear()),
@@ -58,14 +58,14 @@ function generateBackupName() {
     '{hr24}': String(now.getHours()).padStart(2, '0'),
     '{min}': String(now.getMinutes()).padStart(2, '0'),
     '{sec}': String(now.getSeconds()).padStart(2, '0'),
-  };
-
-  for (const [placeholder, value] of Object.entries(replacements)) {
-    const placeholderRegex = new RegExp(placeholder, 'g');
-    format = format.replace(placeholderRegex, value); // Accumulate replacements in format
   }
 
-  backupName.value = format; // Assign the final value to the reactive reference
+  for (const [placeholder, value] of Object.entries(replacements)) {
+    const placeholderRegex = new RegExp(placeholder, 'g')
+    format = format.replace(placeholderRegex, value) // Accumulate replacements in format
+  }
+
+  backupName.value = format // Assign the final value to the reactive reference
 }
 
 function triggerBackup() {

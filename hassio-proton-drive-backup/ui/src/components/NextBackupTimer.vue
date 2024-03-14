@@ -13,8 +13,8 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useConfigStore } from '@/stores/config'
 import { useBackupsStore } from '@/stores/backups'
 
-const cs = useConfigStore();
-const bs = useBackupsStore();
+const cs = useConfigStore()
+const bs = useBackupsStore()
 let milliseconds = ref(0)
 
 // Fetch timer in milliseconds until next backup
@@ -23,7 +23,7 @@ const fetchTimer = async () => {
         const response = await fetch('http://replaceme.homeassistant/api/backups/timer')
         if (response.ok) {
             const data = await response.json()
-            milliseconds.value = data.milliseconds;
+            milliseconds.value = data.milliseconds
         } else {
             console.error('Failed to fetch data')
         }
@@ -39,48 +39,46 @@ const roundedTimer = computed(() => {
     const days = Math.ceil(hours / 24)
 
     if (days > 1) {
-        return `${days} days`;
+        return `${days} days`
     } else if (hours % 24 === 1) {
-        return "1 hour";
+        return "1 hour"
     } else if (hours % 24 > 1) {
-        return `${hours % 24} hours`;
+        return `${hours % 24} hours`
     } else if (minutes % 60 === 1) {
-        return "1 minute";
+        return "1 minute"
     } else if (minutes % 60 > 1) {
-        return `${minutes % 60} minutes`;
+        return `${minutes % 60} minutes`
     } else if (seconds % 60 === 1) {
-        return "1 second";
+        return "1 second"
     } else {
-        return `now`;
+        return `now`
     }
 })
 
 const date = computed(() => {
     const months = ["January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"];
-    const suffixes = ["th", "st", "nd", "rd"];
+        "July", "August", "September", "October", "November", "December"]
+    const suffixes = ["th", "st", "nd", "rd"]
 
-    const date = new Date(Date.now() + milliseconds.value);
-    const day = date.getDate();
-    let daySuffix;
+    const date = new Date(Date.now() + milliseconds.value)
+    const day = date.getDate()
+    let daySuffix
 
-    // Handle special cases for 11th through 20th
     if (day % 100 >= 11 && day % 100 <= 20) {
-        daySuffix = "th";
+        daySuffix = "th"
     } else {
-        // Apply standard suffix selection based on the last digit of the day
-        daySuffix = suffixes[Math.min(day % 10, 3)] || "th";
+        daySuffix = suffixes[Math.min(day % 10, 3)] || "th"
     }
 
-    const month = months[date.getMonth()];
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const month = months[date.getMonth()]
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
 
-    return `${month} ${day}${daySuffix}, ${hours}:${minutes}`;
-});
+    return `${month} ${day}${daySuffix}, ${hours}:${minutes}`
+})
 
-watch(() => cs.config.backupInterval, fetchTimer);
-watch(() => bs.backups, fetchTimer);
+watch(() => cs.config.backupInterval, fetchTimer)
+watch(() => bs.backups, fetchTimer)
 
 onMounted(() => {
     fetchTimer()
@@ -89,6 +87,6 @@ onMounted(() => {
 
 <style>
 .v-tooltip .v-overlay__content {
-    background: rgba(var(--v-theme-primary), 1) !important;
+    background: rgba(var(--v-theme-primary), 1) !important
 }
 </style>

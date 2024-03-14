@@ -52,21 +52,21 @@ onMounted(() => {
 })
 
 const usedByBackups = computed(() => {
-  const totalSizeMB = props.backups.reduce((totalSize, backup) => totalSize + backup.size, 0);
+  const totalSizeMB = props.backups.reduce((totalSize, backup) => totalSize + backup.size, 0)
 
-  let displaySize;
-  let suffix;
+  let displaySize
+  let suffix
   
   if (totalSizeMB < 1000) {
-    displaySize = totalSizeMB.toFixed(1);
-    suffix = 'MB';
+    displaySize = totalSizeMB.toFixed(1)
+    suffix = 'MB'
   } else {
-    displaySize = (totalSizeMB / 1024).toFixed(1); // Convert MB to GB
-    suffix = 'GB';
+    displaySize = (totalSizeMB / 1024).toFixed(1) // Convert MB to GB
+    suffix = 'GB'
   }
 
-  return `${displaySize} ${suffix}`;
-});
+  return `${displaySize} ${suffix}`
+})
 
 const usedSpacePercent = computed(() => {
 	let n = about.value.UsedSpace / about.value.MaxSpace * 100

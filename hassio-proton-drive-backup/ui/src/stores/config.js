@@ -31,7 +31,7 @@ export const useConfigStore = defineStore('config', {
                 })
 
                 if (response.status === 200) {
-                    this.config = config;
+                    this.config = config
                     return { success: true }
                   } else {
                     throw new Error('Failed to save configuration')
