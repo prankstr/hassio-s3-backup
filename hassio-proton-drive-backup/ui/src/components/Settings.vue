@@ -1,14 +1,4 @@
 <template>
-    <v-snackbar color="primary" multi-line :timeout="2500" v-model="snackbar">
-        {{ snackbarMsg }}
-
-        <template v-slot:actions>
-
-            <v-btn color="white" variant="text" @click="snackbar = false">
-                Close
-            </v-btn>
-        </template>
-    </v-snackbar>
     <v-dialog v-model="dialog" width="1024">
         <template v-slot:activator="{ props }">
             <v-btn icon="mdi-cog" v-bind="props" class="mr-1 ml-1"></v-btn>
@@ -85,32 +75,33 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useConfigStore } from '@/stores/config'
+import { useSnackbarStore } from '@/stores/snackbar';
 
 const emit = defineEmits(['settingsUpdated'])
 const dialog = ref(false)
-const snackbar = ref(false)
-const snackbarMsg = ref("Config updated 🔥")
 const revealResetData = ref(false)
 
-const store = useConfigStore()
+const cs = useConfigStore()
+const snackbar = useSnackbarStore()
 
 const localConfig = ref({})
 
-watch(() => store.config, (newConfig) => {
-  localConfig.value = JSON.parse(JSON.stringify(newConfig));
-}, { deep: true })
+watch(dialog, (newVal) => {
+  if (newVal === true) {
+    localConfig.value = JSON.parse(JSON.stringify(cs.config))
+  }
+})
 
 function saveChanges() {
-    store.saveConfig(localConfig.value).then(({ success, error }) => {
+    cs.saveConfig(localConfig.value).then(({ success, error }) => {
         if (!success) {
-            console.error("Error when updating config", error)
-            snackbarMsg.value = "Error when updating config: " + error.message
-            snackbar.value = true
-        } else {
-            dialog.value = false
-            snackbar.value = true
-            emit("settingsUpdated")
+			snackbar.show({message: "⚠️ error.message"})
+            return
         }
+
+        dialog.value = false
+		snackbar.show({message: "🔥 Config updated"})
+        emit("settingsUpdated")
     })
 }
 

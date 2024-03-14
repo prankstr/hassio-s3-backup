@@ -119,7 +119,7 @@ import { useBackupsStore } from '@/stores/backups'
 import { useSnackbarStore } from '@/stores/snackbar'
 
 const bs = useBackupsStore()
-const snackbarStore = useSnackbarStore()
+const snackbar = useSnackbarStore()
 
 const loading = ref(false)
 const revealRestore = ref(false)
@@ -161,12 +161,11 @@ function deleteBackup() {
 
 	bs.deleteBackup(props.backup.id).then(({ success, error }) => {
 		if (!success) {
-			snackbarStore.showMessage('⚠️ error.message')
+			snackbar.show({message: "⚠️ error.message"})
 			loading.value = false
 		}
 
-		dialog.value = false
-		snackbarStore.showMessage('Backup deleted')
+		snackbar.show({message: "Backup deleted"})
 		return loading.value = false
 	})
 }
@@ -177,11 +176,11 @@ function restoreBackup() {
 
 	bs.restoreBackup(props.backup.id).then(({ success, error }) => {
 		if (!success) {
-			snackbarStore.showMessage('⚠️ error.message')
+			snackbar.show({message: "⚠️ error.message"})
 			return loading.value = false
 		}
 
-		snackbarStore.showMessage('Restore started')
+		snackbar.show({message: "Restore started"})
 		return loading.value = false
 	})
 }
@@ -192,11 +191,11 @@ function downloadBackup() {
 
 	bs.downloadBackup(props.backup.id).then(({ success, error }) => {
 		if (!success) {
-			snackbarStore.showMessage('⚠️ error.message')
+			snackbar.show({message: "⚠️ error.message"})
 			return loading.value = false
 		}
 
-		snackbarStore.showMessage('Backup downloaded')
+		snackbar.show({message: "Backup downloaded"})
 		return loading.value = false
 	})
 }
@@ -204,22 +203,22 @@ function downloadBackup() {
 function pinBackup() {
 	bs.pinBackup(props.backup.id).then(({ success, error }) => {
 		if (!success) {
-			snackbarStore.showMessage('⚠️ error.message')
+			snackbar.show({message: "⚠️ error.message"})
 			return
 		}
 
-		snackbarStore.showMessage('Backup pinned')
+		snackbar.show({message: "Backup pinned"})
 	})
 }
 
 function unpinBackup() {
 	bs.unpinBackup(props.backup.id).then(({ success, error }) => {
 		if (!success) {
-			snackbarStore.showMessage('⚠️ error.message')
+			snackbar.show({message: "⚠️ error.message"})
 			return
 		}
 
-		snackbarStore.showMessage('Backup unpinned')
+		snackbar.show({message: "Backup unpinned"})
 	})
 }
 

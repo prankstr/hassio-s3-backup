@@ -9,7 +9,7 @@ export const useSnackbarStore = defineStore('snackbar', {
     visible: false,
   }),
   actions: {
-    showMessage(options = {}) {
+    show(options = {}) {
         this.$reset();
   
         Object.assign(this, options);

@@ -405,6 +405,12 @@ func (s *BackupService) syncBackups() error {
 	backupMap := make(map[string]*models.Backup)
 	for _, backup := range s.backups {
 		backupMap[backup.Name] = backup
+
+		// NIL out HA and Drive
+		// This will delete the backup from the map if it's not found in HA or Drive during the sync
+		// Unsure if this is wanted behavior but sticking to it for now
+		backup.HA = nil
+		backup.Drive = nil
 	}
 
 	// Mark backups for deletion if needed
@@ -534,7 +540,6 @@ func (s *BackupService) updateOrDeleteHABackup(backupMap map[string]*models.Back
 					slog.Info("Deleted backup from Home Assistant", "name", haBackup.Name)
 				}
 			} else {
-
 				backupMap[haBackup.Name].HA = haBackup
 			}
 		}
@@ -597,10 +602,10 @@ func (s *BackupService) updateOrDeleteDriveBackups(backupMap map[string]*models.
 func (s *BackupService) deleteBackupFromAddon() error {
 	backupsToKeep := []*models.Backup{}
 	for _, backup := range s.backups {
-		if backup.KeepInHA || backup.KeepOnDrive {
-			backupsToKeep = append(backupsToKeep, backup)
-		} else {
-			slog.Info("Deleting backup from addon", "name", backup.Name)
+		if backup.HA != nil || backup.Drive != nil {
+			if backup.KeepInHA || backup.KeepOnDrive {
+				backupsToKeep = append(backupsToKeep, backup)
+			}
 		}
 	}
 

@@ -78,6 +78,38 @@ export const useBackupsStore = defineStore('backups', {
                 return { success: false, error: error }
             }
         },
+        async downloadBackup(id) {
+            try {
+                const response = await fetch(`http://replaceme.homeassistant/api/backups/${id}/download`, {
+                    method: 'GET'
+                })
+
+                if (response.status === 200) {
+                    return { success: true }
+                } else {
+                    throw new Error('Failed to download backup')
+                }
+            } catch (error) {
+                console.error('Failed to download backup:', error)
+                return { success: false, error: error }
+            }
+        },
+        async restoreBackup(id) {
+            try {
+                const response = await fetch(`http://replaceme.homeassistant/api/backups/${id}/restore`, {
+                    method: 'POST'
+                })
+
+                if (response.status === 202) {
+                    return { success: true }
+                } else {
+                    throw new Error('Failed to restore backup')
+                }
+            } catch (error) {
+                console.error('Failed to restore backup:', error)
+                return { success: false, error: error }
+            }
+        },
         async pinBackup(id) {
             try {
                 const response = await fetch(`http://replaceme.homeassistant/api/backups/${id}/pin`, {

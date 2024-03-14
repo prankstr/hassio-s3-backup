@@ -1,14 +1,4 @@
 <template>
-	<v-snackbar color="primary" multi-line :timeout="2500" v-model="snackbar">
-		{{ snackbarMsg }}
-
-		<template v-slot:actions>
-
-			<v-btn color="white" variant="text" @click="snackbar = false">
-				Close
-			</v-btn>
-		</template>
-	</v-snackbar>
 	<v-dialog v-model="dialog" width="1024">
 		<template v-slot:activator="{ props }">
 			<v-btn style="max-width: 450px; width: 100%" class="mt-2" color="primary" append-icon="mdi-plus"
@@ -47,15 +37,15 @@
 import { ref } from 'vue'
 import { useConfigStore } from '@/stores/config'
 import { useBackupsStore } from '@/stores/backups'
+import { useSnackbarStore } from '@/stores/snackbar'
 
 const dialog = ref(false)
-const snackbar = ref(false)
 const backupName = ref("")
 const emit = defineEmits(['backupCreated'])
-const snackbarMsg = ref("Awesome! New backup created 🚀")
 
 const cs = useConfigStore()
 const bs = useBackupsStore()
+const snackbar = useSnackbarStore()
 
 function generateBackupName() {
   let format = cs.config.backupNameFormat || 'Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}';
@@ -81,12 +71,11 @@ function generateBackupName() {
 function triggerBackup() {
 	bs.createBackup(backupName.value).then(({ success, error }) => {
         if (!success) {
-			snackbarMsg.value = "⚠️ " + error
-			snackbar.value = true
-        } else {
-            dialog.value = false
-            snackbar.value = true
+			snackbar.show({message: "⚠️ error.message"})
         }
+        
+		dialog.value = false
+		snackbar.show({message: "🚀 Awesome! New backup created"})
     })
 }
 
