@@ -161,13 +161,13 @@ function deleteBackup() {
 
 	bs.deleteBackup(props.backup.id).then(({ success, error }) => {
 		if (!success) {
-			snackbarMsg.value = error.message
-			snackbar.value = true
-		} else {
-			dialog.value = false
-			snackbar.value = true
-			emit("change")
+			snackbarStore.showMessage('⚠️ error.message')
+			loading.value = false
 		}
+
+		dialog.value = false
+		snackbarStore.showMessage('Backup deleted')
+		return loading.value = false
 	})
 }
 
@@ -175,45 +175,40 @@ function restoreBackup() {
 	revealRestore.value = false
 	loading.value = true
 
-	fetch('http://replaceme.homeassistant/api/backups/restore', {
-		method: 'POST',
-		body: JSON.stringify({
-			"slug": props.backup.id
-		})
+	bs.restoreBackup(props.backup.id).then(({ success, error }) => {
+		if (!success) {
+			snackbarStore.showMessage('⚠️ error.message')
+			return loading.value = false
+		}
+
+		snackbarStore.showMessage('Restore started')
+		return loading.value = false
 	})
-		.then(() => {
-		})
-		.catch(error => {
-			console.log(error)
-		})
 }
 
 function downloadBackup() {
 	revealDownload.value = false
 	loading.value = true
 
-	fetch('http://replaceme.homeassistant/api/backups/download', {
-		method: 'POST',
-		body: JSON.stringify({
-			"id": props.backup.id
-		})
+	bs.downloadBackup(props.backup.id).then(({ success, error }) => {
+		if (!success) {
+			snackbarStore.showMessage('⚠️ error.message')
+			return loading.value = false
+		}
+
+		snackbarStore.showMessage('Backup downloaded')
+		return loading.value = false
 	})
-		.then(() => {
-			loading.value = false
-			emit('backupChange')
-		})
-		.catch(error => {
-			console.log(error)
-			loading.value = false
-		})
 }
 
 function pinBackup() {
 	bs.pinBackup(props.backup.id).then(({ success, error }) => {
 		if (!success) {
 			snackbarStore.showMessage('⚠️ error.message')
+			return
 		}
-		snackbarStore.showMessage('📌 Backup pinned!')
+
+		snackbarStore.showMessage('Backup pinned')
 	})
 }
 
@@ -221,8 +216,10 @@ function unpinBackup() {
 	bs.unpinBackup(props.backup.id).then(({ success, error }) => {
 		if (!success) {
 			snackbarStore.showMessage('⚠️ error.message')
+			return
 		}
-		snackbarStore.showMessage('Backup unpinned!')
+
+		snackbarStore.showMessage('Backup unpinned')
 	})
 }
 
