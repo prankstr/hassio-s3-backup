@@ -23,6 +23,38 @@ export const useBackupsStore = defineStore('backups', {
         haBackupsCount() {
             return this.haBackups.length
         },
+        driveBackupsSize() {
+            const totalSizeMB = this.driveBackups.reduce((acc, backup) => acc + backup.size, 0)
+
+            let displaySize;
+            let suffix;
+            
+            if (totalSizeMB < 1000) {
+              displaySize = totalSizeMB.toFixed(1)
+              suffix = 'MB'
+            } else {
+              displaySize = (totalSizeMB / 1024).toFixed(1)
+              suffix = 'GB'
+            }
+          
+            return `${displaySize} ${suffix}`
+        },
+        haBackupsSize() {
+            const totalSizeMB = this.haBackups.reduce((acc, backup) => acc + backup.size, 0)
+
+            let displaySize;
+            let suffix;
+            
+            if (totalSizeMB < 1000) {
+              displaySize = totalSizeMB.toFixed(1)
+              suffix = 'MB'
+            } else {
+              displaySize = (totalSizeMB / 1024).toFixed(1)
+              suffix = 'GB'
+            }
+          
+            return `${displaySize} ${suffix}`
+        },
     },
     actions: {
         async fetchBackups() {

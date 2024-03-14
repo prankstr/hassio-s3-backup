@@ -7,9 +7,8 @@
       <v-row class="align-start justify-center">
         <v-col class="pt-4" sm="11" md="4">
           <div class="d-flex flex-column align-center align-md-end text-end">
-            <DriveStats class="mb-2" :backups="bs.backups"></DriveStats>
-           <!-- <BackupStats class="mb-2" :backups="backupList" :config="config"></BackupStats>
-            <v-divider class="border-opacity-50" color="wite" length="375" vertical></v-divider> -->
+            <SummaryCard class="mb-2"></SummaryCard>
+            <!-- <v-divider class="border-opacity-50" color="wite" length="375" vertical></v-divider> -->
             <NewBackup></NewBackup>
           </div>
         </v-col>
@@ -51,8 +50,7 @@ import { onMounted } from 'vue'
 import AppBar from '@/components/AppBar.vue'
 import NewBackup from '@/components/NewBackup.vue'
 import BackupCard from '@/components/BackupCard.vue'
-import DriveStats from '@/components/DriveStats.vue'
-import BackupStats from '@/components/BackupStats.vue'
+import SummaryCard from '@/components/SummaryCard.vue'
 import Snackbar from '@/components/Snackbar.vue'
 import { useConfigStore } from '@/stores/config'
 import { useBackupsStore } from '@/stores/backups'
