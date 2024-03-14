@@ -22,7 +22,6 @@ func NewBackupHandler(backupService *services.BackupService) BackupHandler {
 
 // HandleListBackups handles requests to /backups, returning a list of backups
 func (h *BackupHandler) HandleListBackups(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Handling list backups request")
 	backups := h.backupService.ListBackups()
 
 	// Marshal the backups into JSON
