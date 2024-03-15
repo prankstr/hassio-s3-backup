@@ -12,9 +12,9 @@
             <NewBackup></NewBackup>
           </div>
         </v-col>
-        <v-col cols="auto" md="7" class="pt-4">
-          <v-row class="justify-center justify-md-start">
-            <v-col cols="11" md="6" v-for="(backup, i) in bs.nonPinnedBackups" :key="backup.id">
+        <v-col class="pt-4" cols="auto" md="7">
+          <v-row class="align-center align-md-start">
+            <v-col cols="12" md="6" v-for="(backup, i) in bs.nonPinnedBackups" :key="backup.id">
               <div class="d-flex flex-column align-center">
                 <BackupCard @backupsChanges=bs.fetchBackups :backup=backup></BackupCard>
               </div>
@@ -22,12 +22,12 @@
           </v-row>
 
           <v-row v-if="bs.pinnedBackups.length > 0" class="justify-center justify-md-start">
-            <v-col cols="11" class="pb-0">
+            <v-col cols="12" md="11" class="pb-0">
               <div class="d-flex flex-column align-center align-md-start">
                 <h2>Pinned Backups</h2>
               </div>
             </v-col>
-            <v-col cols="11" md="6" v-for="(backup, i) in bs.pinnedBackups" key="backup.id">
+            <v-col cols="12" md="6" v-for="(backup, i) in bs.pinnedBackups" key="backup.id">
               <div class="d-flex flex-column align-center">
                 <BackupCard :backup=backup></BackupCard>
               </div>

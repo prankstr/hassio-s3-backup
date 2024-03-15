@@ -15,19 +15,19 @@
                                 persistent-hint
                                 hint="Default: Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}"></v-text-field>
                         </v-col>
-                        <v-col cols="6">
+                        <v-col cols="12" md="6">
                             <v-text-field  v-model.number="localConfig.backupsInHA" type="number" class="mb-0"
                                 label="Number of backups to keep in Home Assistant" persistent-hint
                                 hint="The amount of backups to keep in Home Assistant. Defaults to 4"></v-text-field>
                         </v-col>
-                        <v-col cols="6">
+                        <v-col cols="12" md="6">
                             <v-text-field v-model.number="localConfig.backupsOnDrive" type="number" class="mb-0"
                                 label="Number of backups to keep on Proton Drive" persistent-hint
                                 hint="The amount of backups to keep on Proton Drive. Defaults to 4"></v-text-field>
                         </v-col>
                     </v-row>
                     <v-row>
-                        <v-col cols="6">
+                        <v-col cols="12" md="6">
                             <v-text-field v-model.number="localConfig.backupInterval" type="number" class="mb-0" label="Time between backups"
                                 persistent-hint
                                 hint="The amount of time between backups. Defaults to 3 days."></v-text-field>
