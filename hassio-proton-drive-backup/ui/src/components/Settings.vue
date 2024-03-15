@@ -77,13 +77,12 @@ import { ref, watch } from 'vue'
 import { useConfigStore } from '@/stores/config'
 import { useSnackbarStore } from '@/stores/snackbar';
 
-const emit = defineEmits(['settingsUpdated'])
-const dialog = ref(false)
-const revealResetData = ref(false)
 
 const cs = useConfigStore()
 const snackbar = useSnackbarStore()
 
+const dialog = ref(false)
+const revealResetData = ref(false)
 const localConfig = ref({})
 
 watch(dialog, (newVal) => {
