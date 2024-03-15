@@ -22,7 +22,7 @@
           </v-row>
 
           <v-row v-if="bs.pinnedBackups.length > 0" class="justify-center justify-md-start">
-            <v-col cols="12" md="11" class="pb-0">
+            <v-col cols="12" sm="11" class="pb-0">
               <div class="d-flex flex-column align-center align-md-start">
                 <h2>Pinned Backups</h2>
               </div>
