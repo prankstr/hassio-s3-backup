@@ -78,7 +78,7 @@ const date = computed(() => {
 })
 
 watch(() => cs.config.backupInterval, fetchTimer)
-watch(() => bs.backups, fetchTimer)
+watch(() => bs.backups.length, fetchTimer)
 
 onMounted(() => {
     fetchTimer()
