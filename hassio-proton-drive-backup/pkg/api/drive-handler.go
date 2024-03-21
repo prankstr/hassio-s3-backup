@@ -1,9 +1,8 @@
 package api
 
 import (
-	"net/http"
-
 	"hassio-proton-drive-backup/models"
+	"net/http"
 )
 
 // DriveHandler is a struct to handle requests to concering the drive

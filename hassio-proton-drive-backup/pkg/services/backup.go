@@ -7,14 +7,13 @@ import (
 	"hassio-proton-drive-backup/models"
 	"hassio-proton-drive-backup/pkg/clients"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
 	"time"
-
-	"log/slog"
 )
 
 type BackupService struct {
@@ -870,7 +869,6 @@ func (s *BackupService) ResetBackups() error {
 func (s *BackupService) loadBackupsFromFile() {
 	path := fmt.Sprintf("%s/backups.json", s.config.DataDirectory)
 	data, err := os.ReadFile(path)
-
 	if err != nil {
 		slog.Error("Error loading backups from file", "error", err)
 		return

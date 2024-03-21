@@ -1,23 +1,24 @@
-import { defineStore } from 'pinia'
+import { defineStore } from "pinia";
 
-export const useSnackbarStore = defineStore('snackbar', {
+export const useSnackbarStore = defineStore("snackbar", {NewB
   state: () => ({
-    message: '',
+    message: "",
     multiLine: false,
-    color: 'primary',
+    color: "primary",
     timeout: 3000,
     visible: false,
   }),
   actions: {
     show(options = {}) {
-        this.$reset()
-  
-        Object.assign(this, options)
-  
-        this.visible = true
+      this.$reset();
+
+      Object.assign(this, options);
+
+      this.visible = true;
     },
     hideMessage() {
-      this.visible = false
+      this.visible = false;
     },
   },
-})
+});
+

@@ -1,6 +1,6 @@
 module hassio-proton-drive-backup
 
-go 1.22
+go 1.22.0
 
 require (
 	github.com/henrybear327/Proton-API-Bridge v1.0.0

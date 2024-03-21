@@ -194,7 +194,7 @@ func (s *protonDriveService) GetBackupAttributesByID(id string) (*models.FileAtt
 	}
 
 	return &models.FileAttributes{
-		Size:     float64(protonAttributes.Size) / (1024 * 1024), //convert bytes to MB
+		Size:     float64(protonAttributes.Size) / (1024 * 1024), // convert bytes to MB
 		Modified: protonAttributes.ModificationTime,
 	}, nil
 }

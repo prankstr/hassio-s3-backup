@@ -3,6 +3,7 @@ package services
 import (
 	"encoding/json"
 	"fmt"
+	"hassio-proton-drive-backup/models"
 	"io"
 	"log"
 	"log/slog"
@@ -10,8 +11,6 @@ import (
 	"os"
 	"strconv"
 	"time"
-
-	"hassio-proton-drive-backup/models"
 )
 
 // ConfigService is a struct to handle the application configuration
@@ -226,7 +225,7 @@ func readConfigFromFile(filePath string) (*models.Config, error) {
 
 // getIngressEntry returns the hassio ingress path for the addon
 func getIngressEntry(token string) string {
-	var bearer = "Bearer " + token
+	bearer := "Bearer " + token
 
 	req, err := http.NewRequest("GET", "http://supervisor/addons/self/info", nil)
 	if err != nil {
