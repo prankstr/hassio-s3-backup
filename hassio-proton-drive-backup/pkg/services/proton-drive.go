@@ -68,7 +68,7 @@ func (s *protonDriveService) Login(username string, password string) error {
 	// Initialize ProtonDriveAPI configuration
 	protonConf := protonDriveAPI.NewDefaultConfig()
 	protonConf.ReplaceExistingDraft = true
-	protonConf.AppVersion = "web-drive5.0.23.9"
+	protonConf.AppVersion = "android-drive@2.5.0"
 	protonConf.FirstLoginCredential.Username = username
 	protonConf.FirstLoginCredential.Password = password
 
