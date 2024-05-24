@@ -68,7 +68,7 @@ func (s *protonDriveService) Login(username string, password string) error {
 	// Initialize ProtonDriveAPI configuration
 	protonConf := protonDriveAPI.NewDefaultConfig()
 	protonConf.ReplaceExistingDraft = true
-	protonConf.AppVersion = "macos-drive@1.0.0-alpha.1+rclone"
+	protonConf.AppVersion = "macos-drive@1.0.0-alpha.1"
 	protonConf.FirstLoginCredential.Username = username
 	protonConf.FirstLoginCredential.Password = password
 
