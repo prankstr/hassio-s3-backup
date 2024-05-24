@@ -1,5 +1,5 @@
 ARG BUILD_FROM
-FROM docker.io/golang:1.22-rc-alpine AS build
+FROM docker.io/golang:1.22-alpine AS build
 
 WORKDIR /app
 COPY . /app
