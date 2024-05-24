@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 
-export const useSnackbarStore = defineStore("snackbar", {NewB
+export const useSnackbarStore = defineStore("snackbar", {
   state: () => ({
     message: "",
     multiLine: false,
@@ -21,4 +21,3 @@ export const useSnackbarStore = defineStore("snackbar", {NewB
     },
   },
 });
-
