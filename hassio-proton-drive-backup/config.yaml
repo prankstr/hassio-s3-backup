@@ -15,12 +15,32 @@ ingress: true
 map:
   - backup:rw
 options:
+  storage_backend: "S3"
   backup_directory: "Home Assistant Backups"
   log_level: Info
-  proton_drive_user: null
-  proton_drive_password: null
+  proton:
+    username: null
+    password: null
+  storj:
+    access_grant: null
+    bucket: home-assistant-backups
+  s3:
+    endpoint:
+    bucket: home-assistant-backups
+    access_key_id: null
+    secret_access_key: null
 schema:
+  storage_backend: list(S3|Storj|Proton Drive)
   backup_directory: str
   log_level: match(Info|Debug|Warn|Error)
-  proton_drive_user: str
-  proton_drive_password: password
+  proton:
+    username: str
+    password: password
+  storj:
+    access_grant: password
+    bucket: str
+  s3:
+    endpoint: str
+    bucket: str
+    access_key_id: password
+    secret_access_key: password

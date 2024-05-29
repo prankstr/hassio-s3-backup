@@ -23,11 +23,12 @@ func NewConfigHandler(configService *services.ConfigService) ConfigHandler {
 func (h *ConfigHandler) HandleGetConfig(w http.ResponseWriter, r *http.Request) {
 	config := h.cs.GetConfig()
 
-	responseConfig := models.ConfigUpdate{
+	responseConfig := models.Config{
+		StorageBackend:   config.StorageBackend,
 		BackupNameFormat: config.BackupNameFormat,
 		BackupInterval:   config.BackupInterval,
 		BackupsInHA:      config.BackupsInHA,
-		BackupsOnDrive:   config.BackupsOnDrive,
+		BackupsInStorage: config.BackupsInStorage,
 	}
 
 	res, _ := json.Marshal(responseConfig)
@@ -38,7 +39,7 @@ func (h *ConfigHandler) HandleGetConfig(w http.ResponseWriter, r *http.Request) 
 
 // HandleUpdateConfig handles requests to /config/update, updating the config
 func (h *ConfigHandler) HandleUpdateConfig(w http.ResponseWriter, r *http.Request) {
-	var requestBody models.ConfigUpdate
+	var requestBody models.Config
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
 	if err != nil {

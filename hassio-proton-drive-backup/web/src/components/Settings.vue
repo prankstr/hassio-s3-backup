@@ -26,17 +26,17 @@
                 class="mb-0"
                 label="Number of backups to keep in Home Assistant"
                 persistent-hint
-                hint="The amount of backups to keep in Home Assistant. Defaults to 4"
+                hint="The amount of backups to keep in Home Assistant. 0 disables house keeping"
               ></v-text-field>
             </v-col>
             <v-col cols="12" md="6">
               <v-text-field
-                v-model.number="localConfig.backupsOnDrive"
+                v-model.number="localConfig.backupsInStorage"
                 type="number"
                 class="mb-0"
-                label="Number of backups to keep on Proton Drive"
+                label="Number of backups to keep remote"
                 persistent-hint
-                hint="The amount of backups to keep on Proton Drive. Defaults to 4"
+                hint="The amount of backups to keep in the remote storage. 0 disables housekeeping."
               ></v-text-field>
             </v-col>
           </v-row>
@@ -134,4 +134,3 @@ function saveChanges() {
   });
 }
 </script>
-

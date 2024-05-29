@@ -1,6 +1,9 @@
 package api
 
 import (
+	"fmt"
+	"hassio-proton-drive-backup/models"
+	"hassio-proton-drive-backup/pkg/backends"
 	"hassio-proton-drive-backup/pkg/clients"
 	"hassio-proton-drive-backup/pkg/services"
 	"hassio-proton-drive-backup/utils/httpdebug"
@@ -23,13 +26,31 @@ func NewAPI(configService *services.ConfigService) (*Api, error) {
 
 	hassioApiClient := clients.NewHassioApiClient(config.SupervisorToken)
 
-	driveService, err := services.NewProtonDriveService(configService)
-	if err != nil {
-		return nil, err
+	var err error
+	var storageService models.StorageService
+	switch config.StorageBackend {
+	case "Storj":
+		storageService, err = backends.NewStorjService(configService)
+		if err != nil {
+			return nil, err
+		}
+	case "Proton Drive":
+		storageService, err = backends.NewProtonDriveService(configService)
+		if err != nil {
+			return nil, err
+		}
+	case "S3":
+		storageService, err = backends.NewS3Service(configService)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("unknown storage backend %s - check configuration", config.StorageBackend)
 	}
-	driveHandler := NewDriveHandler(&driveService)
 
-	backupService := services.NewBackupService(hassioApiClient, &driveService, configService)
+	storageHandler := NewStorageHandler(storageService)
+
+	backupService := services.NewBackupService(hassioApiClient, storageService, configService)
 	backupHandler := NewBackupHandler(backupService)
 
 	configHandler := NewConfigHandler(configService)
@@ -48,7 +69,7 @@ func NewAPI(configService *services.ConfigService) (*Api, error) {
 	router.HandleFunc("GET /api/config", configHandler.HandleGetConfig)
 	router.HandleFunc("POST /api/config/update", configHandler.HandleUpdateConfig)
 
-	router.HandleFunc("GET /api/drive/about", driveHandler.HandleAbout)
+	router.HandleFunc("GET /api/storage/about", storageHandler.HandleAbout)
 
 	return &Api{
 		Router: router,

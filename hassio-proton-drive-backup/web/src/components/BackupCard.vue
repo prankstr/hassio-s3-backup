@@ -245,7 +245,7 @@ const translateStatus = (status) => {
   const statusMessages = {
     SYNCED: "Synced",
     HAONLY: "Only in HA",
-    DRIVEONLY: "Only in Proton",
+    STORAGEONLY: "Only in remote storage",
     DELETING: "Deleting",
     RUNNING: "In Progress",
     SYNCING: "Uploading",
@@ -262,7 +262,7 @@ watch(
       status !== "SYNCED" &&
       status !== "FAILED" &&
       status !== "HAONLY" &&
-      status !== "DRIVEONLY";
+      status !== "STORAGEONLY";
   },
   { immediate: true },
 );
@@ -347,4 +347,3 @@ function unpinBackup() {
   background: rgba(var(--v-theme-primary), 1) !important;
 }
 </style>
-

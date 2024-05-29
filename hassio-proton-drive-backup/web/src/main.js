@@ -21,4 +21,3 @@ registerPlugins(app);
 app.use(pinia);
 
 app.mount("#app");
-

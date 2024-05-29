@@ -6,36 +6,36 @@ import "time"
 type BackupStatus string
 
 const (
-	StatusDeleting  BackupStatus = "DELETING"  // Backup in being deleted
-	StatusPending   BackupStatus = "PENDING"   // Backup is initalized but no action taken
-	StatusRunning   BackupStatus = "RUNNING"   // Backup is being created in Home Assistant
-	StatusSynced    BackupStatus = "SYNCED"    // Backup is present in both Home Assistant and drive
-	StatusHAOnly    BackupStatus = "HAONLY"    // Backup is only present in  Home Assistant
-	StatusDriveOnly BackupStatus = "DRIVEONLY" // Backup is only present on drive
-	StatusSyncing   BackupStatus = "SYNCING"   // Backups is being uploaded to drive
-	StatusFailed    BackupStatus = "FAILED"    // Backup process failed somewhere
+	StatusDeleting    BackupStatus = "DELETING"    // Backup in being deleted
+	StatusPending     BackupStatus = "PENDING"     // Backup is initalized but no action taken
+	StatusRunning     BackupStatus = "RUNNING"     // Backup is being created in Home Assistant
+	StatusSynced      BackupStatus = "SYNCED"      // Backup is present in both Home Assistant and drive
+	StatusHAOnly      BackupStatus = "HAONLY"      // Backup is only present in  Home Assistant
+	StatusStorageOnly BackupStatus = "STORAGEONLY" // Backup is only present on drive
+	StatusSyncing     BackupStatus = "SYNCING"     // Backups is being uploaded to drive
+	StatusFailed      BackupStatus = "FAILED"      // Backup process failed somewhere
 )
 
 // Backup represents the details and status of a backup process
 type Backup struct {
-	ID           string         `json:"id"`           // A unique identifier for the backup
-	Name         string         `json:"name"`         // Name of the backup
-	Status       BackupStatus   `json:"status"`       // Current status of the backup
-	Date         time.Time      `json:"date"`         // When the backup process started
-	Size         float64        `json:"size"`         // Size of the backup in MB
-	Slug         string         `json:"slug"`         // Backup slug from Home assistant
-	ErrorMessage string         `json:"errorMessage"` // Error message in case of failure
-	KeepInHA     bool           `json:"keepInHA"`     // Keep the backup in Home Assistant
-	KeepOnDrive  bool           `json:"keepOnDrive"`  // Keep the backup in drive
-	Pinned       bool           `json:"pinned"`       // Keep the backup indefinitely
-	Drive        *DirectoryData `json:"proton"`       // Drive backup details
-	HA           *HassBackup    `json:"ha"`           // Home Assistant backup details
+	Date          time.Time      `json:"date"`
+	Storage       *DirectoryItem `json:"storage"`
+	HA            *HassBackup    `json:"ha"`
+	ID            string         `json:"id"`
+	Name          string         `json:"name"`
+	Status        BackupStatus   `json:"status"`
+	Slug          string         `json:"slug"`
+	ErrorMessage  string         `json:"errorMessage"`
+	Size          float64        `json:"size"`
+	KeepInHA      bool           `json:"keepInHA"`
+	KeepInStorage bool           `json:"keepInStorage"`
+	Pinned        bool           `json:"pinned"`
 }
 
 // HAData is a selection of metadata from the HA backups
 type HAData struct {
-	Slug string    `json:"slug"`
 	Date time.Time `json:"date"`
+	Slug string    `json:"slug"`
 	Size float64   `json:"size"`
 }
 

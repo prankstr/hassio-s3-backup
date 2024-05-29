@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"hassio-proton-drive-backup/pkg/api"
 	"hassio-proton-drive-backup/pkg/services"
 	"hassio-proton-drive-backup/ui"
@@ -41,7 +40,8 @@ func main() {
 
 	api, err := api.NewAPI(configService)
 	if err != nil {
-		fmt.Println(err)
+		slog.Error("Failed to initialize API", "error", err)
+		os.Exit(1)
 	}
 
 	uiHandler := ui.NewHandler(config)

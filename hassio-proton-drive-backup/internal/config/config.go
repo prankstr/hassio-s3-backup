@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hassio-proton-drive-backup/models"
+	"hassio-proton-drive-backup/pkg/backends"
 	"io"
 	"log"
 	"log/slog"
@@ -42,13 +43,27 @@ func NewConfigService() *ConfigService {
 	// Set defaults or override with environment variables if they are set
 	config.Hostname = getEnvOrDefault("HOSTNAME", config.Hostname, "localhost:9101")
 	config.SupervisorToken = getEnvOrDefault("SUPERVISOR_TOKEN", config.SupervisorToken, "")
+	config.StorageBackend = getEnvOrDefault("STORAGE_BACKEND", config.StorageBackend, "")
 	config.BackupDirectory = getEnvOrDefault("BACKUP_DIRECTORY", config.BackupDirectory, "Home Assistant Backups")
 	config.DataDirectory = getEnvOrDefault("DATA_DIRECTORY", config.DataDirectory, "/data")
 	config.BackupsInHA = getEnvOrDefaultInt("BACKUPS_IN_HA", config.BackupsInHA, 0)
 	config.BackupNameFormat = getEnvOrDefault("BACKUP_NAME_FORMAT", config.BackupNameFormat, "Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}")
-	config.BackupsOnDrive = getEnvOrDefaultInt("BACKUPS_ON_DRIVE", config.BackupsOnDrive, 0)
+	config.BackupsInStorage = getEnvOrDefaultInt("BACKUPS_IN_STORAGE", config.BackupsInStorage, 0)
 	config.BackupInterval = getEnvOrDefaultInt("BACKUP_INTERVAL", config.BackupInterval, 3)
 
+	// S3 Config
+	if config.StorageBackend == backends.S3 {
+		config.S3.AccessKeyID = getEnvOrDefault("S3_ACCESS_KEY_ID", config.S3.AccessKeyID, "")
+		config.S3.SecretAccessKey = getEnvOrDefault("S3_SECRET_ACCESS_KEY", config.S3.SecretAccessKey, "")
+		config.S3.BucketName = getEnvOrDefault("S3_BUCKET_NAME", config.S3.BucketName, "")
+		config.S3.Endpoint = getEnvOrDefault("S3_ENDPOINT", config.S3.Endpoint, "")
+	}
+
+	// Storj Config
+	if config.StorageBackend == backends.STORJ {
+		config.Storj.AccessGrant = getEnvOrDefault("STORJ_ACCESS_GRANT", config.Storj.AccessGrant, "")
+		config.Storj.BucketName = getEnvOrDefault("STORJ_BUCKET_NAME", config.Storj.BucketName, "")
+	}
 	//
 	creds.Username = getEnvOrDefault("PROTON_DRIVE_USER", "", "")
 	creds.Password = getEnvOrDefault("PROTON_DRIVE_PASSWORD", "", "")
@@ -107,6 +122,30 @@ func (cs *ConfigService) GetBackupInterval() time.Duration {
 	return (time.Duration(cs.config.BackupInterval) * time.Hour) * 24
 }
 
+func (cs *ConfigService) GetS3BucketName() string {
+	return cs.config.S3.BucketName
+}
+
+func (cs *ConfigService) GetS3Endpoint() string {
+	return cs.config.S3.Endpoint
+}
+
+func (cs *ConfigService) GetS3AccessKeyID() string {
+	return cs.config.S3.AccessKeyID
+}
+
+func (cs *ConfigService) GetS3SecretAccessKey() string {
+	return cs.config.S3.SecretAccessKey
+}
+
+func (cs *ConfigService) GetStorjBucketName() string {
+	return cs.config.Storj.BucketName
+}
+
+func (cs *ConfigService) GetCredentials() *models.Credentials {
+	return cs.creds
+}
+
 // GetBackupNameFormat returns the format to use for the backup name
 func (cs *ConfigService) GetBackupNameFormat() string {
 	return cs.config.BackupNameFormat
@@ -118,8 +157,8 @@ func (cs *ConfigService) GetBackupsInHA() int {
 }
 
 // GetBackupsOnDrive returns the number of backups to keep on the drive
-func (cs *ConfigService) GetBackupsOnDrive() int {
-	return cs.config.BackupsOnDrive
+func (cs *ConfigService) GetBackupsInStorage() int {
+	return cs.config.BackupsInStorage
 }
 
 // GetProtonDriveUser returns the ProtonDrive username
@@ -140,11 +179,11 @@ func (cs *ConfigService) SetBackupInterval(interval int) {
 }
 
 // SetBackupsToKeep sets the number of backups to keep
-func (cs *ConfigService) UpdateConfigFromAPI(configRequest models.ConfigUpdate) error {
+func (cs *ConfigService) UpdateConfigFromAPI(configRequest models.Config) error {
 	cs.config.BackupNameFormat = configRequest.BackupNameFormat
 	cs.config.BackupInterval = configRequest.BackupInterval
 	cs.config.BackupsInHA = configRequest.BackupsInHA
-	cs.config.BackupsOnDrive = configRequest.BackupsOnDrive
+	cs.config.BackupsInStorage = configRequest.BackupsInStorage
 
 	cs.NotifyConfigChange(cs.config)
 

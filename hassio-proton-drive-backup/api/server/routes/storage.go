@@ -6,20 +6,20 @@ import (
 )
 
 // DriveHandler is a struct to handle requests to concering the drive
-type DriveHandler struct {
-	Drive models.Drive
+type StorageHandler struct {
+	StorageService models.StorageService
 }
 
 // NewDriveHandler initializes and returns a new ProtonDriveHandler
-func NewDriveHandler(drive models.Drive) DriveHandler {
-	return DriveHandler{
-		Drive: drive,
+func NewStorageHandler(storageService models.StorageService) StorageHandler {
+	return StorageHandler{
+		StorageService: storageService,
 	}
 }
 
 // HandleAbout handles requests to /drive/about, returning information about the drive
-func (h *DriveHandler) HandleAbout(w http.ResponseWriter, r *http.Request) {
-	res, _ := h.Drive.About()
+func (h *StorageHandler) HandleAbout(w http.ResponseWriter, r *http.Request) {
+	res, _ := h.StorageService.About()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(res)

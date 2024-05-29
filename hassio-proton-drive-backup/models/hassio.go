@@ -4,22 +4,22 @@ import "time"
 
 // HassBackup represents the details of a backup in Home Assistant
 type HassBackup struct {
-	Slug       string        `json:"slug"`       // A unique identifier for the backup
-	Date       time.Time     `json:"date"`       // When the backup process started
-	Name       string        `json:"name"`       // Name of the backup
-	Type       string        `json:"type"`       // Type of the backup, full or partial
-	Size       float64       `json:"size"`       // Size of the backup in MB
-	Protected  bool          `json:"protected"`  // If the backup is protected
-	Location   string        `json:"location"`   // Location of the backup
-	Compressed bool          `json:"compressed"` // If the backup is compressed
-	Content    BackupContent `json:"content"`    // Content of the backup
+	Date       time.Time     `json:"date"`
+	Slug       string        `json:"slug"`
+	Name       string        `json:"name"`
+	Type       string        `json:"type"`
+	Location   string        `json:"location"`
+	Content    BackupContent `json:"content"`
+	Size       float64       `json:"size"`
+	Protected  bool          `json:"protected"`
+	Compressed bool          `json:"compressed"`
 }
 
 // BackupContent represents the content of a backup
 type BackupContent struct {
-	HomeAssistant bool     `json:"homeassistant"`
 	Addons        []string `json:"addons"`
 	Folders       []string `json:"folders"`
+	HomeAssistant bool     `json:"homeassistant"`
 }
 
 // HassBackupResponse represents the response from Home Assistant

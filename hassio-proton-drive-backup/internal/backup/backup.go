@@ -16,46 +16,92 @@ import (
 	"time"
 )
 
-type BackupService struct {
-	hassioApi     clients.HassioApiClient
-	drive         models.Drive
-	driveProvider string
-	configService *ConfigService
-	config        *models.Config
+// BackupStatus is a custom type to represent the status of the backup
+type BackupStatus string
 
-	syncTicker   *time.Ticker
-	syncInterval time.Duration
-	stopSyncChan chan struct{}
+const (
+	StatusDeleting    BackupStatus = "DELETING"    // Backup in being deleted
+	StatusPending     BackupStatus = "PENDING"     // Backup is initalized but no action taken
+	StatusRunning     BackupStatus = "RUNNING"     // Backup is being created in Home Assistant
+	StatusSynced      BackupStatus = "SYNCED"      // Backup is present in both Home Assistant and drive
+	StatusHAOnly      BackupStatus = "HAONLY"      // Backup is only present in  Home Assistant
+	StatusStorageOnly BackupStatus = "STORAGEONLY" // Backup is only present on drive
+	StatusSyncing     BackupStatus = "SYNCING"     // Backups is being uploaded to drive
+	StatusFailed      BackupStatus = "FAILED"      // Backup process failed somewhere
+)
 
-	backups                []*models.Backup
-	backupTimer            *time.Timer
-	backupInterval         time.Duration
-	backupsInHA            int
-	backupsOnDrive         int
-	stopBackupChan         chan struct{}
-	nextBackupIn           time.Duration
-	nextBackupCalculatedAt time.Time
-	ongoingBackups         map[string]struct{}
-
-	mutex sync.Mutex
+// Backup represents the details and status of a backup process
+type Backup struct {
+	Date          time.Time      `json:"date"`
+	Storage       *DirectoryItem `json:"storage"`
+	HA            *HassBackup    `json:"ha"`
+	ID            string         `json:"id"`
+	Name          string         `json:"name"`
+	Status        BackupStatus   `json:"status"`
+	Slug          string         `json:"slug"`
+	ErrorMessage  string         `json:"errorMessage"`
+	Size          float64        `json:"size"`
+	KeepInHA      bool           `json:"keepInHA"`
+	KeepInStorage bool           `json:"keepInStorage"`
+	Pinned        bool           `json:"pinned"`
 }
 
-func NewBackupService(hassioApiClient clients.HassioApiClient, drive models.Drive, configService *ConfigService) *BackupService {
+// HAData is a selection of metadata from the HA backups
+type HAData struct {
+	Date time.Time `json:"date"`
+	Slug string    `json:"slug"`
+	Size float64   `json:"size"`
+}
+
+type BackupRequest struct {
+	ID         string `json:"id"`
+	Name       string `json:"name"`
+	ProtonLink string `json:"protonLink"` // Proton Drive Link to file
+	Slug       string `json:"slug"`       // Backup slug from Home assistant
+}
+
+// UpdateStatus updates the status of the backup
+func (b *Backup) UpdateStatus(status BackupStatus) {
+	b.Status = status
+}
+
+type BackupService struct {
+	nextBackupCalculatedAt time.Time
+	storageService         models.StorageService
+	stopBackupChan         chan struct{}
+	configService          *ConfigService
+	config                 *models.Config
+	syncTicker             *time.Ticker
+	ongoingBackups         map[string]struct{}
+	stopSyncChan           chan struct{}
+	backupTimer            *time.Timer
+	hassioApi              clients.HassioApiClient
+	storageProvider        string
+	backups                []*models.Backup
+	backupsInStorage       int
+	backupsInHA            int
+	nextBackupIn           time.Duration
+	backupInterval         time.Duration
+	syncInterval           time.Duration
+	mutex                  sync.Mutex
+}
+
+func NewBackupService(hassioApiClient clients.HassioApiClient, storage models.StorageService, configService *ConfigService) *BackupService {
 	config := configService.config
 
 	service := &BackupService{
-		hassioApi:     hassioApiClient,
-		drive:         drive,
-		driveProvider: "Proton Drive",
-		configService: configService,
-		config:        config,
+		hassioApi:       hassioApiClient,
+		storageService:  storage,
+		storageProvider: "Proton Drive",
+		configService:   configService,
+		config:          config,
 
-		stopBackupChan: make(chan struct{}),
-		stopSyncChan:   make(chan struct{}),
-		backupInterval: configService.GetBackupInterval(),
-		backupsInHA:    configService.GetBackupsInHA(),
-		backupsOnDrive: configService.GetBackupsOnDrive(),
-		syncInterval:   1 * time.Minute, // set the interval for sync
+		stopBackupChan:   make(chan struct{}),
+		stopSyncChan:     make(chan struct{}),
+		backupInterval:   configService.GetBackupInterval(),
+		backupsInHA:      configService.GetBackupsInHA(),
+		backupsInStorage: configService.GetBackupsInStorage(),
+		syncInterval:     1 * time.Minute, // set the interval for sync
 
 		ongoingBackups: make(map[string]struct{}),
 	}
@@ -104,7 +150,7 @@ func (s *BackupService) PerformBackup(name string) error {
 
 	// Update backup with HA Data and upload to Drive
 	if err := s.processAndUploadBackup(backup); err != nil {
-		slog.Error(fmt.Sprintf("Error syncing backup with %s", s.driveProvider), "name", backup.Name, "error", err)
+		slog.Error("Error syncing backup to storage backend", "name", backup.Name, "error", err)
 		backup.UpdateStatus(models.StatusFailed)
 		s.removeOngoingBackup(backup.ID)
 		return err
@@ -151,10 +197,10 @@ func (s *BackupService) DeleteBackup(id string) error {
 	}
 
 	// Delete backup from the drive
-	if backupToDelete.Drive != nil {
-		slog.Debug(fmt.Sprintf("Deleting backup from %s", s.driveProvider), "ID", backupToDelete.ID)
+	if backupToDelete.Storage != nil {
+		slog.Debug("Deleting backup from storage backend", "ID", backupToDelete.ID)
 		if err := s.deleteBackupFromDrive(backupToDelete); err != nil {
-			slog.Error(fmt.Sprintf("Failed to delete backup from %s", s.driveProvider), "Backup", backupToDelete.Name, "Error", err)
+			slog.Error("Failed to delete backup from storage backend", "Backup", backupToDelete.Name, "Error", err)
 		}
 	}
 
@@ -220,10 +266,10 @@ func (s *BackupService) DownloadBackup(id string) error {
 	backup.UpdateStatus(models.StatusSyncing)
 
 	// Download the backup file
-	reader, err := s.drive.DownloadFileByID(backup.Drive.Identifier)
+	reader, err := s.storageService.DownloadBackup(backup.Storage.Identifier)
 	if err != nil {
 		slog.Error("Failed to download backup", "backup", backup.Name, "error", err)
-		backup.UpdateStatus(models.StatusDriveOnly)
+		backup.UpdateStatus(models.StatusStorageOnly)
 		return err
 	}
 	defer reader.Close()
@@ -233,7 +279,7 @@ func (s *BackupService) DownloadBackup(id string) error {
 	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		slog.Error("Failed to open file for writing", "backup", backup.Name, "filePath", filePath, "error", err)
-		backup.UpdateStatus(models.StatusDriveOnly)
+		backup.UpdateStatus(models.StatusStorageOnly)
 		return err
 	}
 	defer file.Close()
@@ -241,7 +287,7 @@ func (s *BackupService) DownloadBackup(id string) error {
 	// Copy the downloaded file to disk
 	if _, err := io.Copy(file, reader); err != nil {
 		slog.Error("Failed to write backup to disk", "backup", backup.Name, "filePath", filePath, "error", err)
-		backup.UpdateStatus(models.StatusDriveOnly)
+		backup.UpdateStatus(models.StatusStorageOnly)
 		return err
 	}
 
@@ -257,7 +303,7 @@ func (s *BackupService) PinBackup(id string) error {
 	for _, backup := range s.backups {
 		if backup.ID == id {
 			backup.KeepInHA = true
-			backup.KeepOnDrive = true
+			backup.KeepInStorage = true
 			backup.Pinned = true
 			slog.Info("Backup pinned", "name", backup.Name)
 			return s.saveBackupsToFile()
@@ -306,14 +352,14 @@ func (s *BackupService) NameExists(name string) bool {
 // initializeBackup return a new internal backup object
 func (s *BackupService) initializeBackup(name string) *models.Backup {
 	backup := &models.Backup{
-		ID:          s.generateBackupID(),
-		Name:        s.generateBackupName(name),
-		Date:        time.Now().In(s.config.Timezone),
-		Status:      models.StatusPending,
-		KeepInHA:    true,
-		KeepOnDrive: true,
-		Drive:       nil,
-		HA:          nil,
+		ID:            s.generateBackupID(),
+		Name:          s.generateBackupName(name),
+		Date:          time.Now().In(s.config.Timezone),
+		Status:        models.StatusPending,
+		KeepInHA:      true,
+		KeepInStorage: true,
+		Storage:       nil,
+		HA:            nil,
 	}
 
 	s.backups = append([]*models.Backup{backup}, s.backups...)
@@ -341,14 +387,14 @@ func (s *BackupService) processAndUploadBackup(backup *models.Backup) error {
 
 	s.updateBackupDetailsFromHA(backup, haBackup)
 
-	link, err := s.uploadBackup(backup)
+	id, err := s.uploadBackup(backup)
 	if err != nil {
 		return err
 	}
 
 	// Ensure backup.Drive is updated with the new upload detail
-	backup.Drive = &models.DirectoryData{
-		Identifier: link,
+	backup.Storage = &models.DirectoryItem{
+		Identifier: id,
 	}
 
 	return nil
@@ -381,7 +427,7 @@ func (s *BackupService) deleteBackupInHomeAssistant(backupToDelete *models.Backu
 
 // deleteBackupFromDrived deletes a backup from the remote drive
 func (s *BackupService) deleteBackupFromDrive(backupToDelete *models.Backup) error {
-	err := s.drive.DeleteFileByID(backupToDelete.Drive.Identifier)
+	err := s.storageService.DeleteBackup(backupToDelete.Storage.Identifier)
 	if err != nil {
 		return handleBackupError(s, "failed to delete backup from Drive", backupToDelete, err)
 	}
@@ -409,7 +455,7 @@ func (s *BackupService) syncBackups() error {
 		// This will delete the backup from the map if it's not found in HA or Drive during the sync
 		// Unsure if this is wanted behavior but sticking to it for now
 		backup.HA = nil
-		backup.Drive = nil
+		backup.Storage = nil
 	}
 
 	// Mark backups for deletion if needed
@@ -423,7 +469,7 @@ func (s *BackupService) syncBackups() error {
 	}
 
 	// Keep Drive backups up to date
-	if err := s.updateOrDeleteDriveBackups(backupMap); err != nil {
+	if err := s.updateOrDeleteBackupsInBackend(backupMap); err != nil {
 		return err
 	}
 
@@ -432,7 +478,7 @@ func (s *BackupService) syncBackups() error {
 
 	// Update statused and sync backups to drive if needed
 	backupsOnDrive := s.updateBackupStatuses()
-	if s.backupsOnDrive == 0 || (len(s.backups) > backupsOnDrive && backupsOnDrive < s.backupsOnDrive) {
+	if s.backupsInStorage == 0 || (len(s.backups) > backupsOnDrive && backupsOnDrive < s.backupsInStorage) {
 		slog.Debug("Syncing backups to Drive")
 		if err := s.syncNeededBackupsToDrive(backupsOnDrive); err != nil {
 			return err
@@ -445,30 +491,30 @@ func (s *BackupService) syncBackups() error {
 
 // updateBackupStatuses sets the status for each backup and counts backups on Drive.
 func (s *BackupService) updateBackupStatuses() int {
-	backupsOnDrive := 0
+	backupsInStorage := 0
 
 	for _, backup := range s.backups {
-		backupInHA, backupInDrive := backup.HA != nil, backup.Drive != nil
+		backupInHA, backupInStorage := backup.HA != nil, backup.Storage != nil
 
-		if backupInHA && backupInDrive {
+		if backupInHA && backupInStorage {
 			backup.UpdateStatus(models.StatusSynced)
-			backupsOnDrive++
+			backupsInStorage++
 		} else if backupInHA {
 			backup.UpdateStatus(models.StatusHAOnly)
-		} else if backupInDrive {
-			backup.UpdateStatus(models.StatusDriveOnly)
-			backupsOnDrive++
+		} else if backupInStorage {
+			backup.UpdateStatus(models.StatusStorageOnly)
+			backupsInStorage++
 		}
 	}
 
-	return backupsOnDrive
+	return backupsInStorage
 }
 
 // syncNeededBackupsToDrive syncs the required number of backups to the drive.
 func (s *BackupService) syncNeededBackupsToDrive(backupsOnDrive int) error {
 	var uploadCount int
-	if s.backupsOnDrive > 0 {
-		uploadCount = s.backupsOnDrive - backupsOnDrive
+	if s.backupsInStorage > 0 {
+		uploadCount = s.backupsInStorage - backupsOnDrive
 	}
 
 	haOnlyBackups := []*models.Backup{}
@@ -494,9 +540,9 @@ func (s *BackupService) syncNeededBackupsToDrive(backupsOnDrive int) error {
 
 // syncBackupToDriveAndLog encapsulates the sync logic with logging.
 func (s *BackupService) syncBackupToDriveAndLog(backup *models.Backup) error {
-	slog.Info("Syncing backup to Drive", "name", backup.Name, "provider", s.driveProvider)
+	slog.Info("Syncing backup to storage backend", "name", backup.Name)
 	if err := s.syncBackupToDrive(backup); err != nil {
-		slog.Error("Error syncing backup", "name", backup.Name, "provider", s.driveProvider, "error", err)
+		slog.Error("Error syncing backup to storage backend", "name", backup.Name, "error", err)
 		return err
 	}
 	return nil
@@ -551,47 +597,48 @@ func (s *BackupService) updateOrDeleteHABackup(backupMap map[string]*models.Back
 	return nil
 }
 
-// addDriveBackupsToMap adds Drive backups to the backup map if it doesn't find one by name
-func (s *BackupService) updateOrDeleteDriveBackups(backupMap map[string]*models.Backup) error {
-	driveBackups, err := s.drive.ListBackupDirectory()
+// addDriveBackupsToMap adds bacckups found on the storage backend to the backup map if it doesn't find one by name
+func (s *BackupService) updateOrDeleteBackupsInBackend(backupMap map[string]*models.Backup) error {
+	storageBackups, err := s.storageService.ListBackups()
 	if err != nil {
 		return err
 	}
 
-	if len(driveBackups) == 0 {
-		slog.Debug(fmt.Sprintf("No backups found in %s", s.driveProvider))
+	fmt.Println(storageBackups)
+	if len(storageBackups) == 0 {
+		slog.Debug("No backups found on the storage backend")
 		return nil
 	}
 
 	noUpdateNeeded := true
-	for _, driveBackup := range driveBackups {
-		if _, exists := backupMap[driveBackup.Name]; !exists {
-			slog.Info(fmt.Sprintf("Found untracked backup on %s", s.driveProvider), "name", driveBackup.Name)
-			backup := s.initializeBackup(driveBackup.Name)
+	for _, storageBackup := range storageBackups {
+		if _, exists := backupMap[storageBackup.Name]; !exists {
+			slog.Info("Found untracked backup in storage backend", "name", storageBackup.Name)
+			backup := s.initializeBackup(storageBackup.Name)
 
-			if err := s.updateBackupDetailsFromDrive(backup, driveBackup); err != nil {
+			if err := s.updateBackupDetailsFromDrive(backup, storageBackup); err != nil {
 				return err
 			}
 
 			noUpdateNeeded = false
 		} else {
-			if !backupMap[driveBackup.Name].KeepOnDrive {
-				if !backupMap[driveBackup.Name].Pinned {
-					if err := s.drive.DeleteFileByID(driveBackup.Identifier); err != nil {
+			if !backupMap[storageBackup.Name].KeepInStorage {
+				if !backupMap[storageBackup.Name].Pinned {
+					if err := s.storageService.DeleteBackup(storageBackup.Identifier); err != nil {
 						return err
 					}
 
-					backupMap[driveBackup.Name].Drive = nil
-					slog.Info(fmt.Sprintf("Deleted backup from %s", s.driveProvider), "name", driveBackup.Name)
+					backupMap[storageBackup.Name].Storage = nil
+					slog.Info("Deleted backup from storage backend", "name", storageBackup.Name)
 				}
 			} else {
-				backupMap[driveBackup.Name].Drive = driveBackup
+				backupMap[storageBackup.Name].Storage = storageBackup
 			}
 		}
 	}
 
 	if noUpdateNeeded {
-		slog.Debug(fmt.Sprintf("%s backups up to date, no actions taken", s.driveProvider))
+		slog.Debug("Backups in storage backend to date, no actions taken")
 	}
 
 	return nil
@@ -601,8 +648,8 @@ func (s *BackupService) updateOrDeleteDriveBackups(backupMap map[string]*models.
 func (s *BackupService) deleteBackupFromAddon() error {
 	backupsToKeep := []*models.Backup{}
 	for _, backup := range s.backups {
-		if backup.HA != nil || backup.Drive != nil {
-			if backup.KeepInHA || backup.KeepOnDrive {
+		if backup.HA != nil || backup.Storage != nil {
+			if backup.KeepInHA || backup.KeepInStorage {
 				backupsToKeep = append(backupsToKeep, backup)
 			}
 		}
@@ -629,14 +676,14 @@ func (s *BackupService) sortAndSaveBackups() error {
 
 // syncBackupToDrive uploads a backup to the drive if needed
 func (s *BackupService) syncBackupToDrive(backup *models.Backup) error {
-	if backup.Drive != nil {
-		exists := s.drive.FileExists(backup.Drive.Identifier)
+	if backup.Storage != nil {
+		exists := s.storageService.FileExists(backup.Storage.Identifier)
 		if exists {
 			return nil
 		}
 	}
 
-	slog.Info(fmt.Sprintf("Syncing backup to %s", s.driveProvider), "name", backup.Name)
+	slog.Info("Syncing backup to storage backend", "name", backup.Name)
 	backup.UpdateStatus(models.StatusSyncing)
 	link, err := s.uploadBackup(backup)
 	if err != nil {
@@ -651,11 +698,11 @@ func (s *BackupService) syncBackupToDrive(backup *models.Backup) error {
 	}
 
 	// Ensure backup.Drive is updated with the new upload details
-	backup.Drive = &models.DirectoryData{
+	backup.Storage = &models.DirectoryItem{
 		Name:       backup.Name,
 		Identifier: link,
 	}
-	backup.KeepOnDrive = true
+	backup.KeepInStorage = true
 
 	backup.UpdateStatus(models.StatusSynced)
 	return nil
@@ -670,16 +717,16 @@ func (s *BackupService) updateBackupDetailsFromHA(backup *models.Backup, haBacku
 }
 
 // updateBackupDetailsFromHA updates the backup with information from HA
-func (s *BackupService) updateBackupDetailsFromDrive(backup *models.Backup, driveBackup *models.DirectoryData) error {
-	slog.Info(fmt.Sprintf("Fetching backup attributes from %s", s.driveProvider), "name", backup.Name)
-	attributes, err := s.drive.GetBackupAttributesByID(driveBackup.Identifier)
+func (s *BackupService) updateBackupDetailsFromDrive(backup *models.Backup, driveBackup *models.DirectoryItem) error {
+	slog.Info("Fetching backup attributes from storage backend", "name", backup.Name)
+	attributes, err := s.storageService.GetBackupAttributes(driveBackup.Identifier)
 	if err != nil {
 		return err
 	}
 
 	slog.Info("Attributes fetched", "name", driveBackup.Name, "size", attributes.Size, "modified", attributes.Modified)
 
-	backup.Drive = driveBackup
+	backup.Storage = driveBackup
 	backup.Name = driveBackup.Name
 	backup.Date = attributes.Modified
 	backup.Size = attributes.Size
@@ -708,8 +755,8 @@ func (s *BackupService) markExcessBackupsForDeletion() error {
 	}
 
 	// Execute marking for Drive backups if a limit is set.
-	if s.config.BackupsOnDrive > 0 {
-		if err := s.markForDeletion(nonPinnedBackups, s.config.BackupsOnDrive, false); err != nil {
+	if s.config.BackupsInStorage > 0 {
+		if err := s.markForDeletion(nonPinnedBackups, s.config.BackupsInStorage, false); err != nil {
 			return err
 		}
 	} else {
@@ -732,7 +779,7 @@ func (s *BackupService) markForDeletion(backups []*models.Backup, limit int, upd
 			backup.KeepInHA = false
 			slog.Debug("Marking backup for deletion in Home Assistant", "name", backup.Name)
 		} else {
-			backup.KeepOnDrive = false
+			backup.KeepInStorage = false
 			slog.Debug("Marking backup for deletion on Drive", "name", backup.Name)
 		}
 	}
@@ -822,7 +869,7 @@ func (s *BackupService) listenForConfigChanges(configChan <-chan *models.Config)
 		newInterval := s.configService.GetBackupInterval()
 		newBackupNameFormat := s.configService.GetBackupNameFormat()
 		newBackupsInHA := s.configService.GetBackupsInHA()
-		newBackupsOnDrive := s.configService.GetBackupsOnDrive()
+		newBackupsInStorage := s.configService.GetBackupsInStorage()
 
 		if newInterval != s.backupInterval {
 			s.backupInterval = newInterval
@@ -830,9 +877,9 @@ func (s *BackupService) listenForConfigChanges(configChan <-chan *models.Config)
 			slog.Info("Backup configuration updated", "new backupInterval", newInterval.String())
 		}
 
-		if newBackupsInHA != s.backupsInHA || newBackupsOnDrive != s.backupsOnDrive {
+		if newBackupsInHA != s.backupsInHA || newBackupsInStorage != s.backupsInStorage {
 			s.backupsInHA = newBackupsInHA
-			s.backupsOnDrive = newBackupsOnDrive
+			s.backupsInStorage = newBackupsInStorage
 			s.syncBackups()
 		}
 
@@ -844,8 +891,8 @@ func (s *BackupService) listenForConfigChanges(configChan <-chan *models.Config)
 			slog.Info("Backup configuration updated", "new backupsInHA", newBackupsInHA)
 		}
 
-		if newBackupsOnDrive != s.backupsOnDrive {
-			slog.Info("Backup configuration updated", "new backupsOnDrive", newBackupsOnDrive)
+		if newBackupsInStorage != s.backupsInStorage {
+			slog.Info("Backup configuration updated", "new backupsOnDrive", newBackupsInStorage)
 		}
 	}
 }
@@ -943,10 +990,10 @@ func (s *BackupService) uploadBackup(backup *models.Backup) (string, error) {
 	path := fmt.Sprintf("%s/%s.%s", "/backup", backup.HA.Slug, "tar")
 
 	backup.UpdateStatus(models.StatusSyncing)
-	id, err := s.drive.UploadFileByPath(fmt.Sprintf("%s.%s", backup.Name, "tar"), path)
+	id, err := s.storageService.UploadBackup(fmt.Sprintf("%s.%s", backup.Name, "tar"), path)
 	if err != nil {
 		backup.UpdateStatus(models.StatusFailed)
-		slog.Error(fmt.Sprintf("Error uploading backup to %s", s.driveProvider), err)
+		slog.Error("Error uploading backup to storage backend", err)
 		return "", err
 	}
 

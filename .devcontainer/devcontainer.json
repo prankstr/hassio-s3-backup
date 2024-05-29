@@ -7,7 +7,7 @@
   "containerEnv": {
     "WORKSPACE_DIRECTORY": "${containerWorkspaceFolder}"
   },
-  "mounts": [ "type=volume,target=/var/lib/docker" ],
+  "mounts": [ "type=volume,target=/var/lib/docker"],
   "customizations": {
     // Configure properties specific to VS Code.
     "vscode": {

@@ -13,12 +13,12 @@
     <v-card-text>
       <v-row class="pt-0">
         <v-col cols="5" class="pr-0 pt-0">
-          <div class="text-white text-subtitle-1">Drive:</div>
+          <div class="text-white text-subtitle-1">Storage Backend:</div>
         </v-col>
         <v-col class="pr-0 pt-0">
           <div class="text-white text-subtitle-1">
-            {{ bs.driveBackupsCount }} / {{ cs.config.backupsOnDrive }} ({{
-              bs.driveBackupsSize
+            {{ bs.storageBackupsCount }} / {{ backupsInStorage }} ({{
+              bs.storageBackupsSize
             }})
           </div>
         </v-col>
@@ -29,13 +29,21 @@
         </v-col>
         <v-col class="pr-0 pt-0">
           <div class="text-white text-subtitle-1">
-            {{ bs.haBackupsCount }} / {{ cs.config.backupsInHA }} ({{
-              bs.haBackupsSize
-            }})
+            {{ bs.haBackupsCount }} / {{ backupsInHA }} ({{ bs.haBackupsSize }})
           </div>
         </v-col>
       </v-row>
-      <v-row class="pt-0">
+      <v-row class="pt-0" v-if="cs.config.storageBackend === 'storj'">
+        <v-col cols="5" class="pr-0 pt-0">
+          <div class="text-white text-subtitle-1">Estimated Cost:</div>
+        </v-col>
+        <v-col class="pr-0 pt-0">
+          <div class="text-white text-subtitle-1">
+            {{ estimatedCost }}$ / month
+          </div>
+        </v-col>
+      </v-row>
+      <v-row class="pt-0" v-if="cs.config.storageBackend === 'proton'">
         <v-col cols="5" class="pr-0 pt-0">
           <div class="text-white text-subtitle-1">Available Space:</div>
         </v-col>
@@ -43,7 +51,7 @@
           <div class="text-white text-subtitle-1">{{ availableGb }} GB</div>
         </v-col>
       </v-row>
-      <v-row class="pt-0">
+      <v-row class="pt-0" v-if="cs.config.storageBackend === 'proton'">
         <v-col cols="4" class="pr-0 pt-0">
           <div class="text-white text-subtitle-1">Used Space:</div>
         </v-col>
@@ -93,5 +101,25 @@ const availableGb = computed(() => {
   let n = (about.value.MaxSpace - about.value.UsedSpace) / 1024 / 1024 / 1024;
   return n.toFixed(2);
 });
-</script>
 
+const estimatedCost = computed(() => {
+  console.log(bs.storageBackupsSizeInGB);
+  return bs.storageBackupsSizeInGB * 0.004;
+});
+
+const backupsInStorage = computed(() => {
+  if (cs.config.backupsInStorage == 0) {
+    return "∞";
+  }
+
+  return cs.config.backupsInStorage;
+});
+
+const backupsInHA = computed(() => {
+  if (cs.config.backupsInHA == 0) {
+    return "∞";
+  }
+
+  return cs.config.backupsInHA;
+});
+</script>

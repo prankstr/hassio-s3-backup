@@ -7,30 +7,39 @@ import (
 
 // Config is a struct to represent the configuration of the addon
 type Config struct {
-	Hostname        string         // Hostname is the hostname of the machine running the addon
-	IngressPath     string         // IngressPath is the path where the ingress endpoint is exposed
-	SupervisorToken string         // SupervisorToken is the token used to authenticate with the Supervisor API
-	Debug           bool           // Debug is a flag that enables debug mode
-	BackupDirectory string         // BackupDirectory is the directory on the drive where backups are stored
-	DataDirectory   string         // DataDirectory is the directory where the config and backup tracking files are stored
-	LogLevel        slog.Level     // LogLevel is the log level to use
-	Timezone        *time.Location // Timezone that will be used to for backup times
+	Timezone         *time.Location
+	S3               S3Config
+	Storj            StorjConfig
+	DataDirectory    string
+	StorageBackend   string `json:"storageBackend"`
+	BackupDirectory  string
+	SupervisorToken  string
+	BackupNameFormat string `json:"backupNameFormat"`
+	IngressPath      string
+	Hostname         string
+	LogLevel         slog.Level
+	BackupInterval   int `json:"backupInterval"`
+	BackupsInHA      int `json:"backupsInHA"`
+	BackupsInStorage int `json:"backupsInStorage"`
+	Debug            bool
+}
 
-	BackupNameFormat string `json:"backupNameFormat"` // BackupNameFormat is the format to use for the backup name
-	BackupInterval   int    `json:"backupInterval"`   // BackupInterval is the interval in days at which backups are performed
-	BackupsInHA      int    `json:"backupsInHA"`      // NumberOfBackups is the number of backups to keep
-	BackupsOnDrive   int    `json:"backupsOnDrive"`   // NumberOfBackupsOnDrive is the number of backups to keep on the drive
+type StorjConfig struct {
+	AccessGrant string
+	BucketName  string
+}
+
+type S3Config struct {
+	AccessKeyID     string
+	SecretAccessKey string
+	BucketName      string
+	Endpoint        string
 }
 
 type Credentials struct {
-	Username string
-	Password string
-}
-
-// ConfigUpdate is a struct to represent the configuration update
-type ConfigUpdate struct {
-	BackupNameFormat string `json:"backupNameFormat"`
-	BackupInterval   int    `json:"backupInterval"`
-	BackupsInHA      int    `json:"backupsInHA"`
-	BackupsOnDrive   int    `json:"backupsOnDrive"`
+	Username        string
+	Password        string
+	AccessGrant     string
+	AccessKeyID     string
+	SecretAccessKey string
 }
