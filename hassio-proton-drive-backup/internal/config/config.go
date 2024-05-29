@@ -1,10 +1,10 @@
-package services
+package config
 
 import (
 	"encoding/json"
 	"fmt"
-	"hassio-proton-drive-backup/models"
-	"hassio-proton-drive-backup/pkg/backends"
+	"hassio-proton-drive-backup/internal/hassio"
+	"hassio-proton-drive-backup/internal/storage"
 	"io"
 	"log"
 	"log/slog"
@@ -14,11 +14,42 @@ import (
 	"time"
 )
 
+// Config is a struct to represent the configuration of the addon
+type Config struct {
+	Timezone         *time.Location
+	S3               S3Config
+	Storj            StorjConfig
+	DataDirectory    string
+	StorageBackend   string `json:"storageBackend"`
+	BackupDirectory  string
+	SupervisorToken  string
+	BackupNameFormat string `json:"backupNameFormat"`
+	IngressPath      string
+	Hostname         string
+	LogLevel         slog.Level
+	BackupInterval   int `json:"backupInterval"`
+	BackupsInHA      int `json:"backupsInHA"`
+	BackupsInStorage int `json:"backupsInStorage"`
+	Debug            bool
+}
+
+type StorjConfig struct {
+	AccessGrant string
+	BucketName  string
+}
+
+type S3Config struct {
+	AccessKeyID     string
+	SecretAccessKey string
+	BucketName      string
+	Endpoint        string
+}
+
 // ConfigService is a struct to handle the application configuration
 type ConfigService struct {
-	config           *models.Config
-	creds            *models.Credentials
-	configChangeChan chan *models.Config
+	Config           *Config
+	Creds            *storage.Credentials
+	ConfigChangeChan chan *Config
 }
 
 // logLevels is a map of string to slog.Level
@@ -36,9 +67,9 @@ func NewConfigService() *ConfigService {
 	if err != nil {
 		// Handle error. This could be logging the error and continuing with defaults
 		slog.Error("Error reading config file: ", err)
-		config = &models.Config{} // Initialize with an empty config
+		config = &Config{} // Initialize with an empty config
 	}
-	creds := &models.Credentials{} // Initialize with an empty config
+	creds := &storage.Credentials{} // Initialize with an empty config
 
 	// Set defaults or override with environment variables if they are set
 	config.Hostname = getEnvOrDefault("HOSTNAME", config.Hostname, "localhost:9101")
@@ -52,7 +83,7 @@ func NewConfigService() *ConfigService {
 	config.BackupInterval = getEnvOrDefaultInt("BACKUP_INTERVAL", config.BackupInterval, 3)
 
 	// S3 Config
-	if config.StorageBackend == backends.S3 {
+	if config.StorageBackend == storage.S3 {
 		config.S3.AccessKeyID = getEnvOrDefault("S3_ACCESS_KEY_ID", config.S3.AccessKeyID, "")
 		config.S3.SecretAccessKey = getEnvOrDefault("S3_SECRET_ACCESS_KEY", config.S3.SecretAccessKey, "")
 		config.S3.BucketName = getEnvOrDefault("S3_BUCKET_NAME", config.S3.BucketName, "")
@@ -60,7 +91,7 @@ func NewConfigService() *ConfigService {
 	}
 
 	// Storj Config
-	if config.StorageBackend == backends.STORJ {
+	if config.StorageBackend == storage.STORJ {
 		config.Storj.AccessGrant = getEnvOrDefault("STORJ_ACCESS_GRANT", config.Storj.AccessGrant, "")
 		config.Storj.BucketName = getEnvOrDefault("STORJ_BUCKET_NAME", config.Storj.BucketName, "")
 	}
@@ -100,94 +131,94 @@ func NewConfigService() *ConfigService {
 	writeConfigToFile(config)
 
 	return &ConfigService{
-		config:           config,
-		creds:            creds,
-		configChangeChan: make(chan *models.Config),
+		Config:           config,
+		Creds:            creds,
+		ConfigChangeChan: make(chan *Config),
 	}
 }
 
 // NotifyConfigChange sends a new config to the configChangeChan
-func (cs *ConfigService) NotifyConfigChange(newConfig *models.Config) {
+func (cs *ConfigService) NotifyConfigChange(newConfig *Config) {
 	slog.Info("Config updated, notifying")
-	cs.configChangeChan <- newConfig
+	cs.ConfigChangeChan <- newConfig
 }
 
 // GetConfig returns the current application configuration.
-func (cs *ConfigService) GetConfig() *models.Config {
-	return cs.config
+func (cs *ConfigService) GetConfig() *Config {
+	return cs.Config
 }
 
 // GetBackupDirectory returns the directory where backups are stored
 func (cs *ConfigService) GetBackupInterval() time.Duration {
-	return (time.Duration(cs.config.BackupInterval) * time.Hour) * 24
+	return (time.Duration(cs.Config.BackupInterval) * time.Hour) * 24
 }
 
 func (cs *ConfigService) GetS3BucketName() string {
-	return cs.config.S3.BucketName
+	return cs.Config.S3.BucketName
 }
 
 func (cs *ConfigService) GetS3Endpoint() string {
-	return cs.config.S3.Endpoint
+	return cs.Config.S3.Endpoint
 }
 
 func (cs *ConfigService) GetS3AccessKeyID() string {
-	return cs.config.S3.AccessKeyID
+	return cs.Config.S3.AccessKeyID
 }
 
 func (cs *ConfigService) GetS3SecretAccessKey() string {
-	return cs.config.S3.SecretAccessKey
+	return cs.Config.S3.SecretAccessKey
 }
 
 func (cs *ConfigService) GetStorjBucketName() string {
-	return cs.config.Storj.BucketName
+	return cs.Config.Storj.BucketName
 }
 
-func (cs *ConfigService) GetCredentials() *models.Credentials {
-	return cs.creds
+func (cs *ConfigService) GetCredentials() *storage.Credentials {
+	return cs.Creds
 }
 
 // GetBackupNameFormat returns the format to use for the backup name
 func (cs *ConfigService) GetBackupNameFormat() string {
-	return cs.config.BackupNameFormat
+	return cs.Config.BackupNameFormat
 }
 
 // GetBackupsToKeep returns the number of backups to keep
 func (cs *ConfigService) GetBackupsInHA() int {
-	return cs.config.BackupsInHA
+	return cs.Config.BackupsInHA
 }
 
 // GetBackupsOnDrive returns the number of backups to keep on the drive
 func (cs *ConfigService) GetBackupsInStorage() int {
-	return cs.config.BackupsInStorage
+	return cs.Config.BackupsInStorage
 }
 
 // GetProtonDriveUser returns the ProtonDrive username
 func (cs *ConfigService) GetProtonDriveUser() string {
-	return cs.creds.Username
+	return cs.Creds.Username
 }
 
 // GetProtonDrivePassword returns the ProtonDrive password
 func (cs *ConfigService) GetProtonDrivePassword() string {
-	return cs.creds.Password
+	return cs.Creds.Password
 }
 
 // SetBackupsToKeep sets the number of backups to keep
 func (cs *ConfigService) SetBackupInterval(interval int) {
-	cs.config.BackupInterval = interval
+	cs.Config.BackupInterval = interval
 
-	writeConfigToFile(cs.config)
+	writeConfigToFile(cs.Config)
 }
 
 // SetBackupsToKeep sets the number of backups to keep
-func (cs *ConfigService) UpdateConfigFromAPI(configRequest models.Config) error {
-	cs.config.BackupNameFormat = configRequest.BackupNameFormat
-	cs.config.BackupInterval = configRequest.BackupInterval
-	cs.config.BackupsInHA = configRequest.BackupsInHA
-	cs.config.BackupsInStorage = configRequest.BackupsInStorage
+func (cs *ConfigService) UpdateConfigFromAPI(configRequest Config) error {
+	cs.Config.BackupNameFormat = configRequest.BackupNameFormat
+	cs.Config.BackupInterval = configRequest.BackupInterval
+	cs.Config.BackupsInHA = configRequest.BackupsInHA
+	cs.Config.BackupsInStorage = configRequest.BackupsInStorage
 
-	cs.NotifyConfigChange(cs.config)
+	cs.NotifyConfigChange(cs.Config)
 
-	writeConfigToFile(cs.config)
+	writeConfigToFile(cs.Config)
 	return nil
 }
 
@@ -230,7 +261,7 @@ func stringFromSlogLevel(level slog.Level) string {
 }
 
 // writeConfigToFile writes a json representation of the config to a file
-func writeConfigToFile(config *models.Config) error {
+func writeConfigToFile(config *Config) error {
 	// Marshal backups array to JSON
 	data, err := json.Marshal(config)
 	if err != nil {
@@ -247,14 +278,14 @@ func writeConfigToFile(config *models.Config) error {
 }
 
 // readConfigFromFile reads a json config and returns it as a Config struct
-func readConfigFromFile(filePath string) (*models.Config, error) {
+func readConfigFromFile(filePath string) (*Config, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	var config models.Config
+	var config Config
 	if err := json.NewDecoder(file).Decode(&config); err != nil {
 		return nil, err
 	}
@@ -289,7 +320,7 @@ func getIngressEntry(token string) string {
 	}
 
 	// Unmarshal JSON into the struct
-	var response models.HassioResponse
+	var response hassio.HassioResponse
 	if err := json.Unmarshal(body, &response); err != nil {
 		fmt.Println("Error decoding JSON:", err)
 	}

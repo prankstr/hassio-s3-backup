@@ -1,11 +1,11 @@
-package backends
+package storage_backends
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"hassio-proton-drive-backup/models"
-	"hassio-proton-drive-backup/pkg/services"
+	"hassio-proton-drive-backup/internal/config"
+	"hassio-proton-drive-backup/internal/storage"
 	"io"
 	"log/slog"
 	"path/filepath"
@@ -14,10 +14,6 @@ import (
 	protonDriveAPI "github.com/henrybear327/Proton-API-Bridge"
 
 	"github.com/henrybear327/go-proton-api"
-)
-
-const (
-	PROTON = "Proton Drive"
 )
 
 type protonDriveCredentials struct {
@@ -33,10 +29,10 @@ type protonDriveService struct {
 	credentials *protonDriveCredentials
 }
 
-var _ models.StorageService = &protonDriveService{}
+var _ storage.StorageService = &protonDriveService{}
 
 // NewProtonDriveService initializes and returns a new HassioHandler
-func NewProtonDriveService(cs *services.ConfigService) (*protonDriveService, error) {
+func NewProtonDriveService(cs *config.ConfigService) (*protonDriveService, error) {
 	s := protonDriveService{}
 
 	err := s.Login(cs.GetCredentials())
@@ -69,7 +65,7 @@ func NewProtonDriveService(cs *services.ConfigService) (*protonDriveService, err
 }
 
 // NewProtonDrive initializes and returns a new protonDrive
-func (s *protonDriveService) Login(creds *models.Credentials) error {
+func (s *protonDriveService) Login(creds *storage.Credentials) error {
 	// Initialize ProtonDriveAPI configuration
 	protonConf := protonDriveAPI.NewDefaultConfig()
 	protonConf.ReplaceExistingDraft = true
@@ -192,32 +188,32 @@ func (s *protonDriveService) DownloadBackup(id string) (io.ReadCloser, error) {
 }
 
 // GetBackupAttributesByID returns the attributes of a file
-func (s *protonDriveService) GetBackupAttributes(id string) (*models.FileAttributes, error) {
+func (s *protonDriveService) GetBackupAttributes(id string) (*storage.FileAttributes, error) {
 	protonAttributes, err := s.drive.GetActiveRevisionAttrsByID(context.Background(), id)
 	if err != nil {
 		return nil, err
 	}
 
-	return &models.FileAttributes{
+	return &storage.FileAttributes{
 		Size:     float64(protonAttributes.Size) / (1024 * 1024), // convert bytes to MB
 		Modified: protonAttributes.ModificationTime,
 	}, nil
 }
 
 // ListBackupDirectory returns a list items in the backup directory
-func (s *protonDriveService) ListBackups() ([]*models.DirectoryItem, error) {
+func (s *protonDriveService) ListBackups() ([]*storage.DirectoryItem, error) {
 	items, err := s.drive.ListDirectory(context.Background(), s.backupLink.LinkID)
 	if err != nil {
 		return nil, err
 	}
 
-	var protonBackups []*models.DirectoryItem
+	var protonBackups []*storage.DirectoryItem
 	for _, item := range items {
 		if item.IsFolder {
 			continue
 		}
 
-		protonBackups = append(protonBackups, &models.DirectoryItem{
+		protonBackups = append(protonBackups, &storage.DirectoryItem{
 			Identifier: item.Link.LinkID,
 			Name:       strings.TrimSuffix(item.Name, filepath.Ext(item.Name)),
 		})

@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"errors"
-	"hassio-proton-drive-backup/pkg/api"
-	"hassio-proton-drive-backup/pkg/services"
-	"hassio-proton-drive-backup/ui"
+	"hassio-proton-drive-backup/api/server"
+	"hassio-proton-drive-backup/internal/config"
+	"hassio-proton-drive-backup/web"
 	"log/slog"
 	"net/http"
 	"os"
@@ -31,20 +31,20 @@ import (
 
 func main() {
 	// Initalize config
-	configService := services.NewConfigService()
+	configService := config.NewConfigService()
 	config := configService.GetConfig()
 
 	// Set LogLevel
 	h := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: config.LogLevel})
 	slog.SetDefault(slog.New(h))
 
-	api, err := api.NewAPI(configService)
+	api, err := server.NewAPI(configService)
 	if err != nil {
 		slog.Error("Failed to initialize API", "error", err)
 		os.Exit(1)
 	}
 
-	uiHandler := ui.NewHandler(config)
+	uiHandler := web.NewHandler(config)
 
 	api.Router.Handle("/", uiHandler)
 

@@ -1,8 +1,8 @@
-package ui
+package web
 
 import (
 	"embed"
-	"hassio-proton-drive-backup/models"
+	"hassio-proton-drive-backup/internal/config"
 	"io/fs"
 	"log"
 	"net"
@@ -15,7 +15,7 @@ import (
 var staticFiles embed.FS
 
 // NewHandler creates a new handler for serving static content from a given directory
-func NewHandler(config *models.Config) http.HandlerFunc {
+func NewHandler(config *config.Config) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Extract the file path after "/assets/"
 		filePath := strings.TrimPrefix(r.URL.Path, "/assets/")

@@ -1,15 +1,55 @@
-package clients
+package hassio
 
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"hassio-proton-drive-backup/models"
 	"io"
 	"net/http"
 	"time"
 )
+
+// HassBackup represents the details of a backup in Home Assistant
+type HassBackup struct {
+	Date       time.Time     `json:"date"`
+	Slug       string        `json:"slug"`
+	Name       string        `json:"name"`
+	Type       string        `json:"type"`
+	Location   string        `json:"location"`
+	Content    BackupContent `json:"content"`
+	Size       float64       `json:"size"`
+	Protected  bool          `json:"protected"`
+	Compressed bool          `json:"compressed"`
+}
+
+// BackupContent represents the content of a backup
+type BackupContent struct {
+	Addons        []string `json:"addons"`
+	Folders       []string `json:"folders"`
+	HomeAssistant bool     `json:"homeassistant"`
+}
+
+// HassBackupResponse represents the response from Home Assistant
+type HassBackupResponse struct {
+	Result string `json:"result"`
+	Data   struct {
+		Backups []*HassBackup `json:"backups"`
+	} `json:"data"`
+}
+
+// HassioResponseData represents the data in the response from Home Assistant
+type HassioResponseData struct {
+	Slug         string `json:"slug"`
+	IngressEntry string `json:"ingress_entry"`
+}
+
+// HassioResponse represents the response from Home Assistant
+type HassioResponse struct {
+	Result  string `json:"result"`
+	Message string `json:"message"`
+	Data    HassioResponseData
+}
 
 // HassioApiClient is a client for the Hassio API
 type HassioApiClient struct {
@@ -26,7 +66,7 @@ func NewHassioApiClient(token string) HassioApiClient {
 }
 
 // GetBackup queries hassio for a specific backup
-func (c *HassioApiClient) GetBackup(slug string) (*models.HassBackup, error) {
+func (c *HassioApiClient) GetBackup(slug string) (*HassBackup, error) {
 	// API endpoint to list all backups
 	url := fmt.Sprintf("http://supervisor/backups/%s/info", slug)
 
@@ -50,8 +90,8 @@ func (c *HassioApiClient) GetBackup(slug string) (*models.HassBackup, error) {
 	// Parse the response
 	// Define a struct to hold the JSON response
 	var backupResponse struct {
-		Result string            `json:"result"`
-		Data   models.HassBackup `json:"data"`
+		Result string     `json:"result"`
+		Data   HassBackup `json:"data"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&backupResponse); err != nil {
@@ -68,7 +108,7 @@ func (c *HassioApiClient) GetBackup(slug string) (*models.HassBackup, error) {
 }
 
 // ListBackups queries hassio for a list of all backups
-func (c *HassioApiClient) ListBackups() ([]*models.HassBackup, error) {
+func (c *HassioApiClient) ListBackups() ([]*HassBackup, error) {
 	// API endpoint to list all backups
 	url := "http://supervisor/backups"
 
@@ -88,7 +128,7 @@ func (c *HassioApiClient) ListBackups() ([]*models.HassBackup, error) {
 	defer resp.Body.Close()
 
 	// Parse the response
-	var backupResponse models.HassBackupResponse
+	var backupResponse HassBackupResponse
 	if err := json.NewDecoder(resp.Body).Decode(&backupResponse); err != nil {
 		fmt.Println("Error decoding response body:", err)
 		return nil, err
@@ -122,7 +162,7 @@ func (c *HassioApiClient) BackupFull(name string) (string, error) {
 		return "", err
 	}
 
-	var response models.HassioResponse
+	var response HassioResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return "", err

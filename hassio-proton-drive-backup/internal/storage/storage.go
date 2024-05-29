@@ -1,8 +1,14 @@
-package models
+package storage
 
 import (
 	"io"
 	"time"
+)
+
+const (
+	S3     = "S3"
+	STORJ  = "Storj"
+	PROTON = "Proton Drive"
 )
 
 // DirectoryItem represents the details of a directory item
@@ -15,6 +21,14 @@ type DirectoryItem struct {
 type FileAttributes struct {
 	Modified time.Time // Last modified time
 	Size     float64   // Size in MB
+}
+
+type Credentials struct {
+	Username        string
+	Password        string
+	AccessGrant     string
+	AccessKeyID     string
+	SecretAccessKey string
 }
 
 // Drive is an interface to represent a generic drive

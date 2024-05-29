@@ -1,20 +1,16 @@
-package backends
+package storage_backends
 
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"hassio-proton-drive-backup/models"
-	"hassio-proton-drive-backup/pkg/services"
+	"hassio-proton-drive-backup/internal/config"
+	"hassio-proton-drive-backup/internal/storage"
 	"io"
 	"os"
 	"strings"
 
 	"storj.io/uplink"
-)
-
-const (
-	STORJ = "Storj"
 )
 
 type storjService struct {
@@ -23,9 +19,9 @@ type storjService struct {
 	access  *uplink.Access
 }
 
-var _ models.StorageService = &storjService{}
+var _ storage.StorageService = &storjService{}
 
-func NewStorjService(cs *services.ConfigService) (*storjService, error) {
+func NewStorjService(cs *config.ConfigService) (*storjService, error) {
 	s := storjService{}
 	ctx := context.Background()
 
@@ -54,7 +50,7 @@ func NewStorjService(cs *services.ConfigService) (*storjService, error) {
 	return &s, nil
 }
 
-func (s *storjService) Login(creds *models.Credentials) error {
+func (s *storjService) Login(creds *storage.Credentials) error {
 	// Parse access grant, which contains necessary credentials and permissions.
 	access, err := uplink.ParseAccess(creds.AccessGrant)
 	if err != nil {
@@ -127,26 +123,26 @@ func (s *storjService) DeleteBackup(name string) error {
 	return nil
 }
 
-func (s *storjService) GetBackupAttributes(name string) (*models.FileAttributes, error) {
+func (s *storjService) GetBackupAttributes(name string) (*storage.FileAttributes, error) {
 	// Open the object.
 	object, err := s.project.StatObject(context.Background(), s.bucket.Name, name)
 	if err != nil {
 		return nil, fmt.Errorf("could not open object: %v", err)
 	}
 
-	return &models.FileAttributes{
+	return &storage.FileAttributes{
 		Size:     float64(object.System.ContentLength) / (1024 * 1024), // convert bytes to MB
 		Modified: object.System.Created,
 	}, nil
 }
 
-func (s *storjService) ListBackups() ([]*models.DirectoryItem, error) {
+func (s *storjService) ListBackups() ([]*storage.DirectoryItem, error) {
 	// List the objects in the bucket.
 	objects := s.project.ListObjects(context.Background(), s.bucket.Name, &uplink.ListObjectsOptions{})
-	var directoryData []*models.DirectoryItem
+	var directoryData []*storage.DirectoryItem
 	for objects.Next() {
 		object := objects.Item()
-		directoryData = append(directoryData, &models.DirectoryItem{
+		directoryData = append(directoryData, &storage.DirectoryItem{
 			Identifier: object.Key,
 			Name:       strings.TrimSuffix(object.Key, ".tar"),
 		})

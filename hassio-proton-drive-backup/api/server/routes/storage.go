@@ -1,4 +1,4 @@
-package api
+package routes
 
 import (
 	"hassio-proton-drive-backup/models"
