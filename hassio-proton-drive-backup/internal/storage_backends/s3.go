@@ -15,18 +15,19 @@ import (
 )
 
 type s3 struct {
-	Client *minio.Client
-	Bucket string
+	client *minio.Client
+	creds  *storage.Credentials
+	bucket string
 }
 
-var _ storage.StorageService = &s3{}
+var _ storage.Service = &s3{}
 
-func NewS3Service(cs *config.ConfigService) (*s3, error) {
+func NewS3Service(cs *config.Service) (*s3, error) {
 	s := s3{}
-	s.Bucket = cs.GetS3BucketName()
+	s.bucket = cs.GetS3Bucket()
 	creds := credentials.NewStaticV4(cs.GetS3AccessKeyID(), cs.GetS3SecretAccessKey(), "")
 
-	slog.Debug("Initializing S3 client", "endpoint", cs.GetS3Endpoint(), "bucket", s.Bucket)
+	slog.Debug("Initializing S3 client", "endpoint", cs.GetS3Endpoint(), "bucket", s.bucket)
 	client, err := minio.New(cs.GetS3Endpoint(), &minio.Options{
 		Creds:  creds,
 		Secure: true,
@@ -35,24 +36,24 @@ func NewS3Service(cs *config.ConfigService) (*s3, error) {
 		return nil, fmt.Errorf("could not create minio client: %v", err)
 	}
 
-	bucketExists, err := client.BucketExists(context.Background(), cs.GetS3BucketName())
+	bucketExists, err := client.BucketExists(context.Background(), s.bucket)
 	if err != nil {
 		return nil, fmt.Errorf("could not check if bucket exists: %v", err)
 	}
 
 	if !bucketExists {
-		err := client.MakeBucket(context.Background(), cs.GetS3BucketName(), minio.MakeBucketOptions{})
+		err := client.MakeBucket(context.Background(), s.bucket, minio.MakeBucketOptions{})
 		if err != nil {
 			return nil, fmt.Errorf("could not create bucket: %v", err)
 		}
 	}
 
-	s.Client = client
+	s.client = client
 
 	return &s, nil
 }
 
-func (s *s3) Login(creds *storage.Credentials) error {
+func (s *s3) Login() error {
 	return nil
 }
 
@@ -64,7 +65,7 @@ func (s *s3) UploadBackup(name string, path string) (string, error) {
 	ctx := context.Background()
 	contentType := "application/octet-stream"
 
-	info, err := s.Client.FPutObject(ctx, s.Bucket, name, path, minio.PutObjectOptions{ContentType: contentType})
+	info, err := s.client.FPutObject(ctx, s.bucket, name, path, minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
 		return "", fmt.Errorf("could not upload object: %v", err)
 	}
@@ -74,7 +75,7 @@ func (s *s3) UploadBackup(name string, path string) (string, error) {
 
 func (s *s3) DownloadBackup(name string) (io.ReadCloser, error) {
 	// Download the object.
-	object, err := s.Client.GetObject(context.Background(), "mybucket", "myobject", minio.GetObjectOptions{})
+	object, err := s.client.GetObject(context.Background(), "mybucket", "myobject", minio.GetObjectOptions{})
 	if err != nil {
 		fmt.Println(err)
 		return nil, fmt.Errorf("could not get object: %v", err)
@@ -94,7 +95,7 @@ func (s *s3) DownloadBackup(name string) (io.ReadCloser, error) {
 
 func (s *s3) DeleteBackup(name string) error {
 	// Delete the object.
-	err := s.Client.RemoveObject(context.Background(), s.Bucket, name, minio.RemoveObjectOptions{})
+	err := s.client.RemoveObject(context.Background(), s.bucket, name, minio.RemoveObjectOptions{})
 	if err != nil {
 		return fmt.Errorf("could not delete object: %v", err)
 	}
@@ -104,7 +105,7 @@ func (s *s3) DeleteBackup(name string) error {
 
 func (s *s3) GetBackupAttributes(name string) (*storage.FileAttributes, error) {
 	// Open the object.
-	object, err := s.Client.StatObject(context.Background(), s.Bucket, name, minio.StatObjectOptions{})
+	object, err := s.client.StatObject(context.Background(), s.bucket, name, minio.StatObjectOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("could not open object: %v", err)
 	}
@@ -123,7 +124,7 @@ func (s *s3) ListBackups() ([]*storage.DirectoryItem, error) {
 	// List the objects in the bucket.
 	var directoryData []*storage.DirectoryItem
 
-	objectCh := s.Client.ListObjects(ctx, s.Bucket, minio.ListObjectsOptions{})
+	objectCh := s.client.ListObjects(ctx, s.bucket, minio.ListObjectsOptions{})
 	for object := range objectCh {
 		if object.Err != nil {
 			return nil, fmt.Errorf("could not list objects: %v", object.Err)
@@ -139,6 +140,6 @@ func (s *s3) ListBackups() ([]*storage.DirectoryItem, error) {
 }
 
 func (s *s3) FileExists(name string) bool {
-	_, err := s.Client.StatObject(context.Background(), s.Bucket, name, minio.StatObjectOptions{})
+	_, err := s.client.StatObject(context.Background(), s.bucket, name, minio.StatObjectOptions{})
 	return err == nil
 }

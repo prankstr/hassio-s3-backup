@@ -33,7 +33,7 @@
           </div>
         </v-col>
       </v-row>
-      <v-row class="pt-0" v-if="cs.config.storageBackend === 'storj'">
+      <v-row class="pt-0" v-if="cs.config.storageBackend === 'Storj'">
         <v-col cols="5" class="pr-0 pt-0">
           <div class="text-white text-subtitle-1">Estimated Cost:</div>
         </v-col>
@@ -43,7 +43,7 @@
           </div>
         </v-col>
       </v-row>
-      <v-row class="pt-0" v-if="cs.config.storageBackend === 'proton'">
+      <v-row class="pt-0" v-if="cs.config.storageBackend === 'Proton Drive'">
         <v-col cols="5" class="pr-0 pt-0">
           <div class="text-white text-subtitle-1">Available Space:</div>
         </v-col>
@@ -51,7 +51,7 @@
           <div class="text-white text-subtitle-1">{{ availableGb }} GB</div>
         </v-col>
       </v-row>
-      <v-row class="pt-0" v-if="cs.config.storageBackend === 'proton'">
+      <v-row class="pt-0" v-if="cs.config.storageBackend === 'Proton Drive'">
         <v-col cols="4" class="pr-0 pt-0">
           <div class="text-white text-subtitle-1">Used Space:</div>
         </v-col>

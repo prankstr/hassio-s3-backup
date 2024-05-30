@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-// HassBackup represents the details of a backup in Home Assistant
-type HassBackup struct {
+// Backup represents the details of a backup in Home Assistant
+type Backup struct {
 	Date       time.Time     `json:"date"`
 	Slug       string        `json:"slug"`
 	Name       string        `json:"name"`
@@ -30,43 +30,43 @@ type BackupContent struct {
 	HomeAssistant bool     `json:"homeassistant"`
 }
 
-// HassBackupResponse represents the response from Home Assistant
-type HassBackupResponse struct {
+// BackupResponse represents the response from Home Assistant
+type BackupResponse struct {
 	Result string `json:"result"`
 	Data   struct {
-		Backups []*HassBackup `json:"backups"`
+		Backups []*Backup `json:"backups"`
 	} `json:"data"`
 }
 
-// HassioResponseData represents the data in the response from Home Assistant
-type HassioResponseData struct {
+// ResponseData represents the data in the response from Home Assistant
+type ResponseData struct {
 	Slug         string `json:"slug"`
 	IngressEntry string `json:"ingress_entry"`
 }
 
-// HassioResponse represents the response from Home Assistant
-type HassioResponse struct {
+// Response represents the response from Home Assistant
+type Response struct {
 	Result  string `json:"result"`
 	Message string `json:"message"`
-	Data    HassioResponseData
+	Data    ResponseData
 }
 
-// HassioApiClient is a client for the Hassio API
-type HassioApiClient struct {
+// Client is a client for the Hassio API
+type Client struct {
 	Token string
 	URL   string
 }
 
 // NewHassioClient initializes and returns a new HassioClient
-func NewHassioApiClient(token string) HassioApiClient {
-	return HassioApiClient{
+func NewClient(token string) *Client {
+	return &Client{
 		Token: token,
 		URL:   "http://supervisor",
 	}
 }
 
 // GetBackup queries hassio for a specific backup
-func (c *HassioApiClient) GetBackup(slug string) (*HassBackup, error) {
+func (c *Client) GetBackup(slug string) (*Backup, error) {
 	// API endpoint to list all backups
 	url := fmt.Sprintf("http://supervisor/backups/%s/info", slug)
 
@@ -90,8 +90,8 @@ func (c *HassioApiClient) GetBackup(slug string) (*HassBackup, error) {
 	// Parse the response
 	// Define a struct to hold the JSON response
 	var backupResponse struct {
-		Result string     `json:"result"`
-		Data   HassBackup `json:"data"`
+		Result string `json:"result"`
+		Data   Backup `json:"data"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&backupResponse); err != nil {
@@ -108,7 +108,7 @@ func (c *HassioApiClient) GetBackup(slug string) (*HassBackup, error) {
 }
 
 // ListBackups queries hassio for a list of all backups
-func (c *HassioApiClient) ListBackups() ([]*HassBackup, error) {
+func (c *Client) ListBackups() ([]*Backup, error) {
 	// API endpoint to list all backups
 	url := "http://supervisor/backups"
 
@@ -128,7 +128,7 @@ func (c *HassioApiClient) ListBackups() ([]*HassBackup, error) {
 	defer resp.Body.Close()
 
 	// Parse the response
-	var backupResponse HassBackupResponse
+	var backupResponse BackupResponse
 	if err := json.NewDecoder(resp.Body).Decode(&backupResponse); err != nil {
 		fmt.Println("Error decoding response body:", err)
 		return nil, err
@@ -138,7 +138,7 @@ func (c *HassioApiClient) ListBackups() ([]*HassBackup, error) {
 }
 
 // BackupFull requests a full backup from Home Assistant
-func (c *HassioApiClient) BackupFull(name string) (string, error) {
+func (c *Client) BackupFull(name string) (string, error) {
 	jsonBody := []byte(fmt.Sprintf(`{"name": "%s"}`, name))
 	bodyReader := bytes.NewReader(jsonBody)
 
@@ -162,7 +162,7 @@ func (c *HassioApiClient) BackupFull(name string) (string, error) {
 		return "", err
 	}
 
-	var response HassioResponse
+	var response Response
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return "", err
@@ -176,7 +176,7 @@ func (c *HassioApiClient) BackupFull(name string) (string, error) {
 }
 
 // DeleteBackup requests a backup to be deleted from Home Assistant
-func (c *HassioApiClient) DeleteBackup(slug string) error {
+func (c *Client) DeleteBackup(slug string) error {
 	url := fmt.Sprintf("http://supervisor/backups/%s", slug)
 
 	req, err := http.NewRequest("DELETE", url, nil)
@@ -196,7 +196,7 @@ func (c *HassioApiClient) DeleteBackup(slug string) error {
 }
 
 // RestoreBackup requests a backup to be restored in Home Assistant
-func (c *HassioApiClient) RestoreBackup(slug string) error {
+func (c *Client) RestoreBackup(slug string) error {
 	url := fmt.Sprintf("http://supervisor/backups/%s/restore/full", slug)
 
 	req, err := http.NewRequest("POST", url, nil)

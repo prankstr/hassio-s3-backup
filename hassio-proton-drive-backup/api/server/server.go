@@ -1,77 +1,33 @@
 package server
 
 import (
-	"fmt"
-	"hassio-proton-drive-backup/models"
-	"hassio-proton-drive-backup/pkg/backends"
-	"hassio-proton-drive-backup/pkg/clients"
-	"hassio-proton-drive-backup/pkg/services"
-	"hassio-proton-drive-backup/utils/httpdebug"
+	apiBackup "hassio-proton-drive-backup/api/server/router/backup"
+	apiConfig "hassio-proton-drive-backup/api/server/router/config"
+	apiStorage "hassio-proton-drive-backup/api/server/router/storage"
+	"hassio-proton-drive-backup/internal/config"
+	"hassio-proton-drive-backup/internal/storage"
 	"net/http"
 )
 
-// Proxy struct holds dependencies for the Proxy
-type Api struct {
+// Api struct holds dependencies for the API
+type Server struct {
 	Router *http.ServeMux
 }
 
-// NewAPI initializes and returns a new API
-func NewAPI(configService *services.ConfigService) (*Api, error) {
+// NewServer initializes and returns a new API
+func NewServer(configService *config.Service, storageService storage.Service) (*Server, error) {
 	router := http.NewServeMux()
 
-	config := configService.GetConfig()
-	if config.Debug {
-		router.HandleFunc("/", httpdebug.Handler)
-	}
+	// Initialize and register routes for each module
+	backupRouter := apiBackup.NewBackupRouter(storageService, configService)
+	configRouter := apiConfig.NewConfigRouter(configService)
+	storageRouter := apiStorage.NewStorageRouter(storageService)
 
-	hassioApiClient := clients.NewHassioApiClient(config.SupervisorToken)
+	backupRouter.RegisterRoutes(router)
+	configRouter.RegisterRoutes(router)
+	storageRouter.RegisterRoutes(router)
 
-	var err error
-	var storageService models.StorageService
-	switch config.StorageBackend {
-	case "Storj":
-		storageService, err = backends.NewStorjService(configService)
-		if err != nil {
-			return nil, err
-		}
-	case "Proton Drive":
-		storageService, err = backends.NewProtonDriveService(configService)
-		if err != nil {
-			return nil, err
-		}
-	case "S3":
-		storageService, err = backends.NewS3Service(configService)
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, fmt.Errorf("unknown storage backend %s - check configuration", config.StorageBackend)
-	}
-
-	storageHandler := NewStorageHandler(storageService)
-
-	backupService := services.NewBackupService(hassioApiClient, storageService, configService)
-	backupHandler := NewBackupHandler(backupService)
-
-	configHandler := NewConfigHandler(configService)
-
-	// Define routes
-	router.HandleFunc("GET /api/backups", backupHandler.HandleListBackups)
-	router.HandleFunc("GET /api/backups/{id}/download", backupHandler.HandleDownloadBackupRequest)
-	router.HandleFunc("GET /api/backups/timer", backupHandler.HandleTimerRequest)
-	router.HandleFunc("GET /api/backups/reset", backupHandler.HandleResetBackupsRequest)
-	router.HandleFunc("POST /api/backups/new/full", backupHandler.HandleBackupRequest)
-	router.HandleFunc("POST /api/backups/{id}/pin", backupHandler.HandlePinBackupRequest)
-	router.HandleFunc("POST /api/backups/{id}/unpin", backupHandler.HandleUnpinBackupRequest)
-	router.HandleFunc("POST /api/backups/{id}/restore", backupHandler.HandleRestoreBackupRequest)
-	router.HandleFunc("DELETE /api/backups/{id}", backupHandler.HandleDeleteBackupRequest)
-
-	router.HandleFunc("GET /api/config", configHandler.HandleGetConfig)
-	router.HandleFunc("POST /api/config/update", configHandler.HandleUpdateConfig)
-
-	router.HandleFunc("GET /api/storage/about", storageHandler.HandleAbout)
-
-	return &Api{
+	return &Server{
 		Router: router,
 	}, nil
 }

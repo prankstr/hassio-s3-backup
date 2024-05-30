@@ -15,10 +15,11 @@ import (
 )
 
 // Config is a struct to represent the configuration of the addon
-type Config struct {
+type Options struct {
 	Timezone         *time.Location
-	S3               S3Config
-	Storj            StorjConfig
+	S3               S3Options
+	Storj            StorjOptions
+	ProtonDrive      ProtonDriveOptions
 	DataDirectory    string
 	StorageBackend   string `json:"storageBackend"`
 	BackupDirectory  string
@@ -33,23 +34,28 @@ type Config struct {
 	Debug            bool
 }
 
-type StorjConfig struct {
+type StorjOptions struct {
 	AccessGrant string
-	BucketName  string
+	Bucket      string
 }
 
-type S3Config struct {
+type S3Options struct {
 	AccessKeyID     string
 	SecretAccessKey string
-	BucketName      string
+	Bucket          string
 	Endpoint        string
 }
 
-// ConfigService is a struct to handle the application configuration
-type ConfigService struct {
-	Config           *Config
+type ProtonDriveOptions struct {
+	Username string
+	Password string
+}
+
+// Service is a struct to handle the application configuration
+type Service struct {
+	Config           *Options
 	Creds            *storage.Credentials
-	ConfigChangeChan chan *Config
+	ConfigChangeChan chan *Options
 }
 
 // logLevels is a map of string to slog.Level
@@ -61,13 +67,13 @@ var logLevels map[string]slog.Level = map[string]slog.Level{
 }
 
 // New returns a new Config struct
-func NewConfigService() *ConfigService {
+func NewConfigService() *Service {
 	// Read configuration from file
 	config, err := readConfigFromFile("/data/config.json")
 	if err != nil {
 		// Handle error. This could be logging the error and continuing with defaults
 		slog.Error("Error reading config file: ", err)
-		config = &Config{} // Initialize with an empty config
+		config = &Options{} // Initialize with an empty config
 	}
 	creds := &storage.Credentials{} // Initialize with an empty config
 
@@ -86,18 +92,21 @@ func NewConfigService() *ConfigService {
 	if config.StorageBackend == storage.S3 {
 		config.S3.AccessKeyID = getEnvOrDefault("S3_ACCESS_KEY_ID", config.S3.AccessKeyID, "")
 		config.S3.SecretAccessKey = getEnvOrDefault("S3_SECRET_ACCESS_KEY", config.S3.SecretAccessKey, "")
-		config.S3.BucketName = getEnvOrDefault("S3_BUCKET_NAME", config.S3.BucketName, "")
+		config.S3.Bucket = getEnvOrDefault("S3_BUCKET_NAME", config.S3.Bucket, "")
 		config.S3.Endpoint = getEnvOrDefault("S3_ENDPOINT", config.S3.Endpoint, "")
 	}
 
 	// Storj Config
 	if config.StorageBackend == storage.STORJ {
 		config.Storj.AccessGrant = getEnvOrDefault("STORJ_ACCESS_GRANT", config.Storj.AccessGrant, "")
-		config.Storj.BucketName = getEnvOrDefault("STORJ_BUCKET_NAME", config.Storj.BucketName, "")
+		config.Storj.Bucket = getEnvOrDefault("STORJ_BUCKET_NAME", config.Storj.Bucket, "")
 	}
-	//
-	creds.Username = getEnvOrDefault("PROTON_DRIVE_USER", "", "")
-	creds.Password = getEnvOrDefault("PROTON_DRIVE_PASSWORD", "", "")
+
+	// ProtonDrive Config
+	if config.StorageBackend == storage.PROTON {
+		config.ProtonDrive.Username = getEnvOrDefault("PROTON_DRIVE_USERNAME", "", "")
+		config.ProtonDrive.Password = getEnvOrDefault("PROTON_DRIVE_PASSWORD", "", "")
+	}
 
 	defaultTimezone := "UTC"
 	timezoneStr := getEnvOrDefault("TZ", config.Timezone.String(), defaultTimezone)
@@ -130,95 +139,99 @@ func NewConfigService() *ConfigService {
 
 	writeConfigToFile(config)
 
-	return &ConfigService{
+	return &Service{
 		Config:           config,
 		Creds:            creds,
-		ConfigChangeChan: make(chan *Config),
+		ConfigChangeChan: make(chan *Options),
 	}
 }
 
 // NotifyConfigChange sends a new config to the configChangeChan
-func (cs *ConfigService) NotifyConfigChange(newConfig *Config) {
+func (s *Service) NotifyConfigChange(newConfig *Options) {
 	slog.Info("Config updated, notifying")
-	cs.ConfigChangeChan <- newConfig
+	s.ConfigChangeChan <- newConfig
 }
 
 // GetConfig returns the current application configuration.
-func (cs *ConfigService) GetConfig() *Config {
-	return cs.Config
+func (s *Service) GetConfig() *Options {
+	return s.Config
 }
 
 // GetBackupDirectory returns the directory where backups are stored
-func (cs *ConfigService) GetBackupInterval() time.Duration {
-	return (time.Duration(cs.Config.BackupInterval) * time.Hour) * 24
+func (s *Service) GetBackupInterval() time.Duration {
+	return (time.Duration(s.Config.BackupInterval) * time.Hour) * 24
 }
 
-func (cs *ConfigService) GetS3BucketName() string {
-	return cs.Config.S3.BucketName
+func (s *Service) GetS3Bucket() string {
+	return s.Config.S3.Bucket
 }
 
-func (cs *ConfigService) GetS3Endpoint() string {
-	return cs.Config.S3.Endpoint
+func (s *Service) GetS3Endpoint() string {
+	return s.Config.S3.Endpoint
 }
 
-func (cs *ConfigService) GetS3AccessKeyID() string {
-	return cs.Config.S3.AccessKeyID
+func (s *Service) GetS3AccessKeyID() string {
+	return s.Config.S3.AccessKeyID
 }
 
-func (cs *ConfigService) GetS3SecretAccessKey() string {
-	return cs.Config.S3.SecretAccessKey
+func (s *Service) GetS3SecretAccessKey() string {
+	return s.Config.S3.SecretAccessKey
 }
 
-func (cs *ConfigService) GetStorjBucketName() string {
-	return cs.Config.Storj.BucketName
+func (s *Service) GetStorjBucket() string {
+	return s.Config.Storj.Bucket
 }
 
-func (cs *ConfigService) GetCredentials() *storage.Credentials {
-	return cs.Creds
+func (s *Service) GetStorjAccessGrant() string {
+	return s.Config.Storj.AccessGrant
+}
+
+func (s *Service) GetCredentials() *storage.Credentials {
+	return s.Creds
 }
 
 // GetBackupNameFormat returns the format to use for the backup name
-func (cs *ConfigService) GetBackupNameFormat() string {
-	return cs.Config.BackupNameFormat
+func (s *Service) GetBackupNameFormat() string {
+	return s.Config.BackupNameFormat
 }
 
 // GetBackupsToKeep returns the number of backups to keep
-func (cs *ConfigService) GetBackupsInHA() int {
-	return cs.Config.BackupsInHA
+func (s *Service) GetBackupsInHA() int {
+	return s.Config.BackupsInHA
 }
 
 // GetBackupsOnDrive returns the number of backups to keep on the drive
-func (cs *ConfigService) GetBackupsInStorage() int {
-	return cs.Config.BackupsInStorage
+func (s *Service) GetBackupsInStorage() int {
+	return s.Config.BackupsInStorage
 }
 
 // GetProtonDriveUser returns the ProtonDrive username
-func (cs *ConfigService) GetProtonDriveUser() string {
-	return cs.Creds.Username
+func (s *Service) GetProtonDriveUsername() string {
+	return s.Config.ProtonDrive.Username
 }
 
 // GetProtonDrivePassword returns the ProtonDrive password
-func (cs *ConfigService) GetProtonDrivePassword() string {
-	return cs.Creds.Password
+func (s *Service) GetProtonDrivePassword() string {
+	return s.Config.ProtonDrive.Password
 }
 
 // SetBackupsToKeep sets the number of backups to keep
-func (cs *ConfigService) SetBackupInterval(interval int) {
-	cs.Config.BackupInterval = interval
+func (s *Service) SetBackupInterval(interval int) {
+	s.Config.BackupInterval = interval
 
-	writeConfigToFile(cs.Config)
+	writeConfigToFile(s.Config)
 }
 
 // SetBackupsToKeep sets the number of backups to keep
-func (cs *ConfigService) UpdateConfigFromAPI(configRequest Config) error {
-	cs.Config.BackupNameFormat = configRequest.BackupNameFormat
-	cs.Config.BackupInterval = configRequest.BackupInterval
-	cs.Config.BackupsInHA = configRequest.BackupsInHA
-	cs.Config.BackupsInStorage = configRequest.BackupsInStorage
+func (s *Service) UpdateConfigFromAPI(configRequest Options) error {
+	s.Config.BackupNameFormat = configRequest.BackupNameFormat
+	s.Config.BackupInterval = configRequest.BackupInterval
+	s.Config.BackupsInHA = configRequest.BackupsInHA
+	s.Config.BackupsInStorage = configRequest.BackupsInStorage
 
-	cs.NotifyConfigChange(cs.Config)
+	s.NotifyConfigChange(s.Config)
 
-	writeConfigToFile(cs.Config)
+	writeConfigToFile(s.Config)
 	return nil
 }
 
@@ -261,7 +274,7 @@ func stringFromSlogLevel(level slog.Level) string {
 }
 
 // writeConfigToFile writes a json representation of the config to a file
-func writeConfigToFile(config *Config) error {
+func writeConfigToFile(config *Options) error {
 	// Marshal backups array to JSON
 	data, err := json.Marshal(config)
 	if err != nil {
@@ -278,14 +291,14 @@ func writeConfigToFile(config *Config) error {
 }
 
 // readConfigFromFile reads a json config and returns it as a Config struct
-func readConfigFromFile(filePath string) (*Config, error) {
+func readConfigFromFile(filePath string) (*Options, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	var config Config
+	var config Options
 	if err := json.NewDecoder(file).Decode(&config); err != nil {
 		return nil, err
 	}
@@ -320,7 +333,7 @@ func getIngressEntry(token string) string {
 	}
 
 	// Unmarshal JSON into the struct
-	var response hassio.HassioResponse
+	var response hassio.Response
 	if err := json.Unmarshal(body, &response); err != nil {
 		fmt.Println("Error decoding JSON:", err)
 	}

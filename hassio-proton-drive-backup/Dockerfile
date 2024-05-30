@@ -5,9 +5,9 @@ WORKDIR /app
 COPY . /app
 
 RUN apk --no-cache add nodejs yarn --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community && \
-    cd ui && \
-    yarn && \
-    yarn build
+  cd web && \
+  yarn && \
+  yarn build
 
 RUN GO111MODULE=on CGO_ENABLED=0 go build -o hassio_proton_drive_backup
 

@@ -15,7 +15,7 @@ import (
 var staticFiles embed.FS
 
 // NewHandler creates a new handler for serving static content from a given directory
-func NewHandler(config *config.Config) http.HandlerFunc {
+func NewHandler(config *config.Options) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Extract the file path after "/assets/"
 		filePath := strings.TrimPrefix(r.URL.Path, "/assets/")

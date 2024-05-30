@@ -13,35 +13,41 @@ import (
 	"storj.io/uplink"
 )
 
-type storjService struct {
+type storj struct {
 	project *uplink.Project
 	bucket  *uplink.Bucket
 	access  *uplink.Access
+	creds   *storage.Credentials
 }
 
-var _ storage.StorageService = &storjService{}
+var _ storage.Service = &storj{}
 
-func NewStorjService(cs *config.ConfigService) (*storjService, error) {
-	s := storjService{}
+func NewStorjService(cs *config.Service) (*storj, error) {
+	s := storj{}
 	ctx := context.Background()
 
+	// Get the credentials from the config service.
+	s.creds = &storage.Credentials{
+		AccessGrant: cs.GetStorjAccessGrant(),
+	}
+
 	// Parse access grant, which contains necessary credentials and permissions.
-	err := s.Login(cs.GetCredentials())
+	err := s.Login()
 	if err != nil {
-		return &storjService{}, err
+		return &storj{}, err
 	}
 
 	// Open up the Project we will be working with.
 	project, err := uplink.OpenProject(ctx, s.access)
 	if err != nil {
-		return &storjService{}, fmt.Errorf("could not open project: %v", err)
+		return &storj{}, fmt.Errorf("could not open project: %v", err)
 	}
 	defer project.Close()
 
 	// Ensure the desired Bucket within the Project is created.
-	bucket, err := project.EnsureBucket(ctx, cs.GetStorjBucketName())
+	bucket, err := project.EnsureBucket(ctx, cs.GetStorjBucket())
 	if err != nil {
-		return &storjService{}, fmt.Errorf("could not ensure bucket: %v", err)
+		return &storj{}, fmt.Errorf("could not ensure bucket: %v", err)
 	}
 
 	s.project = project
@@ -50,9 +56,9 @@ func NewStorjService(cs *config.ConfigService) (*storjService, error) {
 	return &s, nil
 }
 
-func (s *storjService) Login(creds *storage.Credentials) error {
+func (s *storj) Login() error {
 	// Parse access grant, which contains necessary credentials and permissions.
-	access, err := uplink.ParseAccess(creds.AccessGrant)
+	access, err := uplink.ParseAccess(s.creds.AccessGrant)
 	if err != nil {
 		return fmt.Errorf("could not get access grant: %v", err)
 	}
@@ -62,11 +68,11 @@ func (s *storjService) Login(creds *storage.Credentials) error {
 	return nil
 }
 
-func (s *storjService) About() ([]byte, error) {
+func (s *storj) About() ([]byte, error) {
 	return []byte("Storj"), nil
 }
 
-func (s *storjService) UploadBackup(name string, path string) (string, error) {
+func (s *storj) UploadBackup(name string, path string) (string, error) {
 	// Upload the file.
 	upload, err := s.project.UploadObject(context.Background(), s.bucket.Name, name, &uplink.UploadOptions{})
 	if err != nil {
@@ -95,7 +101,7 @@ func (s *storjService) UploadBackup(name string, path string) (string, error) {
 	return name, nil
 }
 
-func (s *storjService) DownloadBackup(name string) (io.ReadCloser, error) {
+func (s *storj) DownloadBackup(name string) (io.ReadCloser, error) {
 	// Open the object.
 	download, err := s.project.DownloadObject(context.Background(), s.bucket.Name, name, &uplink.DownloadOptions{})
 	if err != nil {
@@ -114,7 +120,7 @@ func (s *storjService) DownloadBackup(name string) (io.ReadCloser, error) {
 	return readCloser, nil
 }
 
-func (s *storjService) DeleteBackup(name string) error {
+func (s *storj) DeleteBackup(name string) error {
 	// Delete the object.
 	_, err := s.project.DeleteObject(context.Background(), s.bucket.Name, name)
 	if err != nil {
@@ -123,7 +129,7 @@ func (s *storjService) DeleteBackup(name string) error {
 	return nil
 }
 
-func (s *storjService) GetBackupAttributes(name string) (*storage.FileAttributes, error) {
+func (s *storj) GetBackupAttributes(name string) (*storage.FileAttributes, error) {
 	// Open the object.
 	object, err := s.project.StatObject(context.Background(), s.bucket.Name, name)
 	if err != nil {
@@ -136,7 +142,7 @@ func (s *storjService) GetBackupAttributes(name string) (*storage.FileAttributes
 	}, nil
 }
 
-func (s *storjService) ListBackups() ([]*storage.DirectoryItem, error) {
+func (s *storj) ListBackups() ([]*storage.DirectoryItem, error) {
 	// List the objects in the bucket.
 	objects := s.project.ListObjects(context.Background(), s.bucket.Name, &uplink.ListObjectsOptions{})
 	var directoryData []*storage.DirectoryItem
@@ -150,7 +156,7 @@ func (s *storjService) ListBackups() ([]*storage.DirectoryItem, error) {
 	return directoryData, nil
 }
 
-func (s *storjService) FileExists(name string) bool {
+func (s *storj) FileExists(name string) bool {
 	_, err := s.project.StatObject(context.Background(), s.bucket.Name, name)
 	return err == nil
 }

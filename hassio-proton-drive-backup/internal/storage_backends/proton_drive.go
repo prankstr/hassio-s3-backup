@@ -23,19 +23,25 @@ type protonDriveCredentials struct {
 	SaltedKeyPass string
 }
 
-type protonDriveService struct {
+type protonDrive struct {
 	drive       *protonDriveAPI.ProtonDrive
 	backupLink  *proton.Link
 	credentials *protonDriveCredentials
+	creds       *storage.Credentials
 }
 
-var _ storage.StorageService = &protonDriveService{}
+var _ storage.Service = &protonDrive{}
 
 // NewProtonDriveService initializes and returns a new HassioHandler
-func NewProtonDriveService(cs *config.ConfigService) (*protonDriveService, error) {
-	s := protonDriveService{}
+func NewProtonDriveService(cs *config.Service) (*protonDrive, error) {
+	s := protonDrive{}
 
-	err := s.Login(cs.GetCredentials())
+	s.creds = &storage.Credentials{
+		Username: cs.GetProtonDriveUsername(),
+		Password: cs.GetProtonDrivePassword(),
+	}
+
+	err := s.Login()
 	if err != nil {
 		return &s, err
 	}
@@ -43,19 +49,19 @@ func NewProtonDriveService(cs *config.ConfigService) (*protonDriveService, error
 	config := cs.GetConfig()
 	backupLink, err := s.drive.SearchByNameInActiveFolder(context.Background(), s.drive.RootLink, config.BackupDirectory, false, true, proton.LinkStateActive)
 	if err != nil {
-		return &protonDriveService{}, err
+		return &protonDrive{}, err
 	}
 
 	// Create backup dir if it doesn't exist
 	if backupLink == nil {
 		id, err := s.drive.CreateNewFolder(context.Background(), s.drive.RootLink, config.BackupDirectory)
 		if err != nil {
-			return &protonDriveService{}, err
+			return &protonDrive{}, err
 		}
 
 		backupLink, err = s.drive.GetLink(context.Background(), id)
 		if err != nil {
-			return &protonDriveService{}, err
+			return &protonDrive{}, err
 		}
 	}
 
@@ -65,13 +71,13 @@ func NewProtonDriveService(cs *config.ConfigService) (*protonDriveService, error
 }
 
 // NewProtonDrive initializes and returns a new protonDrive
-func (s *protonDriveService) Login(creds *storage.Credentials) error {
+func (s *protonDrive) Login() error {
 	// Initialize ProtonDriveAPI configuration
 	protonConf := protonDriveAPI.NewDefaultConfig()
 	protonConf.ReplaceExistingDraft = true
 	protonConf.AppVersion = "macos-drive@1.0.0-alpha.1"
-	protonConf.FirstLoginCredential.Username = creds.Username
-	protonConf.FirstLoginCredential.Password = creds.Password
+	protonConf.FirstLoginCredential.Username = s.creds.Username
+	protonConf.FirstLoginCredential.Password = s.creds.Password
 
 	// Create a context for ProtonDriveAPI
 	ctx := context.Background()
@@ -119,7 +125,7 @@ func (s *protonDriveService) Login(creds *storage.Credentials) error {
 }
 
 // FileExists returns true if a file exists
-func (s *protonDriveService) FileExists(linkID string) bool {
+func (s *protonDrive) FileExists(linkID string) bool {
 	ctx := context.Background()
 
 	link, err := s.drive.GetLink(ctx, linkID)
@@ -142,7 +148,7 @@ func (s *protonDriveService) FileExists(linkID string) bool {
 }
 
 // About returns information about the drive
-func (s *protonDriveService) About() ([]byte, error) {
+func (s *protonDrive) About() ([]byte, error) {
 	// Access h.ProtonDriveService for /ProtonDrive logic
 	res, _ := s.drive.About(context.Background())
 
@@ -156,7 +162,7 @@ func (s *protonDriveService) About() ([]byte, error) {
 }
 
 // UploadFileByPath uploads a file to the drive
-func (s *protonDriveService) UploadBackup(name string, path string) (string, error) {
+func (s *protonDrive) UploadBackup(name string, path string) (string, error) {
 	// Create a new file
 	linkID, _, err := s.drive.UploadFileByPath(context.Background(), s.backupLink, name, path, 0)
 	if err != nil {
@@ -167,7 +173,7 @@ func (s *protonDriveService) UploadBackup(name string, path string) (string, err
 }
 
 // DeleteFileByID deletes a file from the drive
-func (s *protonDriveService) DeleteBackup(id string) error {
+func (s *protonDrive) DeleteBackup(id string) error {
 	// Delete the backup
 	err := s.drive.MoveFileToTrashByID(context.Background(), id)
 	if err != nil {
@@ -178,7 +184,7 @@ func (s *protonDriveService) DeleteBackup(id string) error {
 }
 
 // DownloadFileByID downloads a file from the drive
-func (s *protonDriveService) DownloadBackup(id string) (io.ReadCloser, error) {
+func (s *protonDrive) DownloadBackup(id string) (io.ReadCloser, error) {
 	reader, _, _, err := s.drive.DownloadFileByID(context.Background(), id, 0)
 	if err != nil {
 		return nil, err
@@ -188,7 +194,7 @@ func (s *protonDriveService) DownloadBackup(id string) (io.ReadCloser, error) {
 }
 
 // GetBackupAttributesByID returns the attributes of a file
-func (s *protonDriveService) GetBackupAttributes(id string) (*storage.FileAttributes, error) {
+func (s *protonDrive) GetBackupAttributes(id string) (*storage.FileAttributes, error) {
 	protonAttributes, err := s.drive.GetActiveRevisionAttrsByID(context.Background(), id)
 	if err != nil {
 		return nil, err
@@ -201,7 +207,7 @@ func (s *protonDriveService) GetBackupAttributes(id string) (*storage.FileAttrib
 }
 
 // ListBackupDirectory returns a list items in the backup directory
-func (s *protonDriveService) ListBackups() ([]*storage.DirectoryItem, error) {
+func (s *protonDrive) ListBackups() ([]*storage.DirectoryItem, error) {
 	items, err := s.drive.ListDirectory(context.Background(), s.backupLink.LinkID)
 	if err != nil {
 		return nil, err

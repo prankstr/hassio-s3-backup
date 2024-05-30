@@ -32,8 +32,8 @@ type Credentials struct {
 }
 
 // Drive is an interface to represent a generic drive
-type StorageService interface {
-	Login(creds *Credentials) error                        // Login to the drive
+type Service interface {
+	Login() error                                          // Login to the drive
 	About() ([]byte, error)                                // Get information about the drive
 	UploadBackup(name string, path string) (string, error) // Upload a file to the drive
 	DeleteBackup(id string) error                          // Delete a file from the drive
