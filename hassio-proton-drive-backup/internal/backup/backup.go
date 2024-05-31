@@ -76,7 +76,7 @@ type Service struct {
 	ongoingBackups         map[string]struct{}
 	stopSyncChan           chan struct{}
 	backupTimer            *time.Timer
-	hassio                 *hassio.Client
+	hassio                 *hassio.Service
 	storageProvider        string
 	backups                []*Backup
 	backupsInStorage       int
@@ -87,13 +87,13 @@ type Service struct {
 	mutex                  sync.Mutex
 }
 
-func NewBackupService(storage storage.Service, configService *config.Service) *Service {
+func NewService(storage storage.Service, configService *config.Service) *Service {
 	config := configService.Config
 
-	hassioClient := hassio.NewClient(config.SupervisorToken)
+	hassioService := hassio.NewService(config.SupervisorToken)
 
 	service := &Service{
-		hassio:          hassioClient,
+		hassio:          hassioService,
 		storageService:  storage,
 		storageProvider: "Proton Drive",
 		configService:   configService,

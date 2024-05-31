@@ -9,12 +9,12 @@ RUN apk --no-cache add nodejs yarn --repository=http://dl-cdn.alpinelinux.org/al
   yarn && \
   yarn build
 
-RUN GO111MODULE=on CGO_ENABLED=0 go build -o hassio_proton_drive_backup
+RUN GO111MODULE=on CGO_ENABLED=0 go build -o hassio_s3_backup cmd/hassio_s3_backup/main.go 
 
 ##
 FROM $BUILD_FROM
 
-COPY --from=build /app/hassio_proton_drive_backup .
+COPY --from=build /app/hassio_s3_backup/ .
 COPY run.sh /
 RUN chmod a+x /run.sh
 

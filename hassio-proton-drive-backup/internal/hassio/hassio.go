@@ -51,22 +51,22 @@ type Response struct {
 	Data    ResponseData
 }
 
-// Client is a client for the Hassio API
-type Client struct {
-	Token string
-	URL   string
+// Service is a client for the Hassio API
+type Service struct {
+	token string
+	url   string
 }
 
 // NewHassioClient initializes and returns a new HassioClient
-func NewClient(token string) *Client {
-	return &Client{
-		Token: token,
-		URL:   "http://supervisor",
+func NewService(token string) *Service {
+	return &Service{
+		token: token,
+		url:   "http://supervisor",
 	}
 }
 
 // GetBackup queries hassio for a specific backup
-func (c *Client) GetBackup(slug string) (*Backup, error) {
+func (c *Service) GetBackup(slug string) (*Backup, error) {
 	// API endpoint to list all backups
 	url := fmt.Sprintf("http://supervisor/backups/%s/info", slug)
 
@@ -75,7 +75,7 @@ func (c *Client) GetBackup(slug string) (*Backup, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.Token)
+	req.Header.Set("Authorization", "Bearer "+c.token)
 
 	// Perform the request
 	client := &http.Client{
@@ -108,7 +108,7 @@ func (c *Client) GetBackup(slug string) (*Backup, error) {
 }
 
 // ListBackups queries hassio for a list of all backups
-func (c *Client) ListBackups() ([]*Backup, error) {
+func (c *Service) ListBackups() ([]*Backup, error) {
 	// API endpoint to list all backups
 	url := "http://supervisor/backups"
 
@@ -117,7 +117,7 @@ func (c *Client) ListBackups() ([]*Backup, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.Token)
+	req.Header.Set("Authorization", "Bearer "+c.token)
 
 	// Perform the request
 	client := &http.Client{}
@@ -138,7 +138,7 @@ func (c *Client) ListBackups() ([]*Backup, error) {
 }
 
 // BackupFull requests a full backup from Home Assistant
-func (c *Client) BackupFull(name string) (string, error) {
+func (c *Service) BackupFull(name string) (string, error) {
 	jsonBody := []byte(fmt.Sprintf(`{"name": "%s"}`, name))
 	bodyReader := bytes.NewReader(jsonBody)
 
@@ -148,7 +148,7 @@ func (c *Client) BackupFull(name string) (string, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.Token)
+	req.Header.Set("Authorization", "Bearer "+c.token)
 
 	client := http.Client{Timeout: 120 * time.Second}
 	res, err := client.Do(req)
@@ -176,14 +176,14 @@ func (c *Client) BackupFull(name string) (string, error) {
 }
 
 // DeleteBackup requests a backup to be deleted from Home Assistant
-func (c *Client) DeleteBackup(slug string) error {
+func (c *Service) DeleteBackup(slug string) error {
 	url := fmt.Sprintf("http://supervisor/backups/%s", slug)
 
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.Token)
+	req.Header.Set("Authorization", "Bearer "+c.token)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -196,14 +196,14 @@ func (c *Client) DeleteBackup(slug string) error {
 }
 
 // RestoreBackup requests a backup to be restored in Home Assistant
-func (c *Client) RestoreBackup(slug string) error {
+func (c *Service) RestoreBackup(slug string) error {
 	url := fmt.Sprintf("http://supervisor/backups/%s/restore/full", slug)
 
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.Token)
+	req.Header.Set("Authorization", "Bearer "+c.token)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

@@ -1,4 +1,4 @@
-package storage_backends
+package proton_drive
 
 import (
 	"context"
@@ -33,7 +33,7 @@ type protonDrive struct {
 var _ storage.Service = &protonDrive{}
 
 // NewProtonDriveService initializes and returns a new HassioHandler
-func NewProtonDriveService(cs *config.Service) (*protonDrive, error) {
+func NewService(cs *config.Service) (*protonDrive, error) {
 	s := protonDrive{}
 
 	s.creds = &storage.Credentials{

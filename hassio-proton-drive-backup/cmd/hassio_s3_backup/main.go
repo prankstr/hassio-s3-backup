@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"hassio-proton-drive-backup/api/server"
+	"hassio-proton-drive-backup/internal"
 	"hassio-proton-drive-backup/internal/config"
 	"hassio-proton-drive-backup/internal/storage"
-	"hassio-proton-drive-backup/internal/storage_backends"
+	"hassio-proton-drive-backup/internal/storage/proton_drive"
+	"hassio-proton-drive-backup/internal/storage/s3"
+	"hassio-proton-drive-backup/internal/storage/storj"
 	"hassio-proton-drive-backup/web"
 	"log/slog"
 	"net/http"
@@ -44,19 +47,19 @@ func main() {
 	var storageService storage.Service
 	switch config.StorageBackend {
 	case storage.STORJ:
-		storageService, err = storage_backends.NewStorjService(configService)
+		storageService, err = storj.NewService(configService)
 		if err != nil {
 			slog.Error("Could not initialize storage backend", "err", err, "storage backend", config.StorageBackend)
 			os.Exit(1)
 		}
 	case storage.PROTON:
-		storageService, err = storage_backends.NewProtonDriveService(configService)
+		storageService, err = proton_drive.NewService(configService)
 		if err != nil {
 			slog.Error("Could not initialize storage backend", "err", err, "storage backend", config.StorageBackend)
 			os.Exit(1)
 		}
 	case storage.S3:
-		storageService, err = storage_backends.NewS3Service(configService)
+		storageService, err = s3.NewService(configService)
 		if err != nil {
 			slog.Error("Could not initialize storage backend", "err", err, "storage backend", config.StorageBackend)
 			os.Exit(1)
@@ -66,7 +69,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	api, err := server.NewServer(configService, storageService)
+	services := &internal.Services{
+		ConfigService:  configService,
+		StorageService: storageService,
+	}
+
+	api, err := server.New(services)
 	if err != nil {
 		slog.Error("Failed to initialize API", "error", err)
 		os.Exit(1)

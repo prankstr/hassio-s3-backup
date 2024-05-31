@@ -1,4 +1,4 @@
-package storage_backends
+package storj
 
 import (
 	"bytes"
@@ -22,7 +22,7 @@ type storj struct {
 
 var _ storage.Service = &storj{}
 
-func NewStorjService(cs *config.Service) (*storj, error) {
+func NewService(cs *config.Service) (*storj, error) {
 	s := storj{}
 	ctx := context.Background()
 

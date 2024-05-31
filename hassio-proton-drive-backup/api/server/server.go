@@ -1,33 +1,28 @@
 package server
 
 import (
-	apiBackup "hassio-proton-drive-backup/api/server/router/backup"
-	apiConfig "hassio-proton-drive-backup/api/server/router/config"
-	apiStorage "hassio-proton-drive-backup/api/server/router/storage"
-	"hassio-proton-drive-backup/internal/config"
-	"hassio-proton-drive-backup/internal/storage"
+	"hassio-proton-drive-backup/api/server/backup"
+	"hassio-proton-drive-backup/api/server/config"
+	"hassio-proton-drive-backup/api/server/storage"
+	"hassio-proton-drive-backup/internal"
 	"net/http"
 )
 
 // Api struct holds dependencies for the API
-type Server struct {
+type Api struct {
 	Router *http.ServeMux
 }
 
 // NewServer initializes and returns a new API
-func NewServer(configService *config.Service, storageService storage.Service) (*Server, error) {
-	router := http.NewServeMux()
+func New(services *internal.Services) (*Api, error) {
+	mux := http.NewServeMux()
 
-	// Initialize and register routes for each module
-	backupRouter := apiBackup.NewBackupRouter(storageService, configService)
-	configRouter := apiConfig.NewConfigRouter(configService)
-	storageRouter := apiStorage.NewStorageRouter(storageService)
+	// Register routes
+	backup.RegisterBackupRoutes(mux, services)
+	config.RegisterConfigRoutes(mux, services)
+	storage.RegisterStorageRoutes(mux, services)
 
-	backupRouter.RegisterRoutes(router)
-	configRouter.RegisterRoutes(router)
-	storageRouter.RegisterRoutes(router)
-
-	return &Server{
-		Router: router,
+	return &Api{
+		Router: mux,
 	}, nil
 }

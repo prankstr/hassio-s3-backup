@@ -4,43 +4,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"hassio-proton-drive-backup/api/server/httputils"
-	"hassio-proton-drive-backup/api/server/router"
-	internalBackup "hassio-proton-drive-backup/internal/backup"
+	"hassio-proton-drive-backup/internal/backup"
 	"hassio-proton-drive-backup/internal/config"
 	"hassio-proton-drive-backup/internal/storage"
 	"log/slog"
 	"net/http"
 )
 
-// BackupRouter is a router for backup-related routes.
-type BackupRouter struct {
-	*router.BaseRouter
-	backupService *internalBackup.Service
+// BackupHandler is a router for backup-related routes.
+type BackupHandler struct {
+	backupService *backup.Service
 }
 
-// NewBackupRouter creates a new BackupRouter.
-func NewBackupRouter(storageService storage.Service, configService *config.Service) *BackupRouter {
-	backupService := internalBackup.NewBackupService(storageService, configService)
-	br := &BackupRouter{
-		BaseRouter:    &router.BaseRouter{},
-		backupService: backupService,
+func NewBackupHandler(storageService storage.Service, configService *config.Service) *BackupHandler {
+	return &BackupHandler{
+		backupService: backup.NewService(storageService, configService),
 	}
-
-	br.AddRoute("GET", "/api/backups", br.handleListBackups)
-	br.AddRoute("GET", "/api/backups/{id}/download", br.handleDownloadBackupRequest)
-	br.AddRoute("GET", "/api/backups/timer", br.handleTimerRequest)
-	br.AddRoute("GET", "/api/backups/reset", br.handleResetBackupsRequest)
-	br.AddRoute("POST", "/api/backups/new/full", br.handleBackupRequest)
-	br.AddRoute("POST", "/api/backups/{id}/pin", br.handlePinBackupRequest)
-	br.AddRoute("POST", "/api/backups/{id}/unpin", br.handleUnpinBackupRequest)
-	br.AddRoute("POST", "/api/backups/{id}/restore", br.handleRestoreBackupRequest)
-	br.AddRoute("DELETE", "/api/backups/{id}", br.handleDeleteBackupRequest)
-
-	return br
 }
 
-func (br *BackupRouter) handleListBackups(w http.ResponseWriter, r *http.Request) {
-	backups := br.backupService.ListBackups()
+func (h BackupHandler) HandleListBackups(w http.ResponseWriter, r *http.Request) {
+	backups := h.backupService.ListBackups()
 
 	// Marshal the backups into JSON
 	json, err := json.Marshal(backups)
@@ -54,8 +37,8 @@ func (br *BackupRouter) handleListBackups(w http.ResponseWriter, r *http.Request
 	w.Write(json)
 }
 
-func (br *BackupRouter) handleTimerRequest(w http.ResponseWriter, r *http.Request) {
-	milliseconds := br.backupService.TimeUntilNextBackup()
+func (h *BackupHandler) HandleTimerRequest(w http.ResponseWriter, r *http.Request) {
+	milliseconds := h.backupService.TimeUntilNextBackup()
 
 	response := struct {
 		Milliseconds int64 `json:"milliseconds"`
@@ -73,20 +56,20 @@ func (br *BackupRouter) handleTimerRequest(w http.ResponseWriter, r *http.Reques
 	w.Write(jsonBytes)
 }
 
-func (br *BackupRouter) handleBackupRequest(w http.ResponseWriter, r *http.Request) {
+func (h *BackupHandler) HandleBackupRequest(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := parseRequest(r)
 	if err != nil {
 		httputils.HandleError(w, err, http.StatusBadRequest)
 		return
 	}
 
-	if br.backupService.NameExists(requestBody.Name) {
+	if h.backupService.NameExists(requestBody.Name) {
 		httputils.HandleError(w, fmt.Errorf("a backup with the name \"%s\" already exists", requestBody.Name), http.StatusBadRequest)
 		return
 	}
 
 	go func() {
-		err := br.backupService.PerformBackup(requestBody.Name)
+		err := h.backupService.PerformBackup(requestBody.Name)
 		if err != nil {
 			httputils.HandleError(w, err, http.StatusInternalServerError)
 			return
@@ -96,7 +79,7 @@ func (br *BackupRouter) handleBackupRequest(w http.ResponseWriter, r *http.Reque
 	w.WriteHeader(http.StatusAccepted)
 }
 
-func (br *BackupRouter) handleDeleteBackupRequest(w http.ResponseWriter, r *http.Request) {
+func (h *BackupHandler) HandleDeleteBackupRequest(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
 	if id == "" {
@@ -109,7 +92,7 @@ func (br *BackupRouter) handleDeleteBackupRequest(w http.ResponseWriter, r *http
 		id = requestBody.ID
 	}
 
-	err := br.backupService.DeleteBackup(id)
+	err := h.backupService.DeleteBackup(id)
 	if err != nil {
 		httputils.HandleError(w, err, http.StatusInternalServerError)
 		return
@@ -118,7 +101,7 @@ func (br *BackupRouter) handleDeleteBackupRequest(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusOK)
 }
 
-func (br *BackupRouter) handleRestoreBackupRequest(w http.ResponseWriter, r *http.Request) {
+func (h *BackupHandler) HandleRestoreBackupRequest(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
 	if id == "" {
@@ -131,7 +114,7 @@ func (br *BackupRouter) handleRestoreBackupRequest(w http.ResponseWriter, r *htt
 		id = requestBody.ID
 	}
 
-	err := br.backupService.RestoreBackup(id)
+	err := h.backupService.RestoreBackup(id)
 	if err != nil {
 		httputils.HandleError(w, err, http.StatusInternalServerError)
 		return
@@ -140,7 +123,7 @@ func (br *BackupRouter) handleRestoreBackupRequest(w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusOK)
 }
 
-func (br *BackupRouter) handleDownloadBackupRequest(w http.ResponseWriter, r *http.Request) {
+func (h *BackupHandler) HandleDownloadBackupRequest(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
 	if id == "" {
@@ -153,7 +136,7 @@ func (br *BackupRouter) handleDownloadBackupRequest(w http.ResponseWriter, r *ht
 		id = requestBody.ID
 	}
 
-	err := br.backupService.DownloadBackup(id)
+	err := h.backupService.DownloadBackup(id)
 	if err != nil {
 		httputils.HandleError(w, err, http.StatusInternalServerError)
 		return
@@ -162,7 +145,7 @@ func (br *BackupRouter) handleDownloadBackupRequest(w http.ResponseWriter, r *ht
 	w.WriteHeader(http.StatusOK)
 }
 
-func (br *BackupRouter) handlePinBackupRequest(w http.ResponseWriter, r *http.Request) {
+func (h *BackupHandler) HandlePinBackupRequest(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	slog.Debug("received request to pin backup", "id", id)
 
@@ -176,7 +159,7 @@ func (br *BackupRouter) handlePinBackupRequest(w http.ResponseWriter, r *http.Re
 		id = requestBody.ID
 	}
 
-	err := br.backupService.PinBackup(id)
+	err := h.backupService.PinBackup(id)
 	if err != nil {
 		httputils.HandleError(w, err, http.StatusInternalServerError)
 		return
@@ -185,7 +168,7 @@ func (br *BackupRouter) handlePinBackupRequest(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusOK)
 }
 
-func (br *BackupRouter) handleUnpinBackupRequest(w http.ResponseWriter, r *http.Request) {
+func (h *BackupHandler) HandleUnpinBackupRequest(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	slog.Debug("received request to unpin backup", "id", id)
 
@@ -199,7 +182,7 @@ func (br *BackupRouter) handleUnpinBackupRequest(w http.ResponseWriter, r *http.
 		id = requestBody.ID
 	}
 
-	err := br.backupService.UnpinBackup(id)
+	err := h.backupService.UnpinBackup(id)
 	if err != nil {
 		httputils.HandleError(w, err, http.StatusInternalServerError)
 		return
@@ -208,8 +191,8 @@ func (br *BackupRouter) handleUnpinBackupRequest(w http.ResponseWriter, r *http.
 	w.WriteHeader(http.StatusOK)
 }
 
-func (br *BackupRouter) handleResetBackupsRequest(w http.ResponseWriter, r *http.Request) {
-	err := br.backupService.ResetBackups()
+func (h *BackupHandler) HandleResetBackupsRequest(w http.ResponseWriter, r *http.Request) {
+	err := h.backupService.ResetBackups()
 	if err != nil {
 		httputils.HandleError(w, err, http.StatusInternalServerError)
 		return
@@ -219,8 +202,8 @@ func (br *BackupRouter) handleResetBackupsRequest(w http.ResponseWriter, r *http
 }
 
 // parseRequest decodes the JSON request body into a BackupRequest struct
-func parseRequest(r *http.Request) (*internalBackup.Request, error) {
-	var requestBody internalBackup.Request
+func parseRequest(r *http.Request) (*backup.Request, error) {
+	var requestBody backup.Request
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
 

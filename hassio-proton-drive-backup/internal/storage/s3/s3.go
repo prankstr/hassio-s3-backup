@@ -1,4 +1,4 @@
-package storage_backends
+package s3
 
 import (
 	"bytes"
@@ -22,7 +22,7 @@ type s3 struct {
 
 var _ storage.Service = &s3{}
 
-func NewS3Service(cs *config.Service) (*s3, error) {
+func NewService(cs *config.Service) (*s3, error) {
 	s := s3{}
 	s.bucket = cs.GetS3Bucket()
 	creds := credentials.NewStaticV4(cs.GetS3AccessKeyID(), cs.GetS3SecretAccessKey(), "")
