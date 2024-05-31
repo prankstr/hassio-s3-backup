@@ -9,12 +9,12 @@ import (
 )
 
 // Api struct holds dependencies for the API
-type Api struct {
+type Server struct {
 	Router *http.ServeMux
 }
 
-// NewServer initializes and returns a new API
-func New(services *internal.Services) (*Api, error) {
+// New initializes and returns a new server
+func New(services *internal.Services) (*Server, error) {
 	mux := http.NewServeMux()
 
 	// Register routes
@@ -22,7 +22,7 @@ func New(services *internal.Services) (*Api, error) {
 	config.RegisterConfigRoutes(mux, services)
 	storage.RegisterStorageRoutes(mux, services)
 
-	return &Api{
+	return &Server{
 		Router: mux,
 	}, nil
 }

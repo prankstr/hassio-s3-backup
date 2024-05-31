@@ -7,8 +7,8 @@ import (
 
 // NewConfigRouter creates a new ConfigRouter.
 func RegisterConfigRoutes(mux *http.ServeMux, services *internal.Services) {
-	h := NewConfigHandler(services.ConfigService)
+	h := newConfigHandler(services.ConfigService)
 
-	mux.HandleFunc("GET /api/config", h.HandleGetConfig)
-	mux.HandleFunc("POST /api/config/update", h.HandleUpdateConfig)
+	mux.HandleFunc("GET /api/config", h.handleGetConfig)
+	mux.HandleFunc("POST /api/config/update", h.handleUpdateConfig)
 }

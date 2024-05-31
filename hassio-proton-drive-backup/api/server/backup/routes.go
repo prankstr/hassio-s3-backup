@@ -7,15 +7,15 @@ import (
 
 // NewBackupRouter creates a new BackupHandler.
 func RegisterBackupRoutes(mux *http.ServeMux, services *internal.Services) {
-	h := NewBackupHandler(services.StorageService, services.ConfigService)
+	h := newBackupHandler(services.StorageService, services.ConfigService)
 
-	mux.HandleFunc("GET /api/backups", h.HandleListBackups)
-	mux.HandleFunc("GET /api/backups/{id}/download", h.HandleDownloadBackupRequest)
-	mux.HandleFunc("GET /api/backups/timer", h.HandleTimerRequest)
-	mux.HandleFunc("GET /api/backups/reset", h.HandleResetBackupsRequest)
-	mux.HandleFunc("POST /api/backups/new/full", h.HandleBackupRequest)
-	mux.HandleFunc("POST /api/backups/{id}/pin", h.HandlePinBackupRequest)
-	mux.HandleFunc("POST /api/backups/{id}/unpin", h.HandleUnpinBackupRequest)
-	mux.HandleFunc("POST /api/backups/{id}/restore", h.HandleRestoreBackupRequest)
-	mux.HandleFunc("DELETE /api/backups/{id}", h.HandleDeleteBackupRequest)
+	mux.HandleFunc("GET /api/backups", h.handleListBackups)
+	mux.HandleFunc("GET /api/backups/{id}/download", h.handleDownloadBackupRequest)
+	mux.HandleFunc("GET /api/backups/timer", h.handleTimerRequest)
+	mux.HandleFunc("GET /api/backups/reset", h.handleResetBackupsRequest)
+	mux.HandleFunc("POST /api/backups/new/full", h.handleBackupRequest)
+	mux.HandleFunc("POST /api/backups/{id}/pin", h.handlePinBackupRequest)
+	mux.HandleFunc("POST /api/backups/{id}/unpin", h.handleUnpinBackupRequest)
+	mux.HandleFunc("POST /api/backups/{id}/restore", h.handleRestoreBackupRequest)
+	mux.HandleFunc("DELETE /api/backups/{id}", h.handleDeleteBackupRequest)
 }

@@ -76,7 +76,7 @@ func main() {
 
 	api, err := server.New(services)
 	if err != nil {
-		slog.Error("Failed to initialize API", "error", err)
+		slog.Error("Failed to initialize API server", "error", err)
 		os.Exit(1)
 	}
 

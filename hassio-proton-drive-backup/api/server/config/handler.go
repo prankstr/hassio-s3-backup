@@ -7,17 +7,17 @@ import (
 )
 
 // ConfigHandler is a router for config-related routes.
-type ConfigHandler struct {
+type configHandler struct {
 	configService *config.Service
 }
 
-func NewConfigHandler(configService *config.Service) *ConfigHandler {
-	return &ConfigHandler{
+func newConfigHandler(configService *config.Service) *configHandler {
+	return &configHandler{
 		configService: configService,
 	}
 }
 
-func (h *ConfigHandler) HandleGetConfig(w http.ResponseWriter, r *http.Request) {
+func (h *configHandler) handleGetConfig(w http.ResponseWriter, r *http.Request) {
 	conf := h.configService.GetConfig()
 
 	responseConfig := config.Options{
@@ -34,7 +34,7 @@ func (h *ConfigHandler) HandleGetConfig(w http.ResponseWriter, r *http.Request) 
 	w.Write(res)
 }
 
-func (h *ConfigHandler) HandleUpdateConfig(w http.ResponseWriter, r *http.Request) {
+func (h *configHandler) handleUpdateConfig(w http.ResponseWriter, r *http.Request) {
 	var requestBody config.Options
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)

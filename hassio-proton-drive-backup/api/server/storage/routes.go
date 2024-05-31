@@ -7,6 +7,6 @@ import (
 
 // NewStorageRouter creates a new StorageRouter.
 func RegisterStorageRoutes(mux *http.ServeMux, services *internal.Services) {
-	h := NewStorageHandler(services.StorageService)
+	h := newStorageHandler(services.StorageService)
 	mux.HandleFunc("GET /api/storage/about", h.HandleAbout)
 }
