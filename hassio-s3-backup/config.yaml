@@ -1,9 +1,9 @@
-name: "Home Assistant Proton Drive Backup"
-description: "Backup your Home Assistant data to Proton Drive"
+name: "Home Assistant S3 Backup"
+description: "Backup your Home Assistant data to S3"
 version: "1.0.0"
 slug: "hassio_proton_drive_backup"
 init: false
-panel_title: Proton Drive Backup
+panel_title: S3 Backup
 panel_icon: mdi:folder-upload
 arch:
   - aarch64
