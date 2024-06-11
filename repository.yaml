@@ -1,3 +1,3 @@
-name: Home Assistant Proton Drive Backup
-url: https://github.com/Prankstr/hassio-proton-drive-backup
-maintainer: David Nilsson <dnilss31@gmail.com>
+name: Home Assistant S3 Backup
+url: https://github.com/prankstr/hassio-s3-backup
+maintainer: prankstr
