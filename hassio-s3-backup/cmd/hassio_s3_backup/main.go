@@ -10,7 +10,7 @@ import (
 	"hassio-proton-drive-backup/internal/storage/proton_drive"
 	"hassio-proton-drive-backup/internal/storage/s3"
 	"hassio-proton-drive-backup/internal/storage/storj"
-	"hassio-proton-drive-backup/web"
+	"hassio-proton-drive-backup/webui"
 	"log/slog"
 	"net/http"
 	"os"
@@ -80,7 +80,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	uiHandler := web.NewHandler(config)
+	uiHandler := webui.NewHandler(config)
 
 	api.Router.Handle("/", uiHandler)
 

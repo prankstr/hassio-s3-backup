@@ -13,7 +13,9 @@
     <v-card-text>
       <v-row class="pt-0">
         <v-col cols="5" class="pr-0 pt-0">
-          <div class="text-white text-subtitle-1">Storage Backend:</div>
+          <div class="text-white text-subtitle-1">
+            {{ cs.config.storageBackend }}
+          </div>
         </v-col>
         <v-col class="pr-0 pt-0">
           <div class="text-white text-subtitle-1">

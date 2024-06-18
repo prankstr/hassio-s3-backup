@@ -52,6 +52,29 @@
               ></v-text-field>
             </v-col>
           </v-row>
+          <v-row>
+            <v-card-title class="text-heading-6">S3 settings</v-card-title>
+            <v-btn
+              size="x-large"
+              variant="plain"
+              :icon="show ? 'mdi-chevron-up' : 'mdi-chevron-down'"
+              @click="show = !show"
+            ></v-btn>
+            <v-expand-transition>
+              <div v-show="show">
+                <v-divider></v-divider>
+
+                <v-card-text>
+                  I'm a thing. But, like most politicians, he promised more than
+                  he could deliver. You won't have time for sleeping, soldier,
+                  not with all the bed making you'll be doing. Then we'll go
+                  with that data file! Hey, you add a one and two zeros to that
+                  or we walk! You're going to do his laundry? I've got to find a
+                  way to escape.
+                </v-card-text>
+              </div>
+            </v-expand-transition>
+          </v-row>
         </v-container>
       </v-card-text>
       <v-card-actions>
@@ -111,6 +134,7 @@ import { useSnackbarStore } from "@/stores/snackbar";
 const cs = useConfigStore();
 const snackbar = useSnackbarStore();
 
+const show = ref(false);
 const dialog = ref(false);
 const revealResetData = ref(false);
 const localConfig = ref({});

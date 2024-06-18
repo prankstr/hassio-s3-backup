@@ -8,7 +8,7 @@
       contain
     ></v-img>
 
-    <v-app-bar-title> Proton Drive Backup </v-app-bar-title>
+    <v-app-bar-title> {{ cs.config.storageBackend }} Backup </v-app-bar-title>
 
     <v-spacer></v-spacer>
 
@@ -27,5 +27,7 @@
 <script setup>
 import Settings from "@/components/Settings.vue";
 import NextBackupTimer from "@/components/NextBackupTimer.vue";
-</script>
+import { useConfigStore } from "@/stores/config";
 
+const cs = useConfigStore();
+</script>
