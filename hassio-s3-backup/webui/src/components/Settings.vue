@@ -100,11 +100,12 @@
           </v-card-item>
           <v-card-text style="height: 60px" class="pb-0">
             <p>
-              If your addon state gets messed up for some reason you can clear
-              the addon backup state. Your backups will not be removed from Home
-              Assistant or the drive and the backups that exists in Home
-              Assistant or the drive will be added back to the addon on the next
-              sync.
+              Unexpected errors might cuase the addon state to become corrupt.
+              Restting the addon state will remove all backups from the addon
+              and trigger a sync which will re-add any backup found in Home
+              Assistant and the remote storage. ⚠️ This is potentially
+              destructive as any pinned backup will become unpinned and
+              potentially removed. ⚠️
             </p>
           </v-card-text>
           <v-card-actions class="pb-0 align-end">
