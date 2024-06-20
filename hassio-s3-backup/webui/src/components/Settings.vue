@@ -134,11 +134,11 @@
 <script setup>
 import { ref, watch } from "vue";
 import { useConfigStore } from "@/stores/config";
-import { useBackupStore } from "@/stores/backups";
+import { useBackupsStore } from "@/stores/backups";
 import { useSnackbarStore } from "@/stores/snackbar";
 
 const cs = useConfigStore();
-const bs = useBackupStore();
+const bs = useBackupsStore();
 const snackbar = useSnackbarStore();
 
 const show = ref(false);
