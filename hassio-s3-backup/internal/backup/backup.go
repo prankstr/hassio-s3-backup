@@ -641,7 +641,7 @@ func (s *Service) updateOrDeleteBackupsInBackend(backupMap map[string]*Backup) e
 	}
 
 	if noUpdateNeeded {
-		slog.Debug("Backups in storage backend to date, no actions taken")
+		slog.Debug("Backups in storage backend up to date, no actions taken")
 	}
 
 	return nil
