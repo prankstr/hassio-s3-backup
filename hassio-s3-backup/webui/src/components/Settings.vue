@@ -134,7 +134,7 @@
 <script setup>
 import { ref, watch } from "vue";
 import { useConfigStore } from "@/stores/config";
-import { useBackupStore } from "@/stores/backup";
+import { useBackupStore } from "@/stores/backups";
 import { useSnackbarStore } from "@/stores/snackbar";
 
 const cs = useConfigStore();
