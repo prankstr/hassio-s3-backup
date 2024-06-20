@@ -60,20 +60,24 @@
               :icon="show ? 'mdi-chevron-up' : 'mdi-chevron-down'"
               @click="show = !show"
             ></v-btn>
-            <v-expand-transition>
-              <div v-show="show">
-                <v-divider></v-divider>
-
-                <v-card-text>
-                  I'm a thing. But, like most politicians, he promised more than
-                  he could deliver. You won't have time for sleeping, soldier,
-                  not with all the bed making you'll be doing. Then we'll go
-                  with that data file! Hey, you add a one and two zeros to that
-                  or we walk! You're going to do his laundry? I've got to find a
-                  way to escape.
-                </v-card-text>
-              </div>
-            </v-expand-transition>
+            <v-col>
+              <v-expand-transition>
+                <div v-show="show">
+                  <v-row>
+                    <v-col cols="12" md="6">
+                      <v-text-field
+                        v-model.number="localConfig.backupInterval"
+                        type="number"
+                        class="mb-0"
+                        label="Time between backups"
+                        persistent-hint
+                        hint="The amount of time between backups. Defaults to 3 days."
+                      ></v-text-field>
+                    </v-col>
+                  </v-row>
+                </div>
+              </v-expand-transition>
+            </v-col>
           </v-row>
         </v-container>
       </v-card-text>
@@ -91,15 +95,16 @@
         <v-card v-if="revealResetData" class="v-card--reveal" color="primary">
           <v-card-item>
             <v-card-title class="text-white text-heading-6"
-              >Restore backup?</v-card-title
+              >Reset addon state</v-card-title
             >
           </v-card-item>
           <v-card-text style="height: 60px" class="pb-0">
             <p>
-              If your addon state for some reason get's messed you you can clear
-              the backup data. Your backups will not be removed from Home
-              Assistant or the drive and the backus that exists in Home
-              Assistant or the drive will be added again.
+              If your addon state gets messed up for some reason you can clear
+              the addon backup state. Your backups will not be removed from Home
+              Assistant or the drive and the backups that exists in Home
+              Assistant or the drive will be added back to the addon on the next
+              sync.
             </p>
           </v-card-text>
           <v-card-actions class="pb-0 align-end">
@@ -132,6 +137,7 @@ import { useConfigStore } from "@/stores/config";
 import { useSnackbarStore } from "@/stores/snackbar";
 
 const cs = useConfigStore();
+const bs = useBackupStore();
 const snackbar = useSnackbarStore();
 
 const show = ref(false);
@@ -154,6 +160,19 @@ function saveChanges() {
 
     dialog.value = false;
     snackbar.show({ message: "🔥 Config updated" });
+    emit("settingsUpdated");
+  });
+}
+
+function resetData() {
+  bs.resetData().then(({ success, error }) => {
+    if (!success) {
+      snackbar.show({ message: "⚠️ error.message" });
+      return;
+    }
+    revealResetData.value = false;
+    dialog.value = false;
+    snackbar.show({ message: "Addon state has been reset" });
     emit("settingsUpdated");
   });
 }
