@@ -60,24 +60,22 @@
               :icon="show ? 'mdi-chevron-up' : 'mdi-chevron-down'"
               @click="show = !show"
             ></v-btn>
-            <v-col>
-              <v-expand-transition>
-                <div v-show="show">
-                  <v-row>
-                    <v-col cols="12" md="6">
-                      <v-text-field
-                        v-model.number="localConfig.backupInterval"
-                        type="number"
-                        class="mb-0"
-                        label="Time between backups"
-                        persistent-hint
-                        hint="The amount of time between backups. Defaults to 3 days."
-                      ></v-text-field>
-                    </v-col>
-                  </v-row>
-                </div>
-              </v-expand-transition>
-            </v-col>
+          </v-row>
+          <v-row>
+            <v-expand-transition>
+              <v-row v-show="show">
+                <v-col cols="12" md="6">
+                  <v-text-field
+                    v-model.number="localConfig.backupInterval"
+                    type="number"
+                    class="mb-0"
+                    label="Time between backups"
+                    persistent-hint
+                    hint="The amount of time between backups. Defaults to 3 days."
+                  ></v-text-field>
+                </v-col>
+              </v-row>
+            </v-expand-transition>
           </v-row>
         </v-container>
       </v-card-text>
