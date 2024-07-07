@@ -4,7 +4,11 @@ export const useConfigStore = defineStore("config", {
   state: () => ({
     config: {},
   }),
-  getters: {},
+  getters: {
+    getStorageBackend() {
+      return this.config.storage_backend;
+    },
+  },
   setters: {},
   actions: {
     async fetchConfig() {

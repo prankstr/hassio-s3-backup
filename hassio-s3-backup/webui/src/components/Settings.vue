@@ -34,9 +34,9 @@
                 v-model.number="localConfig.backupsInStorage"
                 type="number"
                 class="mb-0"
-                label="Number of backups to keep remote"
+                :label="`Number of backups to keep in ${localConfig.storageBackend}`"
                 persistent-hint
-                hint="The amount of backups to keep in the remote storage. 0 disables housekeeping."
+                :hint="`The amount of backups to keep in ${localConfig.storageBackend}. 0 disables house keeping.`"
               ></v-text-field>
             </v-col>
           </v-row>
@@ -46,9 +46,9 @@
                 v-model.number="localConfig.backupInterval"
                 type="number"
                 class="mb-0"
-                label="Time between backups"
+                label="Days between backups"
                 persistent-hint
-                hint="The amount of time between backups. Defaults to 3 days."
+                hint="The amount of days between backups. Defaults to 3 days."
               ></v-text-field>
             </v-col>
           </v-row>
