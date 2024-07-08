@@ -25,7 +25,7 @@
     <v-card-text>
       <v-row class="pb-0">
         <v-col>
-          <div v-if="(backup.status = 'FAILED')" class="text-white text-body-1">
+          <div v-if="backup.status == 'FAILED'" class="text-white text-body-1">
             {{ translateStatus(backup.status) }} 
           </div>
           <div v-else class="text-white text-body-1">
