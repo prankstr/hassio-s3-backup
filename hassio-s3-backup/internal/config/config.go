@@ -66,7 +66,7 @@ func NewConfigService() *Service {
 	config.DataDirectory = getEnvOrDefault("DATA_DIRECTORY", config.DataDirectory, "/data")
 	config.BackupsInHA = getEnvOrDefaultInt("BACKUPS_IN_HA", config.BackupsInHA, 0)
 	config.BackupNameFormat = getEnvOrDefault("BACKUP_NAME_FORMAT", config.BackupNameFormat, "Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}")
-	config.BackupsInS3 = getEnvOrDefaultInt("BACKUPS_IN_STORAGE", config.BackupsInS3, 0)
+	config.BackupsInS3 = getEnvOrDefaultInt("BACKUPS_IN_S3", config.BackupsInS3, 0)
 	config.BackupInterval = getEnvOrDefaultInt("BACKUP_INTERVAL", config.BackupInterval, 3)
 
 	// S3 Config

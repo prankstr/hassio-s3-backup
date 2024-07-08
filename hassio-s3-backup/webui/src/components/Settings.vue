@@ -31,7 +31,7 @@
             </v-col>
             <v-col cols="12" md="6">
               <v-text-field
-                v-model.number="localConfig.backupsInStorage"
+                v-model.number="localConfig.backupsInS3"
                 type="number"
                 class="mb-0"
                 :label="`Number of backups to keep in S3`"

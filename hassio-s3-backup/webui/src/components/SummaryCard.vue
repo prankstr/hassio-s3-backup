@@ -31,41 +31,6 @@
           </div>
         </v-col>
       </v-row>
-      <v-row class="pt-0" v-if="cs.config.storageBackend === 'Storj'">
-        <v-col cols="5" class="pr-0 pt-0">
-          <div class="text-white text-subtitle-1">Estimated Cost:</div>
-        </v-col>
-        <v-col class="pr-0 pt-0">
-          <div class="text-white text-subtitle-1">
-            {{ estimatedCost }}$ / month
-          </div>
-        </v-col>
-      </v-row>
-      <v-row class="pt-0" v-if="cs.config.storageBackend === 'Proton Drive'">
-        <v-col cols="5" class="pr-0 pt-0">
-          <div class="text-white text-subtitle-1">Available Space:</div>
-        </v-col>
-        <v-col class="pr-0 pt-0">
-          <div class="text-white text-subtitle-1">{{ availableGb }} GB</div>
-        </v-col>
-      </v-row>
-      <v-row class="pt-0" v-if="cs.config.storageBackend === 'Proton Drive'">
-        <v-col cols="4" class="pr-0 pt-0">
-          <div class="text-white text-subtitle-1">Used Space:</div>
-        </v-col>
-        <v-col class="py-2">
-          <v-progress-linear
-            :width="1"
-            model-value="100"
-            color="white"
-            :height="12"
-            rounded
-            v-model="usedSpacePercent"
-          >
-            <strong class="text-white">{{ usedSpacePercent }}%</strong>
-          </v-progress-linear>
-        </v-col>
-      </v-row>
     </v-card-text>
   </v-card>
 </template>
@@ -88,21 +53,6 @@ onMounted(() => {
     .then((res) => res.json())
     .then((data) => (about.value = data))
     .catch((err) => console.log(err.message));
-});
-
-const usedSpacePercent = computed(() => {
-  let n = (about.value.UsedSpace / about.value.MaxSpace) * 100;
-  return n.toFixed(2);
-});
-
-const availableGb = computed(() => {
-  let n = (about.value.MaxSpace - about.value.UsedSpace) / 1024 / 1024 / 1024;
-  return n.toFixed(2);
-});
-
-const estimatedCost = computed(() => {
-  console.log(bs.storageBackupsSizeInGB);
-  return bs.storageBackupsSizeInGB * 0.004;
 });
 
 const backupsInS3 = computed(() => {

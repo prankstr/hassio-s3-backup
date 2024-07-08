@@ -873,7 +873,7 @@ func (s *Service) listenForConfigChanges(configChan <-chan *config.Options) {
 		newInterval := s.configService.GetBackupInterval()
 		newBackupNameFormat := s.configService.GetBackupNameFormat()
 		newBackupsInHA := s.configService.GetBackupsInHA()
-		newBackupsInStorage := s.configService.GetBackupsInS3()
+		newBackupsInS3 := s.configService.GetBackupsInS3()
 
 		if newInterval != s.backupInterval {
 			s.backupInterval = newInterval
@@ -881,9 +881,9 @@ func (s *Service) listenForConfigChanges(configChan <-chan *config.Options) {
 			slog.Info("Backup configuration updated", "new backupInterval", newInterval.String())
 		}
 
-		if newBackupsInHA != s.backupsInHA || newBackupsInStorage != s.backupsInS3 {
+		if newBackupsInHA != s.backupsInHA || newBackupsInS3 != s.backupsInS3 {
 			s.backupsInHA = newBackupsInHA
-			s.backupsInS3 = newBackupsInStorage
+			s.backupsInS3 = newBackupsInS3
 			s.syncBackups()
 		}
 
@@ -895,8 +895,8 @@ func (s *Service) listenForConfigChanges(configChan <-chan *config.Options) {
 			slog.Info("Backup configuration updated", "new backupsInHA", newBackupsInHA)
 		}
 
-		if newBackupsInStorage != s.backupsInS3 {
-			slog.Info("Backup configuration updated", "new backupsOnDrive", newBackupsInStorage)
+		if newBackupsInS3 != s.backupsInS3 {
+			slog.Info("Backup configuration updated", "new backupsOnDrive", newBackupsInS3)
 		}
 	}
 }
