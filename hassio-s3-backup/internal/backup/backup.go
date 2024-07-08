@@ -140,6 +140,7 @@ func (s *Service) PerformBackup(name string) error {
 	slug, err := s.requestHomeAssistantBackup(backup.Name)
 	if err != nil {
 		slog.Error("Failed to request backup from Home Assistant", "BackupName", backup.Name, "Error", err)
+		backup.ErrorMessage = err.Error()
 		backup.UpdateStatus(StatusFailed)
 		s.removeOngoingBackup(backup.ID)
 		return err
@@ -155,6 +156,7 @@ func (s *Service) PerformBackup(name string) error {
 	if err := s.processAndUploadBackup(backup); err != nil {
 		slog.Error("Error syncing backup to S3", "name", backup.Name, "error", err)
 		backup.UpdateStatus(StatusFailed)
+		backup.ErrorMessage = err.Error()
 		s.removeOngoingBackup(backup.ID)
 		return err
 	}
@@ -434,6 +436,11 @@ func (s *Service) syncBackups() error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
+	// Mark backups for deletion if needed
+	if err := s.markExcessBackupsForDeletion(); err != nil {
+		return err
+	}
+
 	// Create a map of backups for easy access
 	backupMap := make(map[string]*Backup)
 	for _, backup := range s.backups {
@@ -444,11 +451,6 @@ func (s *Service) syncBackups() error {
 		// Unsure if this is wanted behavior but sticking to it for now
 		backup.HA = nil
 		backup.S3 = nil
-	}
-
-	// Mark backups for deletion if needed
-	if err := s.markExcessBackupsForDeletion(); err != nil {
-		return err
 	}
 
 	// Keep HA backups up to date
@@ -686,6 +688,7 @@ func (s *Service) syncBackupToDrive(backup *Backup) error {
 	key, err := s.uploadBackup(backup)
 	if err != nil {
 		backup.UpdateStatus(StatusFailed)
+		backup.ErrorMessage = err.Error()
 
 		if err := s.saveBackupsToFile(); err != nil {
 			slog.Error("Error saving backup state after backup operation", "error", err)
@@ -1018,6 +1021,7 @@ func (s *Service) uploadBackup(backup *Backup) (string, error) {
 	info, err := s.s3.FPutObject(ctx, s.config.S3.Bucket, objectName, path, minio.PutObjectOptions{ContentType: contentType})
 	if err != nil {
 		backup.UpdateStatus(StatusFailed)
+		backup.ErrorMessage = err.Error()
 		slog.Error("Error uploading backup to S3", err)
 		return "", fmt.Errorf("could not upload object: %v", err)
 	}
@@ -1030,6 +1034,7 @@ func handleBackupError(s *Service, errMsg string, backup *Backup, err error) err
 	slog.Error(errMsg, err)
 	if backup != nil {
 		backup.UpdateStatus(StatusFailed)
+		backup.ErrorMessage = err.Error()
 		s.saveBackupsToFile() // Best effort to save state
 	}
 	return fmt.Errorf("%s: %v", errMsg, err)
