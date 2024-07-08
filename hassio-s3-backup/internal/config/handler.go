@@ -2,30 +2,28 @@ package config
 
 import (
 	"encoding/json"
-	"hassio-proton-drive-backup/internal/config"
 	"net/http"
 )
 
 // ConfigHandler is a router for config-related routes.
 type configHandler struct {
-	configService *config.Service
+	configService *Service
 }
 
-func newConfigHandler(configService *config.Service) *configHandler {
+func newConfigHandler(cs *Service) *configHandler {
 	return &configHandler{
-		configService: configService,
+		configService: cs,
 	}
 }
 
 func (h *configHandler) handleGetConfig(w http.ResponseWriter, r *http.Request) {
 	conf := h.configService.GetConfig()
 
-	responseConfig := config.Options{
-		StorageBackend:   conf.StorageBackend,
+	responseConfig := Options{
 		BackupNameFormat: conf.BackupNameFormat,
 		BackupInterval:   conf.BackupInterval,
 		BackupsInHA:      conf.BackupsInHA,
-		BackupsInStorage: conf.BackupsInStorage,
+		BackupsInS3:      conf.BackupsInS3,
 	}
 
 	res, _ := json.Marshal(responseConfig)
@@ -35,7 +33,7 @@ func (h *configHandler) handleGetConfig(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *configHandler) handleUpdateConfig(w http.ResponseWriter, r *http.Request) {
-	var requestBody config.Options
+	var requestBody Options
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
 	if err != nil {

@@ -51,22 +51,22 @@ type Response struct {
 	Data    ResponseData
 }
 
-// Service is a client for the Hassio API
-type Service struct {
+// Client is a client for the Hassio API
+type Client struct {
 	token string
 	url   string
 }
 
 // NewHassioClient initializes and returns a new HassioClient
-func NewService(token string) *Service {
-	return &Service{
+func NewService(token string) *Client {
+	return &Client{
 		token: token,
 		url:   "http://supervisor",
 	}
 }
 
 // GetBackup queries hassio for a specific backup
-func (c *Service) GetBackup(slug string) (*Backup, error) {
+func (c *Client) GetBackup(slug string) (*Backup, error) {
 	// API endpoint to list all backups
 	url := fmt.Sprintf("http://supervisor/backups/%s/info", slug)
 
@@ -108,7 +108,7 @@ func (c *Service) GetBackup(slug string) (*Backup, error) {
 }
 
 // ListBackups queries hassio for a list of all backups
-func (c *Service) ListBackups() ([]*Backup, error) {
+func (c *Client) ListBackups() ([]*Backup, error) {
 	// API endpoint to list all backups
 	url := "http://supervisor/backups"
 
@@ -138,7 +138,7 @@ func (c *Service) ListBackups() ([]*Backup, error) {
 }
 
 // BackupFull requests a full backup from Home Assistant
-func (c *Service) BackupFull(name string) (string, error) {
+func (c *Client) BackupFull(name string) (string, error) {
 	jsonBody := []byte(fmt.Sprintf(`{"name": "%s"}`, name))
 	bodyReader := bytes.NewReader(jsonBody)
 
@@ -176,7 +176,7 @@ func (c *Service) BackupFull(name string) (string, error) {
 }
 
 // DeleteBackup requests a backup to be deleted from Home Assistant
-func (c *Service) DeleteBackup(slug string) error {
+func (c *Client) DeleteBackup(slug string) error {
 	url := fmt.Sprintf("http://supervisor/backups/%s", slug)
 
 	req, err := http.NewRequest("DELETE", url, nil)
@@ -196,7 +196,7 @@ func (c *Service) DeleteBackup(slug string) error {
 }
 
 // RestoreBackup requests a backup to be restored in Home Assistant
-func (c *Service) RestoreBackup(slug string) error {
+func (c *Client) RestoreBackup(slug string) error {
 	url := fmt.Sprintf("http://supervisor/backups/%s/restore/full", slug)
 
 	req, err := http.NewRequest("POST", url, nil)

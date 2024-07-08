@@ -3,13 +3,9 @@ package main
 import (
 	"context"
 	"errors"
-	"hassio-proton-drive-backup/api/server"
-	"hassio-proton-drive-backup/internal"
+	"hassio-proton-drive-backup/internal/backup"
 	"hassio-proton-drive-backup/internal/config"
-	"hassio-proton-drive-backup/internal/storage"
-	"hassio-proton-drive-backup/internal/storage/proton_drive"
-	"hassio-proton-drive-backup/internal/storage/s3"
-	"hassio-proton-drive-backup/internal/storage/storj"
+	"hassio-proton-drive-backup/internal/s3"
 	"hassio-proton-drive-backup/webui"
 	"log/slog"
 	"net/http"
@@ -19,75 +15,35 @@ import (
 	"time"
 )
 
-/* func getIP(r *http.Request) (string, error) {
-	ip, _, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil {
-		return "", err
-	}
-
-	netIP := net.ParseIP(ip)
-	if netIP != nil {
-		slog.Debug("Incoming request", "ip", netIP)
-		return ip, nil
-	}
-
-	return "", fmt.Errorf("no valid ip found")
-} */
-
 func main() {
 	// Initalize config
-	configService := config.NewConfigService()
-	config := configService.GetConfig()
+	cs := config.NewConfigService()
+	conf := cs.GetConfig()
 
 	// Set LogLevel
-	h := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: config.LogLevel})
+	h := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: conf.LogLevel})
 	slog.SetDefault(slog.New(h))
 
-	var err error
-	var storageService storage.Service
-	switch config.StorageBackend {
-	case storage.STORJ:
-		storageService, err = storj.NewService(configService)
-		if err != nil {
-			slog.Error("Could not initialize storage backend", "err", err, "storage backend", config.StorageBackend)
-			os.Exit(1)
-		}
-	case storage.PROTON:
-		storageService, err = proton_drive.NewService(configService)
-		if err != nil {
-			slog.Error("Could not initialize storage backend", "err", err, "storage backend", config.StorageBackend)
-			os.Exit(1)
-		}
-	case storage.S3:
-		storageService, err = s3.NewService(configService)
-		if err != nil {
-			slog.Error("Could not initialize storage backend", "err", err, "storage backend", config.StorageBackend)
-			os.Exit(1)
-		}
-	default:
-		slog.Error("unknown storage backend", "storage backend", config.StorageBackend)
-		os.Exit(1)
-	}
-
-	services := &internal.Services{
-		ConfigService:  configService,
-		StorageService: storageService,
-	}
-
-	api, err := server.New(services)
+	s3, err := s3.NewClient(cs)
 	if err != nil {
-		slog.Error("Failed to initialize API server", "error", err)
+		slog.Error("Could not initialize S3", "err", err)
 		os.Exit(1)
 	}
 
-	uiHandler := webui.NewHandler(config)
+	bs := backup.NewService(s3, cs)
 
-	api.Router.Handle("/", uiHandler)
+	mux := http.NewServeMux()
+	backup.RegisterBackupRoutes(mux, bs)
+	config.RegisterConfigRoutes(mux, cs)
+
+	uiHandler := webui.NewHandler(conf)
+
+	mux.Handle("/", uiHandler)
 
 	// Define server
 	server := http.Server{
 		Addr:    ":8099",
-		Handler: api.Router,
+		Handler: mux,
 	}
 
 	// Start http server

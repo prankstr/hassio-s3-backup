@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"hassio-proton-drive-backup/internal/hassio"
-	"hassio-proton-drive-backup/internal/storage"
 	"io"
 	"log"
 	"log/slog"
@@ -18,11 +17,7 @@ import (
 type Options struct {
 	Timezone         *time.Location
 	S3               S3Options
-	Storj            StorjOptions
-	ProtonDrive      ProtonDriveOptions
 	DataDirectory    string
-	StorageBackend   string `json:"storageBackend"`
-	BackupDirectory  string
 	SupervisorToken  string
 	BackupNameFormat string `json:"backupNameFormat"`
 	IngressPath      string
@@ -30,13 +25,8 @@ type Options struct {
 	LogLevel         slog.Level
 	BackupInterval   int `json:"backupInterval"`
 	BackupsInHA      int `json:"backupsInHA"`
-	BackupsInStorage int `json:"backupsInStorage"`
+	BackupsInS3      int `json:"backupsInS3"`
 	Debug            bool
-}
-
-type StorjOptions struct {
-	AccessGrant string
-	Bucket      string
 }
 
 type S3Options struct {
@@ -46,15 +36,9 @@ type S3Options struct {
 	Endpoint        string
 }
 
-type ProtonDriveOptions struct {
-	Username string
-	Password string
-}
-
 // Service is a struct to handle the application configuration
 type Service struct {
 	Config           *Options
-	Creds            *storage.Credentials
 	ConfigChangeChan chan *Options
 }
 
@@ -75,38 +59,21 @@ func NewConfigService() *Service {
 		slog.Error("Error reading config file: ", err)
 		config = &Options{} // Initialize with an empty config
 	}
-	creds := &storage.Credentials{} // Initialize with an empty config
 
 	// Set defaults or override with environment variables if they are set
 	config.Hostname = getEnvOrDefault("HOSTNAME", config.Hostname, "localhost:9101")
 	config.SupervisorToken = getEnvOrDefault("SUPERVISOR_TOKEN", config.SupervisorToken, "")
-	config.StorageBackend = getEnvOrDefault("STORAGE_BACKEND", config.StorageBackend, "")
-	config.BackupDirectory = getEnvOrDefault("BACKUP_DIRECTORY", config.BackupDirectory, "Home Assistant Backups")
 	config.DataDirectory = getEnvOrDefault("DATA_DIRECTORY", config.DataDirectory, "/data")
 	config.BackupsInHA = getEnvOrDefaultInt("BACKUPS_IN_HA", config.BackupsInHA, 0)
 	config.BackupNameFormat = getEnvOrDefault("BACKUP_NAME_FORMAT", config.BackupNameFormat, "Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}")
-	config.BackupsInStorage = getEnvOrDefaultInt("BACKUPS_IN_STORAGE", config.BackupsInStorage, 0)
+	config.BackupsInS3 = getEnvOrDefaultInt("BACKUPS_IN_STORAGE", config.BackupsInS3, 0)
 	config.BackupInterval = getEnvOrDefaultInt("BACKUP_INTERVAL", config.BackupInterval, 3)
 
 	// S3 Config
-	if config.StorageBackend == storage.S3 {
-		config.S3.AccessKeyID = getEnvOrDefault("S3_ACCESS_KEY_ID", config.S3.AccessKeyID, "")
-		config.S3.SecretAccessKey = getEnvOrDefault("S3_SECRET_ACCESS_KEY", config.S3.SecretAccessKey, "")
-		config.S3.Bucket = getEnvOrDefault("S3_BUCKET_NAME", config.S3.Bucket, "")
-		config.S3.Endpoint = getEnvOrDefault("S3_ENDPOINT", config.S3.Endpoint, "")
-	}
-
-	// Storj Config
-	if config.StorageBackend == storage.STORJ {
-		config.Storj.AccessGrant = getEnvOrDefault("STORJ_ACCESS_GRANT", config.Storj.AccessGrant, "")
-		config.Storj.Bucket = getEnvOrDefault("STORJ_BUCKET_NAME", config.Storj.Bucket, "")
-	}
-
-	// ProtonDrive Config
-	if config.StorageBackend == storage.PROTON {
-		config.ProtonDrive.Username = getEnvOrDefault("PROTON_DRIVE_USERNAME", "", "")
-		config.ProtonDrive.Password = getEnvOrDefault("PROTON_DRIVE_PASSWORD", "", "")
-	}
+	config.S3.AccessKeyID = getEnvOrDefault("S3_ACCESS_KEY_ID", config.S3.AccessKeyID, "")
+	config.S3.SecretAccessKey = getEnvOrDefault("S3_SECRET_ACCESS_KEY", config.S3.SecretAccessKey, "")
+	config.S3.Bucket = getEnvOrDefault("S3_BUCKET_NAME", config.S3.Bucket, "")
+	config.S3.Endpoint = getEnvOrDefault("S3_ENDPOINT", config.S3.Endpoint, "")
 
 	defaultTimezone := "UTC"
 	timezoneStr := getEnvOrDefault("TZ", config.Timezone.String(), defaultTimezone)
@@ -141,7 +108,6 @@ func NewConfigService() *Service {
 
 	return &Service{
 		Config:           config,
-		Creds:            creds,
 		ConfigChangeChan: make(chan *Options),
 	}
 }
@@ -178,18 +144,6 @@ func (s *Service) GetS3SecretAccessKey() string {
 	return s.Config.S3.SecretAccessKey
 }
 
-func (s *Service) GetStorjBucket() string {
-	return s.Config.Storj.Bucket
-}
-
-func (s *Service) GetStorjAccessGrant() string {
-	return s.Config.Storj.AccessGrant
-}
-
-func (s *Service) GetCredentials() *storage.Credentials {
-	return s.Creds
-}
-
 // GetBackupNameFormat returns the format to use for the backup name
 func (s *Service) GetBackupNameFormat() string {
 	return s.Config.BackupNameFormat
@@ -201,18 +155,8 @@ func (s *Service) GetBackupsInHA() int {
 }
 
 // GetBackupsOnDrive returns the number of backups to keep on the drive
-func (s *Service) GetBackupsInStorage() int {
-	return s.Config.BackupsInStorage
-}
-
-// GetProtonDriveUser returns the ProtonDrive username
-func (s *Service) GetProtonDriveUsername() string {
-	return s.Config.ProtonDrive.Username
-}
-
-// GetProtonDrivePassword returns the ProtonDrive password
-func (s *Service) GetProtonDrivePassword() string {
-	return s.Config.ProtonDrive.Password
+func (s *Service) GetBackupsInS3() int {
+	return s.Config.BackupsInS3
 }
 
 // SetBackupsToKeep sets the number of backups to keep
@@ -227,7 +171,7 @@ func (s *Service) UpdateConfigFromAPI(configRequest Options) error {
 	s.Config.BackupNameFormat = configRequest.BackupNameFormat
 	s.Config.BackupInterval = configRequest.BackupInterval
 	s.Config.BackupsInHA = configRequest.BackupsInHA
-	s.Config.BackupsInStorage = configRequest.BackupsInStorage
+	s.Config.BackupsInS3 = configRequest.BackupsInS3
 
 	s.NotifyConfigChange(s.Config)
 

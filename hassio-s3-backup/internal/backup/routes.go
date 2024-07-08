@@ -1,13 +1,12 @@
 package backup
 
 import (
-	"hassio-proton-drive-backup/internal"
 	"net/http"
 )
 
 // NewBackupRouter creates a new BackupHandler.
-func RegisterBackupRoutes(mux *http.ServeMux, services *internal.Services) {
-	h := newBackupHandler(services.StorageService, services.ConfigService)
+func RegisterBackupRoutes(mux *http.ServeMux, bs *Service) {
+	h := newBackupHandler(bs)
 
 	mux.HandleFunc("GET /api/backups", h.handleListBackups)
 	mux.HandleFunc("GET /api/backups/{id}/download", h.handleDownloadBackupRequest)

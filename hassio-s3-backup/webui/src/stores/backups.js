@@ -11,10 +11,9 @@ export const useBackupsStore = defineStore("backups", {
     nonPinnedBackups(state) {
       return state.backups.filter((backup) => !backup.pinned);
     },
-    storageBackups(state) {
+    s3Backups(state) {
       return state.backups.filter(
-        (backup) =>
-          backup.status === "STORAGEONLY" || backup.status === "SYNCED",
+        (backup) => backup.status === "S3ONLY" || backup.status === "SYNCED",
       );
     },
     haBackups(state) {
@@ -22,20 +21,20 @@ export const useBackupsStore = defineStore("backups", {
         (backup) => backup.status === "HAONLY" || backup.status === "SYNCED",
       );
     },
-    storageBackupsCount() {
-      return this.storageBackups.length;
+    s3BackupsCount() {
+      return this.s3Backups.length;
     },
     haBackupsCount() {
       return this.haBackups.length;
     },
-    storageBackupsSizeInMB() {
-      return this.storageBackups.reduce((acc, backup) => acc + backup.size, 0);
+    s3BackupsSizeInMB() {
+      return this.s3Backups.reduce((acc, backup) => acc + backup.size, 0);
     },
-    storageBackupsSizeInGB() {
-      return (this.storageBackupsSizeInMB / 1024).toFixed(1);
+    s3BackupsSizeInGB() {
+      return (this.s3BackupsSizeInMB / 1024).toFixed(1);
     },
-    storageBackupsSize() {
-      const totalSizeMB = this.storageBackups.reduce(
+    s3BackupsSize() {
+      const totalSizeMB = this.s3Backups.reduce(
         (acc, backup) => acc + backup.size,
         0,
       );

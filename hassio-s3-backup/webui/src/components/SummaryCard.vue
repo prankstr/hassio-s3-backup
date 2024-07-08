@@ -13,15 +13,11 @@
     <v-card-text>
       <v-row class="pt-0">
         <v-col cols="5" class="pr-0 pt-0">
-          <div class="text-white text-subtitle-1">
-            {{ cs.config.storageBackend }}
-          </div>
+          <div class="text-white text-subtitle-1">S3</div>
         </v-col>
         <v-col class="pr-0 pt-0">
           <div class="text-white text-subtitle-1">
-            {{ bs.storageBackupsCount }} / {{ backupsInStorage }} ({{
-              bs.storageBackupsSize
-            }})
+            {{ bs.s3BackupsCount }} / {{ backupsInS3 }} ({{ bs.s3BackupsSize }})
           </div>
         </v-col>
       </v-row>
@@ -109,12 +105,12 @@ const estimatedCost = computed(() => {
   return bs.storageBackupsSizeInGB * 0.004;
 });
 
-const backupsInStorage = computed(() => {
-  if (cs.config.backupsInStorage == 0) {
+const backupsInS3 = computed(() => {
+  if (cs.config.backupsInS3 == 0) {
     return "∞";
   }
 
-  return cs.config.backupsInStorage;
+  return cs.config.backupsInS3;
 });
 
 const backupsInHA = computed(() => {

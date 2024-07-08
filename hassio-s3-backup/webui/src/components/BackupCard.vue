@@ -245,7 +245,7 @@ const translateStatus = (status) => {
   const statusMessages = {
     SYNCED: "Synced",
     HAONLY: "Only in HA",
-    STORAGEONLY: "Only in remote storage",
+    S3ONLY: "Only in S3",
     DELETING: "Deleting",
     RUNNING: "In Progress",
     SYNCING: "Uploading",
@@ -262,7 +262,7 @@ watch(
       status !== "SYNCED" &&
       status !== "FAILED" &&
       status !== "HAONLY" &&
-      status !== "STORAGEONLY";
+      status !== "S3ONLY";
   },
   { immediate: true },
 );

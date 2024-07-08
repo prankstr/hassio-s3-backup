@@ -1,13 +1,5 @@
 <template>
   <v-app-bar color="secondary" :elevation="1">
-    <v-img
-      class="mx-2, ml-4"
-      src="@/assets/Drive-logomark-noborder.svg"
-      max-height="40"
-      max-width="40"
-      contain
-    ></v-img>
-
     <v-app-bar-title> {{ cs.config.storageBackend }} Backup </v-app-bar-title>
 
     <v-spacer></v-spacer>

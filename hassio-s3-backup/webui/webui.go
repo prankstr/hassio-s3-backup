@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-//go:embed dist dist/assets/*
+//go:embed dist
 var staticFiles embed.FS
 
 // NewHandler creates a new handler for serving static content from a given directory

@@ -3,21 +3,18 @@ package backup
 import (
 	"encoding/json"
 	"fmt"
-	"hassio-proton-drive-backup/internal/backup"
-	"hassio-proton-drive-backup/internal/config"
-	"hassio-proton-drive-backup/internal/storage"
 	"log/slog"
 	"net/http"
 )
 
 // backupHandler is a router for backup-related routes.
 type backupHandler struct {
-	backupService *backup.Service
+	backupService *Service
 }
 
-func newBackupHandler(storageService storage.Service, configService *config.Service) *backupHandler {
+func newBackupHandler(bs *Service) *backupHandler {
 	return &backupHandler{
-		backupService: backup.NewService(storageService, configService),
+		backupService: bs,
 	}
 }
 
@@ -201,8 +198,8 @@ func (h *backupHandler) handleResetBackupsRequest(w http.ResponseWriter, r *http
 }
 
 // parseRequest decodes the JSON request body into a BackupRequest struct
-func parseRequest(r *http.Request) (*backup.Request, error) {
-	var requestBody backup.Request
+func parseRequest(r *http.Request) (*Request, error) {
+	var requestBody Request
 
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
 
