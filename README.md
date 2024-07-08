@@ -57,7 +57,7 @@ Before starting, the addon needs to be configured with the following settings:
 - `s3_access_key_id`: The S3 Access key ID.
 - `s3_secret_access_key`: The S3 Secret Access Key.
 
-When the addon is running backup related setting can be configured from the UI. It should be pretty self-explanatory but here's a quick rundown of the settings
+When the addon is running backup related setting can be configured from the UI. It should be pretty self-explanatory but here's a quick rundown of the settings:
 
 - **Name format**: The format of the name of the backup. Supports placeholders for date and time(default: Full Backup {year}-{month}-{day} {hr24}:{min}:{sec})
 - **Number of backups keep keep in S3**: The number of backups to keep in S3 before deleting the oldest ones(default: 0)
@@ -65,6 +65,8 @@ When the addon is running backup related setting can be configured from the UI. 
 - **Days between backups:** The number of days between backups(default: 3)
 
 > [!NOTE]
-> Number of backups to keep is initially set to 0 for both S3 and Home Assistant. This means that no backups will be deleted and is a safe guard to not accidentally delete backup for user who enable the addon for the first time. It's recommended to set these to a reasonable value to avoid running out of storage. As soon as you set a number the addon will remove any full backups exceeding this number.
+> Number of backups to keep is initially set to 0 for both S3 and Home Assistant. This means that no backups will be deleted and is a safe guard to prevent unwanted deletion of backups when enabling the addon for the first time.
+>
+> It's recommended to set these to a reasonable value to avoid running out of storage. As soon as you set a number the addon will remove any full backups exceeding this number.
 
 ![Settings preview](images/settings.png "Home Assistant S3 Backup Settings")
