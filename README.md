@@ -7,7 +7,7 @@
 Home Assistant S3 Backup allows for automated scheduling and synchronization of Home Assistant backups to any S3 compatible storage.
 
 > [!WARNING]
-> This plugin is still in early development and should be considered alpha software. While I've been using it in my own Home Assistant installation a whilewithout issues, please use it at your own risk. It's unclear how much development will go into this plugin.
+> This plugin is still in early development and should be considered alpha software. While I've been using it in my own Home Assistant installation a while without issues, please use it at your own risk. It's unclear how much development will go into this plugin.
 >
 > If you're just looking for an easy backup solution for Home Assistant and don't mind using Google Drive you probably want to use [Home Assistant Google Drive Backup](https://github.com/sabeechen/hassio-google-drive-backup) in favor of this.
 
@@ -34,14 +34,14 @@ It's still early days so a lot.. Some of the most noteworthy:
 ## Installation
 
 1. **Add Repository to Home Assistant:**
-   [![Add repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fprankstr%2Fhassio-proton-drive-backup)
 
-   Click the big blue button.
+[![Add repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fprankstr%2Fhassio-s3-backup)
+Click the big blue button.
 
-   Or manually:
+Or manually:
 
-   - Navigate to the Add-on Store in your Home Assistant UI: `Settings` -> `Add-ons` -> `Add-on Store`.
-   - Click the 3-dots in the upper right corner, select `Repositories`, and paste in this URL: [https://github.com/prankstr/hassio-proton-drive-backup](https://github.com/prankstr/hassio-proton-drive-backup)
+- Navigate to the Add-on Store in your Home Assistant UI: `Settings` -> `Add-ons` -> `Add-on Store`.
+- Click the 3-dots in the upper right corner, select `Repositories`, and paste in this URL: [https://github.com/prankstr/hassio-s3-backup](https://github.com/prankstr/hassio-s3-backup).
 
 2. **Install Home Assistant S3 Backup**
    - Refresh the page
@@ -66,3 +66,5 @@ When the addon is running backup related setting can be configured from the UI. 
 
 > [!NOTE]
 > Number of backups to keep is initially set to 0 for both S3 and Home Assistant. This means that no backups will be deleted and is a safe guard to not accidentally delete backup for user who enable the addon for the first time. It's recommended to set these to a reasonable value to avoid running out of storage. As soon as you set a number the addon will remove any full backups exceeding this number.
+
+![Settings preview](images/settings.png "Home Assistant S3 Backup Settings")
