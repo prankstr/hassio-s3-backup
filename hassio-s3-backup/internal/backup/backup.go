@@ -483,7 +483,6 @@ func (s *Service) updateBackupStatuses() int {
 
 	for _, backup := range s.backups {
 		backupInHA, backupInS3 := backup.HA != nil, backup.S3 != nil
-		slog.Info("Updating backup status", "name", backup.Name, "backupInHA", backupInHA, "backupInS3", backupInS3)
 		if backupInHA && backupInS3 {
 			backup.UpdateStatus(StatusSynced)
 			backupsInS3++
