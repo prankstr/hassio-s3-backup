@@ -31,7 +31,7 @@
             </v-col>
             <v-col cols="12" md="6">
               <v-text-field
-                v-model.number="localConfig.backupsInS3"
+                v-model.number="localConfig.backupsInStorage"
                 type="number"
                 class="mb-0"
                 :label="`Number of backups to keep in S3`"
@@ -51,31 +51,6 @@
                 hint="The amount of days between backups. Defaults to 3 days."
               ></v-text-field>
             </v-col>
-          </v-row>
-          <v-row>
-            <v-card-title class="text-heading-6">S3 settings</v-card-title>
-            <v-btn
-              size="x-large"
-              variant="plain"
-              :icon="show ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-              @click="show = !show"
-            ></v-btn>
-          </v-row>
-          <v-row>
-            <v-expand-transition>
-              <v-row v-show="show">
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model.number="localConfig.backupInterval"
-                    type="number"
-                    class="mb-0"
-                    label="Time between backups"
-                    persistent-hint
-                    hint="The amount of time between backups. Defaults to 3 days."
-                  ></v-text-field>
-                </v-col>
-              </v-row>
-            </v-expand-transition>
           </v-row>
         </v-container>
       </v-card-text>

@@ -1,6 +1,6 @@
 <template>
   <v-app-bar color="secondary" :elevation="1">
-    <v-app-bar-title> {{ cs.config.storageBackend }} Backup </v-app-bar-title>
+    <v-app-bar-title> S3 Backup </v-app-bar-title>
 
     <v-spacer></v-spacer>
 
@@ -19,7 +19,4 @@
 <script setup>
 import Settings from "@/components/Settings.vue";
 import NextBackupTimer from "@/components/NextBackupTimer.vue";
-import { useConfigStore } from "@/stores/config";
-
-const cs = useConfigStore();
 </script>
