@@ -446,11 +446,6 @@ func (s *Service) syncBackups() error {
 		backup.S3 = nil
 	}
 
-	// Mark backups for deletion if needed
-	if err := s.markExcessBackupsForDeletion(); err != nil {
-		return err
-	}
-
 	// Keep HA backups up to date
 	if err := s.updateOrDeleteHABackup(backupMap); err != nil {
 		return err
@@ -458,6 +453,11 @@ func (s *Service) syncBackups() error {
 
 	// Keep Drive backups up to date
 	if err := s.updateOrDeleteBackupsInBackend(backupMap); err != nil {
+		return err
+	}
+
+	// Mark backups for deletion if needed
+	if err := s.markExcessBackupsForDeletion(); err != nil {
 		return err
 	}
 
@@ -740,18 +740,28 @@ func (s *Service) updateS3BackupDetails(backup *Backup, s3Backup *s3.Object) err
 
 // markExcessBackupsForDeletion marks the oldest excess backups for deletion based on the given limit
 func (s *Service) markExcessBackupsForDeletion() error {
-	nonPinnedBackups := []*Backup{}
+	nonPinnedHABackups := []*Backup{}
+	nonPinnedS3Backups := []*Backup{}
 	for _, backup := range s.backups {
 		if !backup.Pinned {
-			nonPinnedBackups = append(nonPinnedBackups, backup)
+			if backup.HA != nil {
+				nonPinnedHABackups = append(nonPinnedHABackups, backup)
+			}
+			if backup.S3 != nil {
+				nonPinnedS3Backups = append(nonPinnedS3Backups, backup)
+			}
 		}
 	}
-	sort.Slice(nonPinnedBackups, func(i, j int) bool {
-		return nonPinnedBackups[i].Date.Before(nonPinnedBackups[j].Date)
+
+	sort.Slice(nonPinnedHABackups, func(i, j int) bool {
+		return nonPinnedHABackups[i].Date.Before(nonPinnedHABackups[j].Date)
+	})
+	sort.Slice(nonPinnedS3Backups, func(i, j int) bool {
+		return nonPinnedS3Backups[i].Date.Before(nonPinnedS3Backups[j].Date)
 	})
 
 	if s.config.BackupsInHA > 0 {
-		if err := s.markForDeletion(nonPinnedBackups, s.config.BackupsInHA, true); err != nil {
+		if err := s.markForDeletion(nonPinnedHABackups, s.config.BackupsInHA, true); err != nil {
 			return err
 		}
 	} else {
@@ -760,7 +770,7 @@ func (s *Service) markExcessBackupsForDeletion() error {
 
 	// Execute marking for Drive backups if a limit is set.
 	if s.config.BackupsInS3 > 0 {
-		if err := s.markForDeletion(nonPinnedBackups, s.config.BackupsInS3, false); err != nil {
+		if err := s.markForDeletion(nonPinnedS3Backups, s.config.BackupsInS3, false); err != nil {
 			return err
 		}
 	} else {
