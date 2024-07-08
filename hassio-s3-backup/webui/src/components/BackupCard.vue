@@ -25,7 +25,10 @@
     <v-card-text>
       <v-row class="pb-0">
         <v-col>
-          <div class="text-white text-body-1">
+          <div v-if="(backup.status = 'FAILED')" class="text-white text-body-1">
+            {{ translateStatus(backup.status) }} 
+          </div>
+          <div v-else class="text-white text-body-1">
             {{ translateStatus(backup.status) }}
           </div>
           <div class="text-white text-body-1">
@@ -85,7 +88,7 @@
         </template>
       </v-tooltip>
       <v-tooltip
-        v-if="backup.status != 'DRIVEONLY'"
+        v-if="backup.status != 'S3ONLY'"
         open-delay="400"
         location="bottom"
         text="Restore to this backup"
@@ -102,7 +105,7 @@
         </template>
       </v-tooltip>
       <v-tooltip
-        v-if="backup.status === 'DRIVEONLY'"
+        v-if="backup.status === 'S3ONLY'"
         open-delay="400"
         location="bottom"
         text="Download backup to Home Assistant"
