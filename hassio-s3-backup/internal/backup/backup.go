@@ -264,7 +264,7 @@ func (s *Service) DownloadBackup(id string) error {
 		}
 	}
 
-	if backup == nil || backup.Slug == "" {
+	if backup == nil {
 		slog.Error("The addon doesn't have the necessary information about the backup, please upload it manually to Home Assistant", "backup", backup.Name)
 		return errors.New("the addon doesn't have the necessary information about the backup, please upload it manually to home assistant")
 	}
@@ -273,7 +273,7 @@ func (s *Service) DownloadBackup(id string) error {
 	backup.UpdateStatus(StatusSyncing)
 
 	filePath := filepath.Join("/backup", backup.Name+".tar")
-	err := s.s3.FGetObject(context.Background(), s.config.S3.Bucket, backup.Name, filePath, minio.GetObjectOptions{})
+	err := s.s3.FGetObject(context.Background(), s.config.S3.Bucket, backup.S3.Key, filePath, minio.GetObjectOptions{})
 	if err != nil {
 		slog.Error("Failed to write backup to disk", "backup", backup.Name, "filePath", filePath, "error", err)
 		backup.UpdateStatus(StatusS3Only)
