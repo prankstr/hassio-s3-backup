@@ -743,23 +743,25 @@ func (s *Service) updateS3BackupDetails(backup *Backup, s3Backup *s3.Object) err
 
 // markExcessBackupsForDeletion marks the oldest excess backups for deletion based on the given limit
 func (s *Service) markExcessBackupsForDeletion() error {
-	// mar excess backups in HA for deletion
-	if s.config.BackupsInHA > 0 {
-		nonPinnedHABackups := []*Backup{}
-		for _, backup := range s.backups {
-			if !backup.Pinned {
-				if backup.HA != nil {
-					nonPinnedHABackups = append(nonPinnedHABackups, backup)
-				}
-			}
+	// Get non-pinned backups
+	nonPinnedBackups := []*Backup{}
+
+	for _, backup := range s.backups {
+		if !backup.Pinned {
+			nonPinnedBackups = append(nonPinnedBackups, backup)
 		}
+	}
 
-		sort.Slice(nonPinnedHABackups, func(i, j int) bool {
-			return nonPinnedHABackups[i].Date.Before(nonPinnedHABackups[j].Date)
-		})
+	if s.config.BackupsInHA > 0 {
+		count := 0
+		for _, backup := range nonPinnedBackups {
+			if backup.HA != nil {
+				count++
+			}
 
-		if err := s.markForDeletion(nonPinnedHABackups, s.config.BackupsInHA, true); err != nil {
-			return err
+			if count > s.config.BackupsInHA {
+				backup.KeepInHA = false
+			}
 		}
 	} else {
 		slog.Debug("Skipping deletion for Home Assistant backups; limit is set to 0.")
@@ -767,22 +769,15 @@ func (s *Service) markExcessBackupsForDeletion() error {
 
 	// mark excess backups in S3 for deletion
 	if s.config.BackupsInS3 > 0 {
-		nonPinnedS3Backups := []*Backup{}
-
-		for _, backup := range s.backups {
-			if !backup.Pinned {
-				if backup.S3 != nil {
-					nonPinnedS3Backups = append(nonPinnedS3Backups, backup)
-				}
+		count := 0
+		for _, backup := range nonPinnedBackups {
+			if backup.S3 != nil {
+				count++
 			}
-		}
 
-		sort.Slice(nonPinnedS3Backups, func(i, j int) bool {
-			return nonPinnedS3Backups[i].Date.Before(nonPinnedS3Backups[j].Date)
-		})
-
-		if err := s.markForDeletion(nonPinnedS3Backups, s.config.BackupsInS3, false); err != nil {
-			return err
+			if count > s.config.BackupsInS3 {
+				backup.KeepInS3 = false
+			}
 		}
 	} else {
 		slog.Debug("Skipping deletion for Drive backups; limit is set to 0.")
