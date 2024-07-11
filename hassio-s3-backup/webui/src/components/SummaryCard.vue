@@ -33,14 +33,14 @@
       </v-row>
       <v-row class="pt-0 mt-0">
         <v-col cols="auto" class="pr-1">
-          <div class="text-white text-subtitle-1">
+          <div :class="['text-subtitle-1', status.textColor]">
             {{ status.message }}
           </div>
         </v-col>
         <v-col cols="1" class="pl-0">
           <v-icon
             :icon="status.icon"
-            color="green"
+            :color="status.iconColor"
             size="20"
             class="pt-1"
           ></v-icon>
@@ -87,15 +87,31 @@ const backupsInHA = computed(() => {
 });
 
 const status = computed(() => {
-  const statusObj = {
+  let statusObj = {
     icon: "mdi-check-circle-outline",
     message: "All good",
+    iconColor: "green",
+    textColor: "text-green",
   };
 
-  if (cs.config.backupsInS3 == 0 && cs.config.backupsInHA == 0) {
-    if (bs.s3backupscount != bs.habackupscount) {
-      statusObj.message = "Mismatch";
-      statusMessage.icon = "mdi-alert-circle-outline";
+  if (
+    bs.s3BackupsCount != cs.config.backupsInS3 ||
+    bs.haBackupsCount != cs.config.backupsInHA
+  ) {
+    if (bs.backupsInS3 < 1) {
+      return {
+        icon: "mdi-alert-decagram-outline",
+        message: "No backups in S3",
+        iconColor: "red",
+        textColor: "text-red",
+      };
+    } else {
+      return {
+        icon: "mdi-alert-circle-outline",
+        message: "Mismatch",
+        iconColor: "orange",
+        textColor: "text-orange",
+      };
     }
   }
 
