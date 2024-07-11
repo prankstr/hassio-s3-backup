@@ -33,7 +33,10 @@
       </v-row>
       <v-row v-if="backupsInHA > 0 || backupsInS3 > 0" class="pt-0 mt-0">
         <v-col cols="auto" class="pr-1">
-          <div :class="['text-subtitle-1', status.textColor]">
+          <div
+            v-tooltip:right.contained="status.tooltip"
+            :class="['text-subtitle-1', status.textColor]"
+          >
             {{ status.message }}
 
             <v-icon
@@ -91,6 +94,8 @@ const status = computed(() => {
     message: "All good",
     iconColor: "green",
     textColor: "text-green",
+    tooltip:
+      "The amount of backups in S3 and Home Assistant match the configured amount",
   };
 
   if (cs.config.backupsInHA > 0 && cs.config.backupsInS3 > 0) {
@@ -98,12 +103,13 @@ const status = computed(() => {
       bs.s3BackupsCount != cs.config.backupsInS3 ||
       bs.haBackupsCount != cs.config.backupsInHA
     ) {
-      if (bs.backupsInS3 < 1) {
+      if (bs.s3BackupsCount < 1) {
         return {
           icon: "mdi-alert-decagram-outline",
           message: "No backups in S3",
           iconColor: "red",
           textColor: "text-red",
+          tooltip: "No backups in S3, please create one",
         };
       } else {
         return {
@@ -111,6 +117,8 @@ const status = computed(() => {
           message: "Mismatch",
           iconColor: "orange",
           textColor: "text-orange",
+          tooltip:
+            "If you just enabled this addon or increased the amount of backups, the mismatch will resolve itself when the new backups are created",
         };
       }
     }

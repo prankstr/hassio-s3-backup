@@ -54,7 +54,7 @@
         v-if="!backup.pinned"
         open-delay="400"
         location="bottom"
-        text="Pin this backup, keeping it indefinately in Home Assistant and Proton"
+        text="Pin this backup, keeping it indefinately in Home Assistant and S3"
       >
         <template v-slot:activator="{ props }">
           <v-btn
