@@ -264,11 +264,6 @@ func (s *Service) DownloadBackup(id string) error {
 		}
 	}
 
-	if backup == nil {
-		slog.Error("The addon doesn't have the necessary information about the backup, please upload it manually to Home Assistant", "backup", backup.Name)
-		return errors.New("the addon doesn't have the necessary information about the backup, please upload it manually to home assistant")
-	}
-
 	slog.Debug("Downloading backup to Home Assistant", "backup", backup.Name)
 	backup.UpdateStatus(StatusSyncing)
 
