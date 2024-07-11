@@ -26,10 +26,21 @@
       <v-row class="pb-0">
         <v-col>
           <div v-if="backup.status == 'FAILED'" class="text-white text-body-1">
-            {{ translateStatus(backup.status) }} 
+            {{ translateStatus(backup.status) }}
+            <v-icon
+              icon="mdi-alert-circle-outline"
+              color="red"
+              size="20"
+            ></v-icon>
           </div>
           <div v-else class="text-white text-body-1">
             {{ translateStatus(backup.status) }}
+
+            <v-icon
+              icon="mdi-alert-circle-outline"
+              color="red"
+              size="20"
+            ></v-icon>
           </div>
           <div class="text-white text-body-1">
             {{ translateSize(backup.size) }}
@@ -276,7 +287,7 @@ function deleteBackup() {
 
   bs.deleteBackup(props.backup.id).then(({ success, error }) => {
     if (!success) {
-      snackbar.show({ message: "⚠️ error.message" });
+      snackbar.show({ message: `⚠️ error: ${error}` });
       loading.value = false;
     }
 
@@ -291,7 +302,7 @@ function restoreBackup() {
 
   bs.restoreBackup(props.backup.id).then(({ success, error }) => {
     if (!success) {
-      snackbar.show({ message: "⚠️ error.message" });
+      snackbar.show({ message: `⚠️ error: ${error}` });
       return (loading.value = false);
     }
 
@@ -306,7 +317,7 @@ function downloadBackup() {
 
   bs.downloadBackup(props.backup.id).then(({ success, error }) => {
     if (!success) {
-      snackbar.show({ message: "⚠️ error.message" });
+      snackbar.show({ message: `⚠️ error: ${error}` });
       return (loading.value = false);
     }
 
@@ -318,7 +329,7 @@ function downloadBackup() {
 function pinBackup() {
   bs.pinBackup(props.backup.id).then(({ success, error }) => {
     if (!success) {
-      snackbar.show({ message: "⚠️ error.message" });
+      snackbar.show({ message: `⚠️ error: ${error}` });
       return;
     }
 
@@ -329,7 +340,7 @@ function pinBackup() {
 function unpinBackup() {
   bs.unpinBackup(props.backup.id).then(({ success, error }) => {
     if (!success) {
-      snackbar.show({ message: "⚠️ error.message" });
+      snackbar.show({ message: `⚠️ error: ${error}` });
       return;
     }
 
