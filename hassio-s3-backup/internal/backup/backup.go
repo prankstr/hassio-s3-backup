@@ -737,8 +737,7 @@ func (s *Service) updateS3BackupDetails(backup *Backup, s3Backup *s3.Object) err
 }
 
 // markExcessBackupsForDeletion marks the oldest excess backups for deletion based on the given limit
-func (s *Service) markExcessBackupsForDeletion() error {
-	// Get non-pinned backups
+func (s *Service) markExcessBackupsForDeletion() error { // Get non-pinned backups
 	nonPinnedBackups := []*Backup{}
 
 	for _, backup := range s.backups {
@@ -747,57 +746,51 @@ func (s *Service) markExcessBackupsForDeletion() error {
 		}
 	}
 
+	// Sort non-pinned backups by date, oldest first
+	sort.Slice(nonPinnedBackups, func(i, j int) bool {
+		return nonPinnedBackups[i].Date.Before(nonPinnedBackups[j].Date)
+	})
+
+	// Mark excess backups in HA for deletion
 	if s.config.BackupsInHA > 0 {
-		count := 0
+		haBackups := []*Backup{}
 		for _, backup := range nonPinnedBackups {
 			if backup.HA != nil {
-				count++
+				haBackups = append(haBackups, backup)
 			}
+		}
 
-			if count > s.config.BackupsInHA {
-				backup.KeepInHA = false
+		// Retain the most recent HA backups
+		if len(haBackups) > s.config.BackupsInHA {
+			for i := 0; i < len(haBackups)-s.config.BackupsInHA; i++ {
+				haBackups[i].KeepInHA = false
 			}
 		}
 	} else {
 		slog.Debug("Skipping deletion for Home Assistant backups; limit is set to 0.")
 	}
 
-	// mark excess backups in S3 for deletion
+	// Mark excess backups in S3 for deletion
 	if s.config.BackupsInS3 > 0 {
-		count := 0
+		s3Backups := []*Backup{}
 		for _, backup := range nonPinnedBackups {
 			if backup.S3 != nil {
-				count++
+				s3Backups = append(s3Backups, backup)
 			}
+		}
 
-			if count > s.config.BackupsInS3 {
-				backup.KeepInS3 = false
+		// Retain the most recent S3 backups
+		// Also consider HA-only backups as theyw will be synceed to S3
+		if len(s3Backups) > s.config.BackupsInS3 {
+			// Mark the oldest S3 backups for deletion
+			for i := 0; i < len(s3Backups)-s.config.BackupsInS3; i++ {
+				s3Backups[i].KeepInS3 = false
 			}
 		}
 	} else {
-		slog.Debug("Skipping deletion for Drive backups; limit is set to 0.")
+		slog.Debug("Skipping deletion for S3 backups; limit is set to 0.")
 	}
 
-	return nil
-}
-
-// markForDeletion marks the oldest excess backups for deletion based on the given limit.
-// The updateHA argument specifies whether to update KeepInHA or KeepOnDrive.
-func (s *Service) markForDeletion(backups []*Backup, limit int, updateHA bool) error {
-	excessCount := len(backups) - limit
-	if excessCount <= 0 {
-		return nil
-	}
-
-	for _, backup := range backups[:excessCount] {
-		if updateHA {
-			backup.KeepInHA = false
-			slog.Debug("Marking backup for deletion in Home Assistant", "name", backup.Name)
-		} else {
-			backup.KeepInS3 = false
-			slog.Debug("Marking backup for deletion on Drive", "name", backup.Name)
-		}
-	}
 	return nil
 }
 
