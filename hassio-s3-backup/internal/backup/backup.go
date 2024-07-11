@@ -772,19 +772,12 @@ func (s *Service) markExcessBackupsForDeletion() error { // Get non-pinned backu
 
 	// Mark excess backups in S3 for deletion
 	if s.config.BackupsInS3 > 0 {
-		s3Backups := []*Backup{}
-		for _, backup := range nonPinnedBackups {
-			if backup.S3 != nil {
-				s3Backups = append(s3Backups, backup)
-			}
-		}
-
 		// Retain the most recent S3 backups
-		// Also consider HA-only backups as theyw will be synceed to S3
-		if len(s3Backups) > s.config.BackupsInS3 {
+		// Consider all backups as they will be synceed to S3
+		if len(nonPinnedBackups) > s.config.BackupsInS3 {
 			// Mark the oldest S3 backups for deletion
-			for i := 0; i < len(s3Backups)-s.config.BackupsInS3; i++ {
-				s3Backups[i].KeepInS3 = false
+			for i := 0; i < len(nonPinnedBackups)-s.config.BackupsInS3; i++ {
+				nonPinnedBackups[i].KeepInS3 = false
 			}
 		}
 	} else {
