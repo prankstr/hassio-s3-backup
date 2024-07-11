@@ -266,7 +266,7 @@ func (s *Service) DownloadBackup(id string) error {
 	s.ongoingBackups[backup.ID] = struct{}{}
 
 	slog.Debug("Downloading backup to Home Assistant", "backup", backup.Name)
-	backup.UpdateStatus(StatusSyncing)
+	backup.UpdateStatus(StatusDownloading)
 
 	object, err := s.s3.GetObject(context.Background(), s.config.S3.Bucket, backup.S3.Key, minio.GetObjectOptions{})
 	if err != nil {
