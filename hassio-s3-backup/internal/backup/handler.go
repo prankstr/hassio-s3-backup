@@ -208,6 +208,6 @@ func parseRequest(r *http.Request) (*Request, error) {
 
 // handleError handles errors by logging them and writing an error response to the client
 func handleError(w http.ResponseWriter, err error, statusCode int) {
-	slog.Error("error handling request", err, "status_code", statusCode)
+	slog.Error("error handling request", "error", err, "status_code", statusCode)
 	http.Error(w, err.Error(), statusCode)
 }
