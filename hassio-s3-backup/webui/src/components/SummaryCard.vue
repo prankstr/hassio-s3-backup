@@ -7,7 +7,7 @@
     variant="tonal"
   >
     <v-card-item>
-      <v-card-title class="text-white text-h4 pb-4">Summary</v-card-title>
+      <v-card-title class="text-white text-h4 mb-4 mt-2">Summary</v-card-title>
     </v-card-item>
 
     <v-card-text>
@@ -31,19 +31,18 @@
           </div>
         </v-col>
       </v-row>
-      <v-row class="pt-0 mt-0">
+      <v-row v-if="backupsInHA > 0 || backupsInS3 > 0" class="pt-0 mt-0">
         <v-col cols="auto" class="pr-1">
           <div :class="['text-subtitle-1', status.textColor]">
             {{ status.message }}
+
+            <v-icon
+              :icon="status.icon"
+              :color="status.iconColor"
+              class="pb-1"
+              size="20"
+            ></v-icon>
           </div>
-        </v-col>
-        <v-col cols="1" class="pl-0">
-          <v-icon
-            :icon="status.icon"
-            :color="status.iconColor"
-            size="20"
-            class="pt-1"
-          ></v-icon>
         </v-col>
       </v-row>
     </v-card-text>
@@ -94,24 +93,26 @@ const status = computed(() => {
     textColor: "text-green",
   };
 
-  if (
-    bs.s3BackupsCount != cs.config.backupsInS3 ||
-    bs.haBackupsCount != cs.config.backupsInHA
-  ) {
-    if (bs.backupsInS3 < 1) {
-      return {
-        icon: "mdi-alert-decagram-outline",
-        message: "No backups in S3",
-        iconColor: "red",
-        textColor: "text-red",
-      };
-    } else {
-      return {
-        icon: "mdi-alert-circle-outline",
-        message: "Mismatch",
-        iconColor: "orange",
-        textColor: "text-orange",
-      };
+  if (cs.config.backupsInHA > 0 && cs.config.backupsInS3 > 0) {
+    if (
+      bs.s3BackupsCount != cs.config.backupsInS3 ||
+      bs.haBackupsCount != cs.config.backupsInHA
+    ) {
+      if (bs.backupsInS3 < 1) {
+        return {
+          icon: "mdi-alert-decagram-outline",
+          message: "No backups in S3",
+          iconColor: "red",
+          textColor: "text-red",
+        };
+      } else {
+        return {
+          icon: "mdi-alert-circle-outline",
+          message: "Mismatch",
+          iconColor: "orange",
+          textColor: "text-orange",
+        };
+      }
     }
   }
 

@@ -35,6 +35,7 @@
               <v-icon
                 icon="mdi-help-circle-outline"
                 color="red"
+                class="pb-1"
                 size="20"
               ></v-icon>
             </v-tooltip>
