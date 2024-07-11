@@ -592,7 +592,7 @@ func (s *Service) updateOrDeleteBackupsInBackend(backupMap map[string]*Backup) e
 	objectCh := s.s3.ListObjects(context.Background(), s.config.S3.Bucket, minio.ListObjectsOptions{})
 	for object := range objectCh {
 		if object.Err != nil {
-			slog.Error("could not list objects in S3: %v", object.Err)
+			slog.Error("could not list objects in S3: %v", "error", object.Err)
 			return fmt.Errorf("could not list objects: %v", object.Err)
 		}
 
@@ -1017,7 +1017,7 @@ func (s *Service) uploadBackup(backup *Backup) (string, error) {
 	if err != nil {
 		backup.UpdateStatus(StatusFailed)
 		backup.ErrorMessage = err.Error()
-		slog.Error("Error uploading backup to S3", err)
+		slog.Error("Error uploading backup to S3", "erroe", err)
 		return "", fmt.Errorf("could not upload object: %v", err)
 	}
 
@@ -1026,7 +1026,7 @@ func (s *Service) uploadBackup(backup *Backup) (string, error) {
 
 // handleBackupError takes a standard set of actions when a backup error occurs
 func handleBackupError(s *Service, errMsg string, backup *Backup, err error) error {
-	slog.Error(errMsg, err)
+	slog.Error(errMsg, "erroe", err)
 	if backup != nil {
 		backup.UpdateStatus(StatusFailed)
 		backup.ErrorMessage = err.Error()
