@@ -10,7 +10,6 @@ import (
 	"hassio-proton-drive-backup/internal/s3"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -267,17 +266,24 @@ func (s *Service) DownloadBackup(id string) error {
 	slog.Debug("Downloading backup to Home Assistant", "backup", backup.Name)
 	backup.UpdateStatus(StatusSyncing)
 
-	filePath := filepath.Join("/backup", backup.Name+".tar")
-	err := s.s3.FGetObject(context.Background(), s.config.S3.Bucket, backup.S3.Key, filePath, minio.GetObjectOptions{})
+	object, err := s.s3.GetObject(context.Background(), s.config.S3.Bucket, backup.S3.Key, minio.GetObjectOptions{})
 	if err != nil {
-		slog.Error("Failed to write backup to disk", "backup", backup.Name, "filePath", filePath, "error", err)
+		slog.Error("Failed to get backup from S3", "backup", backup.Name, "error", err)
+		backup.UpdateStatus(StatusS3Only)
+		return err
+	}
+	defer object.Close()
+
+	err = s.hassio.UploadBackup(object)
+	if err != nil {
+		slog.Error("Failed to upload backup to Home Assistant", "backup", backup.Name, "error", err)
 		backup.UpdateStatus(StatusS3Only)
 		return err
 	}
 
-	slog.Info("Backup downloaded successfully", "backup", backup.Name, "filePath", filePath)
+	slog.Info("Backup downloaded successfully", "backup", backup.Name)
 	backup.KeepInHA = true
-	backup.UpdateStatus(StatusSynced)
+	s.syncBackups()
 
 	return nil
 }

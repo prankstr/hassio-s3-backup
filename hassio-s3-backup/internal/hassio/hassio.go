@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"time"
 )
@@ -173,6 +174,56 @@ func (c *Client) BackupFull(name string) (string, error) {
 	}
 
 	return response.Data.Slug, nil
+}
+
+// UploadBackup uploads a backup to Home Assistant
+func (c *Client) UploadBackup(data io.Reader) error {
+	url := "http://supervisor/backups/new/upload"
+
+	// Create a buffer to hold the multipart form data
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+
+	// Create the form file field
+	part, err := writer.CreateFormFile("file", "temp")
+	if err != nil {
+		return err
+	}
+
+	// Copy the file content into the form field
+	_, err = io.Copy(part, data)
+	if err != nil {
+		return err
+	}
+
+	// Close the multipart writer to finalize the form data
+	err = writer.Close()
+	if err != nil {
+		return err
+	}
+
+	// Create the HTTP request
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+c.token)
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	// Send the request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("unexpected status code: %d, response: %s", resp.StatusCode, respBody)
+	}
+
+	return nil
 }
 
 // DeleteBackup requests a backup to be deleted from Home Assistant
