@@ -22,14 +22,15 @@ import (
 type Status string
 
 const (
-	StatusDeleting Status = "DELETING" // Backup in being deleted
-	StatusPending  Status = "PENDING"  // Backup is initalized but no action taken
-	StatusRunning  Status = "RUNNING"  // Backup is being created in Home Assistant
-	StatusSynced   Status = "SYNCED"   // Backup is present in both Home Assistant and drive
-	StatusHAOnly   Status = "HAONLY"   // Backup is only present in  Home Assistant
-	StatusS3Only   Status = "S3ONLY"   // Backup is only present in S3
-	StatusSyncing  Status = "SYNCING"  // Backups is being uploaded to drive
-	StatusFailed   Status = "FAILED"   // Backup process failed somewhere
+	StatusDeleting    Status = "DELETING"    // Backup in being deleted
+	StatusPending     Status = "PENDING"     // Backup is initalized but no action taken
+	StatusRunning     Status = "RUNNING"     // Backup is being created in Home Assistant
+	StatusSynced      Status = "SYNCED"      // Backup is present in both Home Assistant and drive
+	StatusHAOnly      Status = "HAONLY"      // Backup is only present in  Home Assistant
+	StatusS3Only      Status = "S3ONLY"      // Backup is only present in S3
+	StatusSyncing     Status = "SYNCING"     // Backups is being uploaded to S3
+	StatusDownloading Status = "DOWNLOADING" // Backup is being downloaded from S3
+	StatusFailed      Status = "FAILED"      // Backup process failed somewhere
 )
 
 // Backup represents the details and status of a backup process
@@ -251,8 +252,7 @@ func (s *Service) RestoreBackup(id string) error {
 	return nil
 }
 
-// DownloadBackup downloads a backup to the specified directory
-// Note: might not be needed, download can be done manually from drive and then uploaded to Home Assistant
+// DownloadBackup downloads a backup from S3 to Home Assistant
 func (s *Service) DownloadBackup(id string) error {
 	var backup *Backup
 
@@ -262,6 +262,8 @@ func (s *Service) DownloadBackup(id string) error {
 			break
 		}
 	}
+
+	s.ongoingBackups[backup.ID] = struct{}{}
 
 	slog.Debug("Downloading backup to Home Assistant", "backup", backup.Name)
 	backup.UpdateStatus(StatusSyncing)
@@ -283,6 +285,7 @@ func (s *Service) DownloadBackup(id string) error {
 
 	slog.Info("Backup downloaded successfully", "backup", backup.Name)
 	backup.KeepInHA = true
+	s.removeOngoingBackup(backup.ID)
 	s.syncBackups()
 
 	return nil

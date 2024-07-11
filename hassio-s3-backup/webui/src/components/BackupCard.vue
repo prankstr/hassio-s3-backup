@@ -264,6 +264,7 @@ const translateStatus = (status) => {
     DELETING: "Deleting",
     RUNNING: "In Progress",
     SYNCING: "Uploading",
+    DOWNLOADING: "Downloading",
     FAILED: "Failed",
   };
 
