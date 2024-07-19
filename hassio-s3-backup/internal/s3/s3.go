@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hassio-proton-drive-backup/internal/config"
 	"log/slog"
+	"net/url"
 	"time"
 
 	"github.com/minio/minio-go/v7"
@@ -26,13 +27,22 @@ func NewClient(cs *config.Service) (*minio.Client, error) {
 	bucket := cs.GetS3Bucket()
 	creds := credentials.NewStaticV4(cs.GetS3AccessKeyID(), cs.GetS3SecretAccessKey(), "")
 
-	slog.Debug("Initializing S3 client", "endpoint", cs.GetS3Endpoint(), "bucket", bucket)
-	client, err := minio.New(cs.GetS3Endpoint(), &minio.Options{
-		Creds:  creds,
-		Secure: true,
-	})
+	url, err := url.Parse(cs.GetS3Endpoint())
 	if err != nil {
-		return nil, fmt.Errorf("could not create minio client: %v", err)
+		return nil, fmt.Errorf("could not parse endpoint: %v", err)
+	}
+
+	isSecure := url.Scheme == "https"
+
+	opts := &minio.Options{
+		Creds:  creds,
+		Secure: isSecure,
+	}
+
+	slog.Debug("initializing s3 client", "endpoint", url, "bucket", bucket)
+	client, err := minio.New(url.Host, opts)
+	if err != nil {
+		return nil, fmt.Errorf("could not create s3 client: %v", err)
 	}
 
 	bucketExists, err := client.BucketExists(context.Background(), bucket)
