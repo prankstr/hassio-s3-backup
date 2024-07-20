@@ -23,33 +23,43 @@ type Credentials struct {
 	SecretAccessKey string
 }
 
+// NewClient creates a new S3 client
 func NewClient(cs *config.Service) (*minio.Client, error) {
+	// Get bucket and credentials from config
 	bucket := cs.GetS3Bucket()
 	creds := credentials.NewStaticV4(cs.GetS3AccessKeyID(), cs.GetS3SecretAccessKey(), "")
 
+	// Parse the S3 endpoint URL from the config
 	url, err := url.Parse(cs.GetS3Endpoint())
 	if err != nil {
 		return nil, fmt.Errorf("could not parse endpoint: %v", err)
 	}
 
+	// Determine if the connection should be secure based on the URL scheme
 	isSecure := url.Scheme == "https"
 
+	// Create minio options with the credentials and security settings
 	opts := &minio.Options{
 		Creds:  creds,
 		Secure: isSecure,
 	}
 
-	slog.Debug("initializing s3 client", "endpoint", url, "bucket", bucket)
+	// Log the initialization of the S3 client with debug level
+	slog.Debug("initializing S3 client", "endpoint", url, "bucket", bucket)
+
+	// Create a new minio client with the parsed URL host and options
 	client, err := minio.New(url.Host, opts)
 	if err != nil {
-		return nil, fmt.Errorf("could not create s3 client: %v", err)
+		return nil, fmt.Errorf("could not create S3 client: %v", err)
 	}
 
+	// Check if the specified bucket exists in S3
 	bucketExists, err := client.BucketExists(context.Background(), bucket)
 	if err != nil {
 		return nil, fmt.Errorf("could not check if bucket exists: %v", err)
 	}
 
+	// If the bucket does not exist, create it
 	if !bucketExists {
 		err := client.MakeBucket(context.Background(), bucket, minio.MakeBucketOptions{})
 		if err != nil {
@@ -57,5 +67,6 @@ func NewClient(cs *config.Service) (*minio.Client, error) {
 		}
 	}
 
+	// Return the initialized S3 client
 	return client, nil
 }
