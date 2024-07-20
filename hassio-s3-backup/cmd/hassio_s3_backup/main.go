@@ -58,6 +58,8 @@ func main() {
 		slog.Info("stopped serving new connections.")
 	}()
 
+	// TODO: Decide if the external server is needed
+	// Could be used for metrics or direct access to the UI
 	/* 	// Define server
 	   	extServer := http.Server{
 	   		Addr:    ":9101",
