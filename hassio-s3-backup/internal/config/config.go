@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"hassio-proton-drive-backup/internal/hassio"
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -13,7 +12,7 @@ import (
 	"time"
 )
 
-// Config is a struct to represent the configuration of the addon
+// Options represents the addon options
 type Options struct {
 	Timezone         *time.Location
 	S3               S3Options
@@ -29,6 +28,7 @@ type Options struct {
 	Debug            bool
 }
 
+// S3Options represents the S3 options
 type S3Options struct {
 	AccessKeyID     string
 	SecretAccessKey string
@@ -36,13 +36,13 @@ type S3Options struct {
 	Endpoint        string
 }
 
-// Service is a struct to handle the application configuration
+// Service represents the config service
 type Service struct {
 	Config           *Options
 	ConfigChangeChan chan *Options
 }
 
-// logLevels is a map of string to slog.Level
+// logLevels maps string to slog.Level
 var logLevels map[string]slog.Level = map[string]slog.Level{
 	"Error": slog.LevelError,
 	"Warn":  slog.LevelWarn,
@@ -50,9 +50,9 @@ var logLevels map[string]slog.Level = map[string]slog.Level{
 	"Debug": slog.LevelDebug,
 }
 
-// New returns a new Config struct
+// NewConfigService returns a new ConfigService
 func NewConfigService() *Service {
-	// Read configuration from file
+	// Read saved configuration from file
 	config, err := readConfigFromFile("/data/config.json")
 	if err != nil {
 		// Handle error. This could be logging the error and continuing with defaults
@@ -69,17 +69,11 @@ func NewConfigService() *Service {
 	config.BackupsInS3 = getEnvOrDefaultInt("BACKUPS_IN_S3", config.BackupsInS3, 0)
 	config.BackupInterval = getEnvOrDefaultInt("BACKUP_INTERVAL", config.BackupInterval, 3)
 
-	// S3 Config
-	config.S3.AccessKeyID = getEnvOrDefault("S3_ACCESS_KEY_ID", config.S3.AccessKeyID, "")
-	config.S3.SecretAccessKey = getEnvOrDefault("S3_SECRET_ACCESS_KEY", config.S3.SecretAccessKey, "")
-	config.S3.Bucket = getEnvOrDefault("S3_BUCKET_NAME", config.S3.Bucket, "")
-	config.S3.Endpoint = getEnvOrDefault("S3_ENDPOINT", config.S3.Endpoint, "")
-
 	defaultTimezone := "UTC"
 	timezoneStr := getEnvOrDefault("TZ", config.Timezone.String(), defaultTimezone)
 	config.Timezone, err = time.LoadLocation(timezoneStr)
 	if err != nil {
-		slog.Error("invalid time zone, defaulting to UTC: %v", err)
+		slog.Error("Invalid time zone, defaulting to UTC: %v", err)
 		config.Timezone, _ = time.LoadLocation(defaultTimezone)
 	}
 
@@ -91,7 +85,6 @@ func NewConfigService() *Service {
 		config.LogLevel = logLevels["Info"]
 	}
 
-	// Handle the debug setting
 	debugStr := getEnvOrDefault("DEBUG", strconv.FormatBool(config.Debug), "true")
 	debug, err := strconv.ParseBool(debugStr)
 	if err == nil {
@@ -100,11 +93,25 @@ func NewConfigService() *Service {
 		slog.Error("Cannot parse the DEBUG variable")
 	}
 
+	// S3 Config
+	config.S3.AccessKeyID = getEnvOrDefault("S3_ACCESS_KEY_ID", config.S3.AccessKeyID, "")
+	config.S3.SecretAccessKey = getEnvOrDefault("S3_SECRET_ACCESS_KEY", config.S3.SecretAccessKey, "")
+	config.S3.Bucket = getEnvOrDefault("S3_BUCKET_NAME", config.S3.Bucket, "")
+	config.S3.Endpoint = getEnvOrDefault("S3_ENDPOINT", config.S3.Endpoint, "")
+
 	// Handle ingress entry
-	ingressEntry := getIngressEntry(config.SupervisorToken)
+	ingressEntry, err := getIngressEntry(config.SupervisorToken)
+	if err != nil {
+		slog.Error("Error getting ingress entry: %v", err)
+		ingressEntry = ""
+	}
 	config.IngressPath = ingressEntry
 
-	writeConfigToFile(config)
+	// Write config to file
+	err = writeConfigToFile(config)
+	if err != nil {
+		slog.Error("Error writing config to file: %v", err)
+	}
 
 	return &Service{
 		Config:           config,
@@ -123,23 +130,27 @@ func (s *Service) GetConfig() *Options {
 	return s.Config
 }
 
-// GetBackupDirectory returns the directory where backups are stored
+// GetBackupInterval returns the backup interval in days
 func (s *Service) GetBackupInterval() time.Duration {
 	return (time.Duration(s.Config.BackupInterval) * time.Hour) * 24
 }
 
+// GetS3Bucket returns the S3 bucket name
 func (s *Service) GetS3Bucket() string {
 	return s.Config.S3.Bucket
 }
 
+// GetS3Endpoint returns the S3 endpoint
 func (s *Service) GetS3Endpoint() string {
 	return s.Config.S3.Endpoint
 }
 
+// GetS3AccessKeyID returns the S3 access key ID
 func (s *Service) GetS3AccessKeyID() string {
 	return s.Config.S3.AccessKeyID
 }
 
+// GetS3SecretAccessKey returns the S3 secret access key
 func (s *Service) GetS3SecretAccessKey() string {
 	return s.Config.S3.SecretAccessKey
 }
@@ -149,24 +160,26 @@ func (s *Service) GetBackupNameFormat() string {
 	return s.Config.BackupNameFormat
 }
 
-// GetBackupsToKeep returns the number of backups to keep
+// GetBackupsInHA returns the number of backups to keep in Home Assistant
 func (s *Service) GetBackupsInHA() int {
 	return s.Config.BackupsInHA
 }
 
-// GetBackupsOnDrive returns the number of backups to keep on the drive
+// GetBackupsInS3 returns the number of backups to keep in S3
 func (s *Service) GetBackupsInS3() int {
 	return s.Config.BackupsInS3
 }
 
-// SetBackupsToKeep sets the number of backups to keep
+// SetBackupInterval sets the backup interval
 func (s *Service) SetBackupInterval(interval int) {
 	s.Config.BackupInterval = interval
-
-	writeConfigToFile(s.Config)
+	err := writeConfigToFile(s.Config)
+	if err != nil {
+		slog.Error("Error writing config to file: %v", err)
+	}
 }
 
-// SetBackupsToKeep sets the number of backups to keep
+// UpdateConfigFromAPI updates the configuration with the provided settings from an API request
 func (s *Service) UpdateConfigFromAPI(configRequest Options) error {
 	s.Config.BackupNameFormat = configRequest.BackupNameFormat
 	s.Config.BackupInterval = configRequest.BackupInterval
@@ -174,8 +187,11 @@ func (s *Service) UpdateConfigFromAPI(configRequest Options) error {
 	s.Config.BackupsInS3 = configRequest.BackupsInS3
 
 	s.NotifyConfigChange(s.Config)
-
-	writeConfigToFile(s.Config)
+	err := writeConfigToFile(s.Config)
+	if err != nil {
+		slog.Error("Error writing config to file: %v", err)
+		return fmt.Errorf("failed to update config: %v", err)
+	}
 	return nil
 }
 
@@ -184,26 +200,22 @@ func getEnvOrDefault(key string, currentValue, defaultValue string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
 	}
-
 	if currentValue != "" {
 		return currentValue
 	}
-
 	return defaultValue
 }
 
-// Helper function to get environment variable or return a default
+// Helper function to get environment variable as integer or return a default
 func getEnvOrDefaultInt(key string, currentValue, defaultValue int) int {
 	if value, exists := os.LookupEnv(key); exists {
 		if intValue, err := strconv.Atoi(value); err == nil {
 			return intValue
 		}
 	}
-
 	if currentValue != 0 {
 		return currentValue
 	}
-
 	return defaultValue
 }
 
@@ -219,7 +231,7 @@ func stringFromSlogLevel(level slog.Level) string {
 
 // writeConfigToFile writes a json representation of the config to a file
 func writeConfigToFile(config *Options) error {
-	// Marshal backups array to JSON
+	// Marshal config to JSON
 	data, err := json.Marshal(config)
 	if err != nil {
 		return err
@@ -234,7 +246,7 @@ func writeConfigToFile(config *Options) error {
 	return nil
 }
 
-// readConfigFromFile reads a json config and returns it as a Config struct
+// readConfigFromFile reads the config and returns it as an Options struct
 func readConfigFromFile(filePath string) (*Options, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -251,39 +263,37 @@ func readConfigFromFile(filePath string) (*Options, error) {
 }
 
 // getIngressEntry returns the hassio ingress path for the addon
-func getIngressEntry(token string) string {
+func getIngressEntry(token string) (string, error) {
 	bearer := "Bearer " + token
 
 	req, err := http.NewRequest("GET", "http://supervisor/addons/self/info", nil)
 	if err != nil {
-		fmt.Println(err)
+		return "", err
 	}
 
-	// add authorization header to the req
+	// Add authorization header to the request
 	req.Header.Add("Authorization", bearer)
 
-	// Send req using http Client
+	// Send request using http Client
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Println("Error on response.\n[ERROR] -", err)
+		return "", fmt.Errorf("error on response: %v", err)
 	}
 	defer resp.Body.Close()
 
 	// Read the response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("Error reading response body:", err)
+		return "", fmt.Errorf("error reading response body: %v", err)
 	}
 
 	// Unmarshal JSON into the struct
 	var response hassio.Response
 	if err := json.Unmarshal(body, &response); err != nil {
-		fmt.Println("Error decoding JSON:", err)
+		return "", fmt.Errorf("error decoding JSON: %v", err)
 	}
 
 	// Access the IngressPath
-	ingressEntry := response.Data.IngressEntry
-
-	return ingressEntry
+	return response.Data.IngressEntry, nil
 }
