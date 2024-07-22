@@ -12,17 +12,19 @@ type backupHandler struct {
 	backupService *Service
 }
 
+// newBackupHandler creates and returns a new backupHandler instance.
 func newBackupHandler(bs *Service) *backupHandler {
 	return &backupHandler{
 		backupService: bs,
 	}
 }
 
-func (h backupHandler) handleListBackups(w http.ResponseWriter, r *http.Request) {
+// handleListBackups handles the listing of backups.
+func (h *backupHandler) handleListBackups(w http.ResponseWriter, r *http.Request) {
 	backups := h.backupService.ListBackups()
 
 	// Marshal the backups into JSON
-	json, err := json.Marshal(backups)
+	jsonData, err := json.Marshal(backups)
 	if err != nil {
 		handleError(w, err, http.StatusInternalServerError)
 		return
@@ -30,9 +32,10 @@ func (h backupHandler) handleListBackups(w http.ResponseWriter, r *http.Request)
 
 	// Write the JSON response
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(json)
+	w.Write(jsonData)
 }
 
+// handleTimerRequest handles requests to get the time until the next backup.
 func (h *backupHandler) handleTimerRequest(w http.ResponseWriter, r *http.Request) {
 	milliseconds := h.backupService.TimeUntilNextBackup()
 
@@ -52,6 +55,7 @@ func (h *backupHandler) handleTimerRequest(w http.ResponseWriter, r *http.Reques
 	w.Write(jsonBytes)
 }
 
+// handleBackupRequest handles requests to perform a backup.
 func (h *backupHandler) handleBackupRequest(w http.ResponseWriter, r *http.Request) {
 	requestBody, err := parseRequest(r)
 	if err != nil {
@@ -67,14 +71,14 @@ func (h *backupHandler) handleBackupRequest(w http.ResponseWriter, r *http.Reque
 	go func() {
 		err := h.backupService.PerformBackup(requestBody.Name)
 		if err != nil {
-			handleError(w, err, http.StatusInternalServerError)
-			return
+			slog.Error("error performing backup", "error", err)
 		}
 	}()
 
 	w.WriteHeader(http.StatusAccepted)
 }
 
+// handleDeleteBackupRequest handles requests to delete a backup.
 func (h *backupHandler) handleDeleteBackupRequest(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
@@ -97,6 +101,7 @@ func (h *backupHandler) handleDeleteBackupRequest(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusOK)
 }
 
+// handleRestoreBackupRequest handles requests to restore a backup.
 func (h *backupHandler) handleRestoreBackupRequest(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
@@ -119,6 +124,7 @@ func (h *backupHandler) handleRestoreBackupRequest(w http.ResponseWriter, r *htt
 	w.WriteHeader(http.StatusOK)
 }
 
+// handleDownloadBackupRequest handles requests to download a backup.
 func (h *backupHandler) handleDownloadBackupRequest(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 
@@ -141,6 +147,7 @@ func (h *backupHandler) handleDownloadBackupRequest(w http.ResponseWriter, r *ht
 	w.WriteHeader(http.StatusOK)
 }
 
+// handlePinBackupRequest handles requests to pin a backup.
 func (h *backupHandler) handlePinBackupRequest(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	slog.Debug("received request to pin backup", "id", id)
@@ -164,6 +171,7 @@ func (h *backupHandler) handlePinBackupRequest(w http.ResponseWriter, r *http.Re
 	w.WriteHeader(http.StatusOK)
 }
 
+// handleUnpinBackupRequest handles requests to unpin a backup.
 func (h *backupHandler) handleUnpinBackupRequest(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	slog.Debug("received request to unpin backup", "id", id)
@@ -187,6 +195,7 @@ func (h *backupHandler) handleUnpinBackupRequest(w http.ResponseWriter, r *http.
 	w.WriteHeader(http.StatusOK)
 }
 
+// handleResetBackupsRequest handles requests to reset backups.
 func (h *backupHandler) handleResetBackupsRequest(w http.ResponseWriter, r *http.Request) {
 	err := h.backupService.ResetBackups()
 	if err != nil {
@@ -197,16 +206,14 @@ func (h *backupHandler) handleResetBackupsRequest(w http.ResponseWriter, r *http
 	w.WriteHeader(http.StatusOK)
 }
 
-// parseRequest decodes the JSON request body into a BackupRequest struct
+// parseRequest decodes the JSON request body into a Request struct.
 func parseRequest(r *http.Request) (*Request, error) {
 	var requestBody Request
-
 	err := json.NewDecoder(r.Body).Decode(&requestBody)
-
 	return &requestBody, err
 }
 
-// handleError handles errors by logging them and writing an error response to the client
+// handleError handles errors by logging them and writing an error response to the client.
 func handleError(w http.ResponseWriter, err error, statusCode int) {
 	slog.Error("error handling request", "error", err, "status_code", statusCode)
 	http.Error(w, err.Error(), statusCode)

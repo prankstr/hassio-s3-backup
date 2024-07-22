@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// NewBackupRouter creates a new BackupHandler.
+// RegisterBackupRoutes registers routes for backup endpoints
 func RegisterBackupRoutes(mux *http.ServeMux, bs *Service) {
 	h := newBackupHandler(bs)
 

@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// NewConfigRouter creates a new ConfigRouter.
+// RegisterConfigRoutes registers routes for config endpoints
 func RegisterConfigRoutes(mux *http.ServeMux, cs *Service) {
 	h := newConfigHandler(cs)
 
