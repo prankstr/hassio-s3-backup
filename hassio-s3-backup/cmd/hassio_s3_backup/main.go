@@ -45,7 +45,7 @@ func main() {
 
 	// Define and start HTTP server
 	server := http.Server{
-		Addr:    ":8080",
+		Addr:    ":8099",
 		Handler: mux,
 	}
 
