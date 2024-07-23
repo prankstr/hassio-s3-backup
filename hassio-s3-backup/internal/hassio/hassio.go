@@ -76,7 +76,15 @@ func handleResponse(resp *http.Response, result interface{}) error {
 		respBody, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("unexpected status code: %d, response: %s", resp.StatusCode, respBody)
 	}
-	if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
+
+	// Debug: Log the response body
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("error reading response body: %v", err)
+	}
+	fmt.Printf("Response Body: %s\n", respBody)
+
+	if err := json.NewDecoder(bytes.NewReader(respBody)).Decode(result); err != nil {
 		return fmt.Errorf("could not parse response: %v", err)
 	}
 	return nil
