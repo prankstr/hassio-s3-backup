@@ -105,6 +105,8 @@ func (c *Client) GetBackup(slug string) (*Backup, error) {
 		return nil, err
 	}
 
+	fmt.Println("Backup: ", &backup)
+
 	return &backup, nil
 }
 
