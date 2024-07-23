@@ -131,7 +131,7 @@ func (s *Service) PerformBackup(name string) error {
 	s.ongoingBackups[backup.ID] = struct{}{}
 
 	slog.Info("Backup started", "name", backup.Name)
-	slog.Info("Requesting backup from Home Assistant", "name", backup.Name)
+	slog.Debug("Requesting backup from Home Assistant", "name", backup.Name)
 
 	// Create backup in Home Assistant
 	backup.UpdateStatus(StatusRunning)
@@ -152,10 +152,11 @@ func (s *Service) PerformBackup(name string) error {
 
 	// Update backup with HA Data and upload to Drive
 	if err := s.processAndUploadBackup(backup); err != nil {
-		slog.Error("Error syncing backup to S3", "name", backup.Name, "error", err)
 		backup.UpdateStatus(StatusFailed)
 		backup.ErrorMessage = err.Error()
 		s.removeOngoingBackup(backup.ID)
+
+		err = fmt.Errorf("failed to upload backup to S3: %v", err)
 		return err
 	}
 
@@ -375,6 +376,7 @@ func (s *Service) processAndUploadBackup(backup *Backup) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(haBackup)
 
 	s.updateHABackupDetails(backup, haBackup)
 
