@@ -280,3 +280,42 @@ func (c *Client) RestoreBackup(slug string) error {
 
 	return handleResponse(resp, nil)
 }
+
+// getIngressEntry returns the hassio ingress path for the addon
+func GetIngressEntry(token string) (string, error) {
+	bearer := "Bearer " + token
+
+	req, err := http.NewRequest("GET", "http://supervisor/addons/self/info", nil)
+	if err != nil {
+		return "", err
+	}
+
+	// Add authorization header to the request
+	req.Header.Add("Authorization", bearer)
+
+	// Send request using http Client
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("error on response: %v", err)
+	}
+
+	// Read and parse the response
+	var response Response
+	if err := handleResponse(resp, &response); err != nil {
+		return "", err
+	}
+
+	// Check if the response indicates an error
+	if response.Result == "error" {
+		return "", errors.New(response.Message)
+	}
+
+	// Extract the ingress_entry from the response data
+	ingressEntry, ok := response.Data["ingress_entry"].(string)
+	if !ok {
+		return "", errors.New("missing or invalid ingress_entry in response")
+	}
+
+	return ingressEntry, nil
+}

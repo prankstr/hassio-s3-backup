@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hassio-proton-drive-backup/internal/hassio"
-	"io"
 	"log/slog"
-	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -100,7 +98,7 @@ func NewConfigService() *Service {
 	config.S3.Endpoint = getEnvOrDefault("S3_ENDPOINT", config.S3.Endpoint, "")
 
 	// Handle ingress entry
-	ingressEntry, err := getIngressEntry(config.SupervisorToken)
+	ingressEntry, err := hassio.GetIngressEntry(config.SupervisorToken)
 	if err != nil {
 		slog.Error("Error getting ingress entry: %v", err)
 		ingressEntry = ""
@@ -206,40 +204,4 @@ func readConfigFromFile(filePath string) (*Options, error) {
 	}
 
 	return &config, nil
-}
-
-// getIngressEntry returns the hassio ingress path for the addon
-func getIngressEntry(token string) (string, error) {
-	bearer := "Bearer " + token
-
-	req, err := http.NewRequest("GET", "http://supervisor/addons/self/info", nil)
-	if err != nil {
-		return "", err
-	}
-
-	// Add authorization header to the request
-	req.Header.Add("Authorization", bearer)
-
-	// Send request using http Client
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("error on response: %v", err)
-	}
-	defer resp.Body.Close()
-
-	// Read the response body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("error reading response body: %v", err)
-	}
-
-	// Unmarshal JSON into the struct
-	var response hassio.Response
-	if err := json.Unmarshal(body, &response); err != nil {
-		return "", fmt.Errorf("error decoding JSON: %v", err)
-	}
-
-	// Access the IngressPath
-	return response.Data.IngressEntry, nil
 }
