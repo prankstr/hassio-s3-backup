@@ -137,13 +137,15 @@ func (s *Service) PerformBackup(name string) error {
 	backup.UpdateStatus(StatusRunning)
 	slug, err := s.requestHomeAssistantBackup(backup.Name)
 	if err != nil {
-		slog.Error("Failed to request backup from Home Assistant", "BackupName", backup.Name, "Error", err)
 		backup.ErrorMessage = err.Error()
 		backup.UpdateStatus(StatusFailed)
 		s.removeOngoingBackup(backup.ID)
+
+		err = fmt.Errorf("Backup creation in Home Assistant failed: %v", err)
 		return err
 	}
 	backup.Slug = slug
+	slog.Debug("Backup created in Home Assistant", "name", backup.Name, "slug", backup.Slug)
 
 	if err := s.saveBackupsToFile(); err != nil {
 		slog.Error("Error saving backup state after Home Assistant request", "name", backup.Name, "error", err)
@@ -376,7 +378,6 @@ func (s *Service) processAndUploadBackup(backup *Backup) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(haBackup)
 
 	s.updateHABackupDetails(backup, haBackup)
 
