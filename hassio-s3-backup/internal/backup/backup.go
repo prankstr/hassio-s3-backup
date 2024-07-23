@@ -374,6 +374,7 @@ func (s *Service) requestHomeAssistantBackup(name string) (string, error) {
 
 // processAndUploadBackup updates the backup with information from Home Assistant and uploads it to the remote drive
 func (s *Service) processAndUploadBackup(backup *Backup) error {
+	slog.Info("processAndUploadBackup", "slug", backup.Slug)
 	haBackup, err := s.hassioClient.GetBackup(backup.Slug)
 	if err != nil {
 		return err

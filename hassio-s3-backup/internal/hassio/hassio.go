@@ -13,22 +13,19 @@ import (
 
 // Backup represents the details of a backup in Home Assistant
 type Backup struct {
-	Date       time.Time     `json:"date"`
-	Slug       string        `json:"slug"`
-	Name       string        `json:"name"`
-	Type       string        `json:"type"`
-	Location   string        `json:"location"`
-	Content    BackupContent `json:"content"`
-	Size       float64       `json:"size"`
-	Protected  bool          `json:"protected"`
-	Compressed bool          `json:"compressed"`
-}
-
-// BackupContent represents the content of a backup
-type BackupContent struct {
-	Addons        []string `json:"addons"`
-	Folders       []string `json:"folders"`
-	HomeAssistant bool     `json:"homeassistant"`
+	Date                         time.Time `json:"date"`
+	Slug                         string    `json:"slug"`
+	Name                         string    `json:"name"`
+	Type                         string    `json:"type"`
+	Location                     string    `json:"location"`
+	Addons                       []string  `json:"addons"`
+	Repositories                 []string  `json:"repositories"`
+	Folders                      []string  `json:"folders"`
+	Size                         float64   `json:"size"`
+	Protected                    bool      `json:"protected"`
+	Compressed                   bool      `json:"compressed"`
+	HomeAssistant                bool      `json:"homeassistant"`
+	HomeAssistantExcludeDatabase bool      `json:"homeassistant_exclude_database"`
 }
 
 // BackupResponse represents the response from Home Assistant for listing backups
@@ -83,6 +80,7 @@ func handleResponse(resp *http.Response, result interface{}) error {
 		return fmt.Errorf("error reading response body: %v", err)
 	}
 
+	fmt.Println("respBody:", respBody)
 	// Decode the response body
 	if err := json.NewDecoder(bytes.NewReader(respBody)).Decode(result); err != nil {
 		return fmt.Errorf("could not parse response: %v", err)
