@@ -29,11 +29,17 @@ type Backup struct {
 }
 
 // BackupResponse represents the response from Home Assistant for listing backups
-type BackupResponse struct {
+type SingleBackupResponse struct {
+	Result string `json:"result"`
+	Data   struct {
+		Backup Backup `json:"backup"`
+	} `json:"data"`
+}
+
+type ListBackupsResponse struct {
 	Result string `json:"result"`
 	Data   struct {
 		Backups []*Backup `json:"backups"`
-		Backup  Backup    `json:"backup"` // Add this line to accommodate the single backup response
 	} `json:"data"`
 }
 
@@ -80,7 +86,6 @@ func handleResponse(resp *http.Response, result interface{}) error {
 		return fmt.Errorf("error reading response body: %v", err)
 	}
 
-	fmt.Println("respBody:", respBody)
 	// Decode the response body
 	if err := json.NewDecoder(bytes.NewReader(respBody)).Decode(result); err != nil {
 		return fmt.Errorf("could not parse response: %v", err)
@@ -107,7 +112,7 @@ func (c *Client) GetBackup(slug string) (*Backup, error) {
 	}
 
 	// Parse the response
-	var backupResponse BackupResponse
+	var backupResponse SingleBackupResponse
 	if err := handleResponse(resp, &backupResponse); err != nil {
 		return nil, err
 	}
@@ -139,7 +144,7 @@ func (c *Client) ListBackups() ([]*Backup, error) {
 	}
 
 	// Parse the response
-	var backupResponse BackupResponse
+	var backupResponse ListBackupsResponse
 	if err := handleResponse(resp, &backupResponse); err != nil {
 		return nil, err
 	}
