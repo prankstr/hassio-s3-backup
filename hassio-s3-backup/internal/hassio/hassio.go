@@ -48,9 +48,9 @@ type ResponseData struct {
 
 // Response represents a generic response from Home Assistant
 type Response struct {
-	Result  string `json:"result"`
-	Message string `json:"message"`
-	Data    ResponseData
+	Data    map[string]interface{} `json:"data"`
+	Result  string                 `json:"result"`
+	Message string                 `json:"message"`
 }
 
 // Client is a client for the Hassio API
@@ -77,13 +77,16 @@ func handleResponse(resp *http.Response, result interface{}) error {
 		return fmt.Errorf("unexpected status code: %d, response: %s", resp.StatusCode, respBody)
 	}
 
-	// Debug: Log the response body
+	// Read the response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("error reading response body: %v", err)
 	}
+
+	// Debug: Log the response body
 	fmt.Printf("Response Body: %s\n", respBody)
 
+	// Decode the response body
 	if err := json.NewDecoder(bytes.NewReader(respBody)).Decode(result); err != nil {
 		return fmt.Errorf("could not parse response: %v", err)
 	}
@@ -182,9 +185,15 @@ func (c *Client) BackupFull(name string) (string, error) {
 		return "", errors.New(response.Message)
 	}
 
-	fmt.Println(response.Data)
+	fmt.Printf("Response Data: %+v\n", response.Data) // Debug: Print the response data
 
-	return response.Data.Slug, nil
+	// Extract the slug from the response data
+	slug, ok := response.Data["slug"].(string)
+	if !ok {
+		return "", errors.New("missing or invalid slug in response")
+	}
+
+	return slug, nil
 }
 
 // UploadBackup uploads a backup file to Home Assistant
