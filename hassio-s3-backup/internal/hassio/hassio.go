@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"time"
@@ -185,13 +186,12 @@ func (c *Client) BackupFull(name string) (string, error) {
 		return "", errors.New(response.Message)
 	}
 
-	fmt.Printf("Response Data: %+v\n", response.Data) // Debug: Print the response data
-
 	// Extract the slug from the response data
 	slug, ok := response.Data["slug"].(string)
 	if !ok {
 		return "", errors.New("missing or invalid slug in response")
 	}
+	slog.Info("Request completed", "slug", slug)
 
 	return slug, nil
 }
