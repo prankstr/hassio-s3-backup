@@ -18,10 +18,10 @@ import (
 func main() {
 	// Initalize config
 	cs := config.NewConfigService()
-	conf := cs.GetConfig()
+	c := cs.Config
 
 	// Set LogLevel
-	h := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: conf.LogLevel})
+	h := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: c.LogLevel})
 	slog.SetDefault(slog.New(h))
 
 	// Initalize S3
@@ -40,7 +40,7 @@ func main() {
 	config.RegisterConfigRoutes(mux, cs)
 
 	// Setup UI route and handler
-	uiHandler := webui.NewHandler(conf)
+	uiHandler := webui.NewHandler(c)
 	mux.Handle("/", uiHandler)
 
 	// Define and start HTTP server

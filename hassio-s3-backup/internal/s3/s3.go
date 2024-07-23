@@ -25,12 +25,13 @@ type Credentials struct {
 
 // NewClient creates a new S3 client
 func NewClient(cs *config.Service) (*minio.Client, error) {
+	c := cs.Config
 	// Get bucket and credentials from config
-	bucket := cs.GetS3Bucket()
-	creds := credentials.NewStaticV4(cs.GetS3AccessKeyID(), cs.GetS3SecretAccessKey(), "")
+	bucket := c.S3.Bucket
+	creds := credentials.NewStaticV4(c.S3.AccessKeyID, c.S3.SecretAccessKey, "")
 
 	// Parse the S3 endpoint URL from the config
-	url, err := url.Parse(cs.GetS3Endpoint())
+	url, err := url.Parse(c.S3.Endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("could not parse endpoint: %v", err)
 	}

@@ -125,60 +125,6 @@ func (s *Service) NotifyConfigChange(newConfig *Options) {
 	s.ConfigChangeChan <- newConfig
 }
 
-// GetConfig returns the current application configuration.
-func (s *Service) GetConfig() *Options {
-	return s.Config
-}
-
-// GetBackupInterval returns the backup interval in days
-func (s *Service) GetBackupInterval() time.Duration {
-	return (time.Duration(s.Config.BackupInterval) * time.Hour) * 24
-}
-
-// GetS3Bucket returns the S3 bucket name
-func (s *Service) GetS3Bucket() string {
-	return s.Config.S3.Bucket
-}
-
-// GetS3Endpoint returns the S3 endpoint
-func (s *Service) GetS3Endpoint() string {
-	return s.Config.S3.Endpoint
-}
-
-// GetS3AccessKeyID returns the S3 access key ID
-func (s *Service) GetS3AccessKeyID() string {
-	return s.Config.S3.AccessKeyID
-}
-
-// GetS3SecretAccessKey returns the S3 secret access key
-func (s *Service) GetS3SecretAccessKey() string {
-	return s.Config.S3.SecretAccessKey
-}
-
-// GetBackupNameFormat returns the format to use for the backup name
-func (s *Service) GetBackupNameFormat() string {
-	return s.Config.BackupNameFormat
-}
-
-// GetBackupsInHA returns the number of backups to keep in Home Assistant
-func (s *Service) GetBackupsInHA() int {
-	return s.Config.BackupsInHA
-}
-
-// GetBackupsInS3 returns the number of backups to keep in S3
-func (s *Service) GetBackupsInS3() int {
-	return s.Config.BackupsInS3
-}
-
-// SetBackupInterval sets the backup interval
-func (s *Service) SetBackupInterval(interval int) {
-	s.Config.BackupInterval = interval
-	err := writeConfigToFile(s.Config)
-	if err != nil {
-		slog.Error("Error writing config to file: %v", err)
-	}
-}
-
 // UpdateConfigFromAPI updates the configuration with the provided settings from an API request
 func (s *Service) UpdateConfigFromAPI(configRequest Options) error {
 	s.Config.BackupNameFormat = configRequest.BackupNameFormat

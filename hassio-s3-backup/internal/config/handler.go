@@ -20,7 +20,7 @@ func newConfigHandler(cs *Service) *configHandler {
 // handleGetConfig handles GET requests to retrieve the current configuration.
 func (h *configHandler) handleGetConfig(w http.ResponseWriter, r *http.Request) {
 	// Retrieve the current configuration
-	conf := h.configService.GetConfig()
+	conf := h.configService.Config
 
 	// Prepare the response with the configuration options
 	responseConfig := Options{
