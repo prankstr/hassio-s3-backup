@@ -48,9 +48,9 @@ type ResponseData struct {
 
 // Response represents a generic response from Home Assistant
 type Response struct {
-	Result  string       `json:"result"`
-	Message string       `json:"message"`
-	Data    ResponseData `json:"data"`
+	Result  string `json:"result"`
+	Message string `json:"message"`
+	Data    ResponseData
 }
 
 // Client is a client for the Hassio API
