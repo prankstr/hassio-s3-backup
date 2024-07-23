@@ -130,8 +130,8 @@ func (s *Service) PerformBackup(name string) error {
 	// Track ongoing backups to avoid syncing or any other manipulation in the meantime
 	s.ongoingBackups[backup.ID] = struct{}{}
 
-	slog.Info("Backup started", "name", backup.Name)
-	slog.Debug("Requesting backup from Home Assistant", "name", backup.Name)
+	slog.Info("backup started", "name", backup.Name)
+	slog.Debug("requesting backup from Home Assistant", "name", backup.Name)
 
 	// Create backup in Home Assistant
 	backup.UpdateStatus(StatusRunning)
@@ -141,11 +141,11 @@ func (s *Service) PerformBackup(name string) error {
 		backup.UpdateStatus(StatusFailed)
 		s.removeOngoingBackup(backup.ID)
 
-		err = fmt.Errorf("Backup creation in Home Assistant failed: %v", err)
+		err = fmt.Errorf("backup creation in Home Assistant failed: %v", err)
 		return err
 	}
 	backup.Slug = slug
-	slog.Debug("Backup created in Home Assistant", "name", backup.Name, "slug", backup.Slug)
+	slog.Debug("backup created in Home Assistant", "name", backup.Name, "slug", backup.Slug)
 
 	if err := s.saveBackupsToFile(); err != nil {
 		slog.Error("Error saving backup state after Home Assistant request", "name", backup.Name, "error", err)
@@ -805,13 +805,13 @@ func (s *Service) startBackupScheduler() {
 		for {
 			select {
 			case <-s.backupTimer.C:
-				slog.Info("Performing scheduled backup")
+				slog.Info("performing scheduled backup")
 
 				if err := s.PerformBackup(""); err != nil {
-					slog.Error("Error performing scheduled backup", "error", err)
+					slog.Error("failed to perform scheduled backup", "error", err)
 				}
 			case <-s.stopBackupChan:
-				slog.Info("Stopping backup scheduler")
+				slog.Info("stopping backup scheduler")
 				return
 			}
 		}

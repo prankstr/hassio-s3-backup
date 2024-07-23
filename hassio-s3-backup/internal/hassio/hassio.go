@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"time"
@@ -83,9 +82,6 @@ func handleResponse(resp *http.Response, result interface{}) error {
 	if err != nil {
 		return fmt.Errorf("error reading response body: %v", err)
 	}
-
-	// Debug: Log the response body
-	fmt.Printf("Response Body: %s\n", respBody)
 
 	// Decode the response body
 	if err := json.NewDecoder(bytes.NewReader(respBody)).Decode(result); err != nil {
@@ -191,7 +187,6 @@ func (c *Client) BackupFull(name string) (string, error) {
 	if !ok {
 		return "", errors.New("missing or invalid slug in response")
 	}
-	slog.Info("Request completed", "slug", slug)
 
 	return slug, nil
 }
