@@ -378,6 +378,7 @@ func (s *Service) processAndUploadBackup(backup *Backup) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("haBackup", haBackup)
 
 	s.updateHABackupDetails(backup, haBackup)
 
