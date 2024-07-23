@@ -1008,8 +1008,7 @@ func (s *Service) uploadBackup(backup *Backup) (string, error) {
 	if err != nil {
 		backup.UpdateStatus(StatusFailed)
 		backup.ErrorMessage = err.Error()
-		slog.Error("Error uploading backup to S3", "error", err)
-		return "", fmt.Errorf("could not upload object: %v", err)
+		return "", err
 	}
 
 	return info.Key, nil

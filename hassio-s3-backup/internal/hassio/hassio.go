@@ -174,7 +174,7 @@ func (c *Client) BackupFull(name string) (string, error) {
 		return "", errors.New(response.Message)
 	}
 
-	fmt.Println(response.Result)
+	fmt.Println(response.Data)
 
 	return response.Data.Slug, nil
 }
