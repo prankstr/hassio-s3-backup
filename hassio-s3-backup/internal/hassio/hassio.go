@@ -86,6 +86,9 @@ func handleResponse(resp *http.Response, result interface{}) error {
 		return fmt.Errorf("error reading response body: %v", err)
 	}
 
+	// Debug: Log the response body
+	fmt.Printf("Response Body: %s\n", respBody)
+
 	// Decode the response body
 	if err := json.NewDecoder(bytes.NewReader(respBody)).Decode(result); err != nil {
 		return fmt.Errorf("could not parse response: %v", err)
