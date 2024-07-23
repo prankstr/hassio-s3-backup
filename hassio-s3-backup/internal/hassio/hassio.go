@@ -122,6 +122,8 @@ func (c *Client) GetBackup(slug string) (*Backup, error) {
 		return nil, fmt.Errorf("could not get backup from Home Assistant")
 	}
 
+	fmt.Println(backupResponse)
+
 	return &backupResponse.Data.Backup, nil
 }
 
