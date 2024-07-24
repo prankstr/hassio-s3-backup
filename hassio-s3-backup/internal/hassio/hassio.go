@@ -21,20 +21,18 @@ type Addon struct {
 
 // Backup represents the details of a backup in Home Assistant
 type Backup struct {
-	Date                         time.Time `json:"date"`
-	Location                     *string   `json:"location"`
-	HomeAssistant                string    `json:"homeassistant"`
-	Slug                         string    `json:"slug"`
-	Name                         string    `json:"name"`
-	Type                         string    `json:"type"`
-	SupervisorVersion            string    `json:"supervisor_version"`
-	Repositories                 []string  `json:"repositories"`
-	Addons                       []Addon   `json:"addons"`
-	Folders                      []string  `json:"folders"`
-	Size                         float64   `json:"size"`
-	Protected                    bool      `json:"protected"`
-	Compressed                   bool      `json:"compressed"`
-	HomeAssistantExcludeDatabase bool      `json:"homeassistant_exclude_database"`
+	Date              time.Time `json:"date"`
+	Location          *string   `json:"location"`
+	HomeAssistant     string    `json:"homeassistant"`
+	Slug              string    `json:"slug"`
+	Name              string    `json:"name"`
+	Type              string    `json:"type"`
+	SupervisorVersion string    `json:"supervisor_version"`
+	Repositories      []string  `json:"repositories"`
+	Addons            []Addon   `json:"addons"`
+	Folders           []string  `json:"folders"`
+	Size              float64   `json:"size"`
+	Protected         bool      `json:"protected"`
 }
 
 // BackupResponse represents the response from Home Assistant for listing backups
