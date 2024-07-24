@@ -461,22 +461,26 @@ func (s *Service) syncBackups() error {
 	}
 
 	// Keep HA backups up to date
+	slog.Debug("syncing HA backups")
 	if err := s.updateOrDeleteHABackup(backupMap); err != nil {
 		return err
 	}
 
 	// Keep Drive backups up to date
+	slog.Debug("syncing S3 backups")
 	if err := s.updateOrDeleteBackupsInBackend(backupMap); err != nil {
 		return err
 	}
 
 	// Delete backups from the addon after making sure ha and drive are up to date
+	slog.Debug("deleting backups from addon")
 	s.deleteBackupFromAddon()
 
 	// Update statuses and sync backups to drive if needed
+	slog.Debug("update backup statuses")
 	backupsInS3 := s.updateBackupStatuses()
 	if s.config.BackupsInS3 == 0 || (len(s.backups) > backupsInS3 && backupsInS3 < s.config.BackupsInS3) {
-		slog.Debug("Syncing backups to Drive")
+		slog.Debug("syncing backups to Drive")
 		if err := s.ensureS3Backups(backupsInS3); err != nil {
 			return err
 		}

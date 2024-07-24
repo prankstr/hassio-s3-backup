@@ -150,8 +150,6 @@ func (c *Client) ListBackups() ([]*Backup, error) {
 		return nil, err
 	}
 
-	fmt.Println("backupResponse", backupResponse)
-
 	return backupResponse.Data.Backups, nil
 }
 
