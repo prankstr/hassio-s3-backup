@@ -28,6 +28,21 @@ type Backup struct {
 	HomeAssistantExcludeDatabase bool      `json:"homeassistant_exclude_database"`
 }
 
+// BackupResponse represents the response from Home Assistant for listing backups
+type SingleBackupResponse struct {
+	Result string `json:"result"`
+	Data   struct {
+		Backup Backup
+	} `json:"data"`
+}
+
+type ListBackupsResponse struct {
+	Result string `json:"result"`
+	Data   struct {
+		Backups []*Backup
+	} `json:"data"`
+}
+
 // ResponseData represents the data in a generic response from Home Assistant
 type ResponseData struct {
 	Slug         string `json:"slug"`
@@ -100,14 +115,19 @@ func (c *Client) GetBackup(slug string) (*Backup, error) {
 	}
 
 	// Parse the response
-	var backup Backup
-	if err := handleResponse(resp, &backup); err != nil {
+	var backupResponse SingleBackupResponse
+	if err := handleResponse(resp, &backupResponse); err != nil {
 		return nil, err
 	}
 
-	fmt.Println("Backup: ", &backup)
+	// Check if the response is successful
+	if backupResponse.Result != "ok" {
+		return nil, fmt.Errorf("could not get backup from Home Assistant")
+	}
 
-	return &backup, nil
+	fmt.Println(backupResponse)
+
+	return &backupResponse.Data.Backup, nil
 }
 
 // ListBackups retrieves a list of all backups from Home Assistant
@@ -129,12 +149,12 @@ func (c *Client) ListBackups() ([]*Backup, error) {
 	}
 
 	// Parse the response
-	var backups []*Backup
-	if err := handleResponse(resp, &backups); err != nil {
+	var backupResponse ListBackupsResponse
+	if err := handleResponse(resp, &backupResponse); err != nil {
 		return nil, err
 	}
 
-	return backups, nil
+	return backupResponse.Data.Backups, nil
 }
 
 // BackupFull requests a full backup from Home Assistant
