@@ -44,8 +44,10 @@ type SingleBackupResponse struct {
 }
 
 type ListBackupsResponse struct {
-	Result string    `json:"result"`
-	Data   []*Backup `json:"data"`
+	Result string `json:"result"`
+	Data   struct {
+		Backups []*Backup
+	} `json:"data"`
 }
 
 // ResponseData represents the data in a generic response from Home Assistant
@@ -159,7 +161,7 @@ func (c *Client) ListBackups() ([]*Backup, error) {
 		return nil, err
 	}
 
-	return backupResponse.Data, nil
+	return backupResponse.Data.Backups, nil
 }
 
 // BackupFull requests a full backup from Home Assistant
