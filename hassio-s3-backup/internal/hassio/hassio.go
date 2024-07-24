@@ -30,8 +30,9 @@ type Backup struct {
 
 // BackupResponse represents the response from Home Assistant for listing backups
 type SingleBackupResponse struct {
-	Result string `json:"result"`
-	Data   Backup `json:"data"`
+	Result  string `json:"result"`
+	Message string `json:"message"`
+	Data    Backup `json:"data"`
 }
 
 type ListBackupsResponse struct {
@@ -42,7 +43,7 @@ type ListBackupsResponse struct {
 }
 
 // ResponseData represents the data in a generic response from Home Assistant
-type ResponseData struct {
+type IngressResponse struct {
 	Slug         string `json:"slug"`
 	IngressEntry string `json:"ingress_entry"`
 }
@@ -176,7 +177,7 @@ func (c *Client) BackupFull(name string) (string, error) {
 	}
 
 	// Read and parse the response
-	var response Response
+	var response SingleBackupResponse
 	if err := handleResponse(resp, &response); err != nil {
 		return "", err
 	}
@@ -187,8 +188,8 @@ func (c *Client) BackupFull(name string) (string, error) {
 	}
 
 	// Extract the slug from the response data
-	slug, ok := response.Data["slug"].(string)
-	if !ok {
+	slug := response.Data.Slug
+	if slug == "" {
 		return "", errors.New("missing or invalid slug in response")
 	}
 
