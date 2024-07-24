@@ -11,14 +11,6 @@ import (
 	"time"
 )
 
-// Addon represents the details of an addon
-type Addon struct {
-	Slug    string  `json:"slug"`
-	Name    string  `json:"name"`
-	Version string  `json:"version"`
-	Size    float64 `json:"size"`
-}
-
 // Backup represents the details of a backup in Home Assistant
 type Backup struct {
 	Date time.Time `json:"date"`
@@ -30,13 +22,13 @@ type Backup struct {
 
 // BaseResponse represents a generic response from Home Assistant
 type BaseResponse struct {
+	Data    interface{} `json:"data"`
 	Result  string      `json:"result"`
 	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
 }
 
-// SingleBackupResponse represents the response from Home Assistant for a single backup
-type SingleBackupResponse struct {
+// BackupResponse represents the response from Home Assistant for a single backup
+type BackupResponse struct {
 	BaseResponse
 	Data Backup `json:"data"`
 }
@@ -49,7 +41,7 @@ type ListBackupsResponse struct {
 	} `json:"data"`
 }
 
-// IngressResponse represents the data in a generic response from Home Assistant
+// IngressResponse
 type IngressResponse struct {
 	BaseResponse
 	Data struct {
@@ -71,7 +63,6 @@ func NewService(token string) *Client {
 		client: &http.Client{
 			Timeout: 10 * time.Minute,
 		},
-		url: "http://supervisor",
 	}
 }
 
@@ -88,9 +79,6 @@ func handleResponse(resp *http.Response, result interface{}) error {
 	if err != nil {
 		return fmt.Errorf("error reading response body: %v", err)
 	}
-
-	// Debug: Log the response body
-	fmt.Printf("Response Body: %s\n", respBody)
 
 	// Decode the base response
 	var baseResponse BaseResponse
@@ -115,10 +103,8 @@ func handleResponse(resp *http.Response, result interface{}) error {
 
 // GetBackup retrieves the details of a specific backup by its slug
 func (c *Client) GetBackup(slug string) (*Backup, error) {
-	// API endpoint to get backup information
-	url := fmt.Sprintf("%s/backups/%s/info", c.url, slug)
-	fmt.Println("Fetching backup: ", url)
 	// Create the HTTP request
+	url := fmt.Sprintf("http://supervisor/backups/%s/info", slug)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -132,7 +118,7 @@ func (c *Client) GetBackup(slug string) (*Backup, error) {
 	}
 
 	// Parse the response
-	var backupResponse SingleBackupResponse
+	var backupResponse BackupResponse
 	if err := handleResponse(resp, &backupResponse); err != nil {
 		return nil, err
 	}
@@ -142,10 +128,8 @@ func (c *Client) GetBackup(slug string) (*Backup, error) {
 
 // ListBackups retrieves a list of all backups from Home Assistant
 func (c *Client) ListBackups() ([]*Backup, error) {
-	// API endpoint to list all backups
-	url := fmt.Sprintf("%s/backups", c.url)
-
 	// Create the HTTP request
+	url := "http://supervisor/backups"
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -174,7 +158,7 @@ func (c *Client) BackupFull(name string) (string, error) {
 	bodyReader := bytes.NewReader(jsonBody)
 
 	// Create the HTTP request
-	url := fmt.Sprintf("%s/backups/new/full", c.url)
+	url := "http://supervisor/backups/new/full"
 	req, err := http.NewRequest(http.MethodPost, url, bodyReader)
 	if err != nil {
 		return "", err
@@ -190,7 +174,7 @@ func (c *Client) BackupFull(name string) (string, error) {
 	}
 
 	// Read and parse the response
-	var response SingleBackupResponse
+	var response BackupResponse
 	if err := handleResponse(resp, &response); err != nil {
 		return "", err
 	}
@@ -206,8 +190,6 @@ func (c *Client) BackupFull(name string) (string, error) {
 
 // UploadBackup uploads a backup file to Home Assistant
 func (c *Client) UploadBackup(data io.Reader) error {
-	url := fmt.Sprintf("%s/backups/new/upload", c.url)
-
 	// Create a buffer to hold the multipart form data
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -231,6 +213,7 @@ func (c *Client) UploadBackup(data io.Reader) error {
 	}
 
 	// Create the HTTP request
+	url := "http://supervisor/backups/new/upload"
 	req, err := http.NewRequest("POST", url, body)
 	if err != nil {
 		return err
@@ -249,10 +232,8 @@ func (c *Client) UploadBackup(data io.Reader) error {
 
 // DeleteBackup requests a specific backup to be deleted from Home Assistant
 func (c *Client) DeleteBackup(slug string) error {
-	// API endpoint to delete a specific backup
-	url := fmt.Sprintf("%s/backups/%s", c.url, slug)
-
 	// Create the HTTP request
+	url := fmt.Sprintf("http://supervisor/backups/%s", slug)
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return err
@@ -270,10 +251,8 @@ func (c *Client) DeleteBackup(slug string) error {
 
 // RestoreBackup requests a specific backup to be restored in Home Assistant
 func (c *Client) RestoreBackup(slug string) error {
-	// API endpoint to restore a specific backup
-	url := fmt.Sprintf("%s/backups/%s/restore/full", c.url, slug)
-
 	// Create the HTTP request
+	url := fmt.Sprintf("http://supervisor/backups/%s/restore/full", slug)
 	req, err := http.NewRequest("POST", url, nil)
 	if err != nil {
 		return err
@@ -293,7 +272,9 @@ func (c *Client) RestoreBackup(slug string) error {
 func GetIngressEntry(token string) (string, error) {
 	bearer := "Bearer " + token
 
-	req, err := http.NewRequest("GET", "http://supervisor/addons/self/info", nil)
+	// Create the HTTP request
+	url := "http://supervisor/addons/self/info"
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return "", err
 	}
@@ -324,6 +305,8 @@ func GetIngressEntry(token string) (string, error) {
 	if !ok {
 		return "", errors.New("missing or invalid ingress_entry in response")
 	}
+
+	fmt.Println("Ingress Entry: ", ingressEntry)
 
 	return ingressEntry, nil
 }
