@@ -69,6 +69,7 @@ func (h *backupHandler) handleBackupRequest(w http.ResponseWriter, r *http.Reque
 	}
 
 	go func() {
+		slog.Info("backup request received", "name", requestBody.Name)
 		err := h.backupService.PerformBackup(requestBody.Name)
 		if err != nil {
 			slog.Error("error performing backup", "error", err)

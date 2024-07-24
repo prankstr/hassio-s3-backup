@@ -129,7 +129,6 @@ func (s *Service) PerformBackup(name string) error {
 
 	// Track ongoing backups to avoid syncing or any other manipulation in the meantime
 	s.ongoingBackups[backup.ID] = struct{}{}
-
 	slog.Debug("backup started", "name", backup.Name)
 
 	// Create backup in Home Assistant
@@ -164,7 +163,7 @@ func (s *Service) PerformBackup(name string) error {
 	// Remove ongoing backup and save state
 	backup.UpdateStatus(StatusSynced)
 	s.removeOngoingBackup(backup.ID)
-	slog.Info("backup process completed successfully", "BackupName", backup.Name, "Status", backup.Status)
+	slog.Info("backup successfully created and synced", "name", backup.Name)
 
 	if err := s.saveBackupsToFile(); err != nil {
 		slog.Error("error saving backup state after syncing", "name", backup.Name, "error", err)
