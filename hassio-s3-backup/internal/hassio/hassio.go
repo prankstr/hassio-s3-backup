@@ -37,7 +37,7 @@ type SingleBackupResponse struct {
 type ListBackupsResponse struct {
 	Result string `json:"result"`
 	Data   struct {
-		Backups []*Backup
+		Backups []*Backup `json:"backups"`
 	} `json:"data"`
 }
 
