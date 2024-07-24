@@ -11,6 +11,14 @@ import (
 	"time"
 )
 
+// Addon represents the details of an addon
+type Addon struct {
+	Slug    string  `json:"slug"`
+	Name    string  `json:"name"`
+	Version string  `json:"version"`
+	Size    float64 `json:"size"`
+}
+
 // Backup represents the details of a backup in Home Assistant
 type Backup struct {
 	Date                         time.Time `json:"date"`
@@ -18,7 +26,7 @@ type Backup struct {
 	Name                         string    `json:"name"`
 	Type                         string    `json:"type"`
 	Location                     string    `json:"location"`
-	Addons                       []string  `json:"addons"`
+	Addons                       []Addon   `json:"addons"`
 	Repositories                 []string  `json:"repositories"`
 	Folders                      []string  `json:"folders"`
 	Size                         float64   `json:"size"`
