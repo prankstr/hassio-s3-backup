@@ -67,7 +67,7 @@ func NewService(token string) *Client {
 }
 
 // handleResponse is a helper function to handle the response and error checking
-func handleResponse(resp *http.Response, result interface{}) error {
+func handleResponse(resp *http.Response, data interface{}) error {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
@@ -80,10 +80,9 @@ func handleResponse(resp *http.Response, result interface{}) error {
 		return fmt.Errorf("error reading response body: %v", err)
 	}
 
-	// Decode the base response
 	var baseResponse BaseResponse
 	if err := json.NewDecoder(bytes.NewReader(respBody)).Decode(&baseResponse); err != nil {
-		return fmt.Errorf("could not parse base response: %v", err)
+		return fmt.Errorf("could not parse response: %v", err)
 	}
 
 	// Check if the result is "ok"
@@ -92,9 +91,9 @@ func handleResponse(resp *http.Response, result interface{}) error {
 	}
 
 	// If result is not nil, decode the specific response
-	if result != nil {
-		if err := json.NewDecoder(bytes.NewReader(respBody)).Decode(result); err != nil {
-			return fmt.Errorf("could not parse response: %v", err)
+	if data != nil {
+		if err := json.NewDecoder(bytes.NewReader(respBody)).Decode(data); err != nil {
+			return fmt.Errorf("could not parse data: %v", err)
 		}
 	}
 
@@ -121,6 +120,11 @@ func (c *Client) GetBackup(slug string) (*Backup, error) {
 	var backupResponse BackupResponse
 	if err := handleResponse(resp, &backupResponse); err != nil {
 		return nil, err
+	}
+
+	rs := backupResponse.Data.Slug
+	if rs != slug {
+		return nil, errors.New("missing or invalid backup in response")
 	}
 
 	return &backupResponse.Data, nil
@@ -286,18 +290,13 @@ func GetIngressEntry(token string) (string, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("error on response: %v", err)
+		return "", err
 	}
 
 	// Read and parse the response
 	var baseResponse BaseResponse
 	if err := handleResponse(resp, &baseResponse); err != nil {
 		return "", err
-	}
-
-	// Check if the response indicates an error
-	if baseResponse.Result != "ok" {
-		return "", fmt.Errorf("could not get ingress entry from Home Assistant")
 	}
 
 	// Extract the ingress_entry from the response data
