@@ -100,7 +100,7 @@ func handleResponse(resp *http.Response, result interface{}) error {
 func (c *Client) GetBackup(slug string) (*Backup, error) {
 	// API endpoint to get backup information
 	url := fmt.Sprintf("http://supervisor/backups/%s/info", slug)
-
+	fmt.Println("Fetching backup: ", url)
 	// Create the HTTP request
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -125,7 +125,7 @@ func (c *Client) GetBackup(slug string) (*Backup, error) {
 		return nil, fmt.Errorf("could not get backup from Home Assistant")
 	}
 
-	fmt.Println(backupResponse)
+	fmt.Println("Backup: ", backupResponse)
 
 	return &backupResponse.Data.Backup, nil
 }
