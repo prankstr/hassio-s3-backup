@@ -123,8 +123,6 @@ func (c *Client) GetBackup(slug string) (*Backup, error) {
 		return nil, fmt.Errorf("could not get backup from Home Assistant")
 	}
 
-	fmt.Println("Backup: ", backupResponse)
-
 	return &backupResponse.Data, nil
 }
 
@@ -151,6 +149,8 @@ func (c *Client) ListBackups() ([]*Backup, error) {
 	if err := handleResponse(resp, &backupResponse); err != nil {
 		return nil, err
 	}
+
+	fmt.Println("backupResponse", backupResponse)
 
 	return backupResponse.Data.Backups, nil
 }
