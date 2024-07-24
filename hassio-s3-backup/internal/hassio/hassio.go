@@ -26,9 +26,10 @@ type Backup struct {
 	Name                         string    `json:"name"`
 	Type                         string    `json:"type"`
 	Location                     string    `json:"location"`
-	Addons                       []Addon   `json:"addons"`
+	SupervisorVersion            string    `json:"supervisor_version"`
 	Repositories                 []string  `json:"repositories"`
 	Folders                      []string  `json:"folders"`
+	Addons                       []Addon   `json:"addons"`
 	Size                         float64   `json:"size"`
 	Protected                    bool      `json:"protected"`
 	Compressed                   bool      `json:"compressed"`
