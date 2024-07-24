@@ -22,34 +22,30 @@ type Addon struct {
 // Backup represents the details of a backup in Home Assistant
 type Backup struct {
 	Date                         time.Time `json:"date"`
+	Location                     *string   `json:"location"`
+	HomeAssistant                string    `json:"homeassistant"`
 	Slug                         string    `json:"slug"`
 	Name                         string    `json:"name"`
 	Type                         string    `json:"type"`
-	Location                     string    `json:"location"`
 	SupervisorVersion            string    `json:"supervisor_version"`
 	Repositories                 []string  `json:"repositories"`
-	Folders                      []string  `json:"folders"`
 	Addons                       []Addon   `json:"addons"`
+	Folders                      []string  `json:"folders"`
 	Size                         float64   `json:"size"`
 	Protected                    bool      `json:"protected"`
 	Compressed                   bool      `json:"compressed"`
-	HomeAssistant                bool      `json:"homeassistant"`
 	HomeAssistantExcludeDatabase bool      `json:"homeassistant_exclude_database"`
 }
 
 // BackupResponse represents the response from Home Assistant for listing backups
 type SingleBackupResponse struct {
 	Result string `json:"result"`
-	Data   struct {
-		Backup Backup
-	} `json:"data"`
+	Data   Backup `json:"data"`
 }
 
 type ListBackupsResponse struct {
-	Result string `json:"result"`
-	Data   struct {
-		Backups []*Backup
-	} `json:"data"`
+	Result string    `json:"result"`
+	Data   []*Backup `json:"data"`
 }
 
 // ResponseData represents the data in a generic response from Home Assistant
@@ -136,7 +132,7 @@ func (c *Client) GetBackup(slug string) (*Backup, error) {
 
 	fmt.Println("Backup: ", backupResponse)
 
-	return &backupResponse.Data.Backup, nil
+	return &backupResponse.Data, nil
 }
 
 // ListBackups retrieves a list of all backups from Home Assistant
@@ -163,7 +159,7 @@ func (c *Client) ListBackups() ([]*Backup, error) {
 		return nil, err
 	}
 
-	return backupResponse.Data.Backups, nil
+	return backupResponse.Data, nil
 }
 
 // BackupFull requests a full backup from Home Assistant
