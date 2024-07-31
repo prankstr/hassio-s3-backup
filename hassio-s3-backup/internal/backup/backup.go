@@ -139,14 +139,14 @@ func (s *Service) PerformBackup(name string) error {
 		backup.UpdateStatus(StatusFailed)
 		s.removeOngoingBackup(backup.ID)
 
-		err = fmt.Errorf("backup creation in Home Assistant failed: %v", err)
+		err = fmt.Errorf("backup creation in home assistant failed: %v", err)
 		return err
 	}
 	backup.Slug = slug
-	slog.Debug("backup created in Home Assistant", "name", backup.Name, "slug", backup.Slug)
+	slog.Debug("backup created in home assistant", "name", backup.Name, "slug", backup.Slug)
 
 	if err := s.saveBackupsToFile(); err != nil {
-		slog.Error("error saving backup state after Home Assistant request", "name", backup.Name, "error", err)
+		slog.Error("error saving backup state after home assistant request", "name", backup.Name, "error", err)
 		return err
 	}
 
@@ -156,7 +156,7 @@ func (s *Service) PerformBackup(name string) error {
 		backup.ErrorMessage = err.Error()
 		s.removeOngoingBackup(backup.ID)
 
-		err = fmt.Errorf("failed to upload backup to S3: %v", err)
+		err = fmt.Errorf("failed to upload backup to s3: %v", err)
 		return err
 	}
 
@@ -189,23 +189,23 @@ func (s *Service) DeleteBackup(id string) error {
 		return nil // or return an error indicating that the backup was not found
 	}
 
-	slog.Debug("initiating backup deletion", "backup", backupToDelete.Name, "BackupId", backupToDelete.ID)
+	slog.Debug("initiating backup deletion", "name", backupToDelete.Name)
 	backupToDelete.UpdateStatus(StatusDeleting)
 
 	// Delete backup from Home Assistant
-	slog.Debug("deleting backup from Home Assistant", "ID", backupToDelete.ID)
+	slog.Debug("deleting backup from home assistant", "name", backupToDelete.Name)
 	if err := s.deleteBackupInHomeAssistant(backupToDelete); err != nil {
-		slog.Error("failed to delete backup in Home Assistant", "Backup", backupToDelete.Name, "error", err)
+		slog.Error("failed to delete backup in home assistant", "name", backupToDelete.Name, "error", err)
 	} else {
-		slog.Debug("backup deleted from Home Assistant", "name", backupToDelete.Name)
+		slog.Debug("backup deleted from home assistant", "name", backupToDelete.Name)
 	}
 
 	// Delete backup from the S3
 	if backupToDelete.S3 != nil {
 		if err := s.deleteBackupFromS3(backupToDelete); err != nil {
-			slog.Error("failed to delete backup from S3 backend", "Backup", backupToDelete.Name, "Error", err)
+			slog.Error("failed to delete backup from s3", "Backup", backupToDelete.Name, "error", err)
 		} else {
-			slog.Debug("backup deleted from S3", "name", backupToDelete.Name)
+			slog.Debug("backup deleted from s3", "name", backupToDelete.Name)
 		}
 	}
 
@@ -215,7 +215,7 @@ func (s *Service) DeleteBackup(id string) error {
 	}
 
 	if err := s.saveBackupsToFile(); err != nil {
-		slog.Error("Error saving backup state after deletion", "error", err)
+		slog.Error("error saving backup state after deletion", "error", err)
 		return err
 	}
 
@@ -239,7 +239,7 @@ func (s *Service) RestoreBackup(id string) error {
 
 	err := s.hassioClient.RestoreBackup(backupToRestore.HA.Slug)
 	if err != nil {
-		return fmt.Errorf("failed to restore backup in Home Assistant: %v", err)
+		return fmt.Errorf("failed to restore backup in home assistant: %v", err)
 	}
 
 	slog.Info("restored to backup", "name", backupToRestore.Name)
@@ -259,12 +259,12 @@ func (s *Service) DownloadBackup(id string) error {
 
 	s.ongoingBackups[backup.ID] = struct{}{}
 
-	slog.Debug("downloading backup to Home Assistant", "name", backup.Name)
+	slog.Debug("downloading backup to home assistant", "name", backup.Name)
 	backup.UpdateStatus(StatusDownloading)
 
 	object, err := s.s3Client.GetObject(context.Background(), s.config.S3.Bucket, backup.S3.Key, minio.GetObjectOptions{})
 	if err != nil {
-		slog.Error("failed to get backup from S3", "name", backup.Name, "error", err)
+		slog.Error("failed to get backup from s3", "name", backup.Name, "error", err)
 		backup.UpdateStatus(StatusS3Only)
 		return err
 	}
@@ -351,7 +351,7 @@ func (s *Service) initializeBackup(name string) *Backup {
 
 	s.backups = append([]*Backup{backup}, s.backups...)
 
-	slog.Debug("new backup initialized", "id", backup.ID, "name", backup.Name, "status", backup.Status)
+	slog.Debug("new backup initialized", "name", backup.Name, "status", backup.Status)
 	return backup
 }
 
@@ -405,20 +405,20 @@ func (s *Service) findBackupToDelete(id string) (*Backup, int) {
 
 // deleteBackupInHomeAssistant calls home assistant to delete a backup
 func (s *Service) deleteBackupInHomeAssistant(backup *Backup) error {
-	slog.Debug("deleting backup from Home Assistant", "backup", backup)
+	slog.Debug("deleting backup from home assistant", "backup", backup)
 	err := s.hassioClient.DeleteBackup(backup.Slug)
 	if err != nil {
-		return handleBackupError(s, "failed to delete backup in Home Assistant", backup, err)
+		return handleBackupError(s, "failed to delete backup in home assistant", backup, err)
 	}
 	return nil
 }
 
 // deleteBackupFromS3 deletes a backup from the S3
 func (s *Service) deleteBackupFromS3(backup *Backup) error {
-	slog.Debug("deleting backup from S3", "backup", backup)
+	slog.Debug("deleting backup from s3", "backup", backup)
 	err := s.s3Client.RemoveObject(context.Background(), s.config.S3.Bucket, backup.S3.Key, minio.RemoveObjectOptions{})
 	if err != nil {
-		return handleBackupError(s, "failed to delete backup from S3", backup, err)
+		return handleBackupError(s, "failed to delete backup from s3", backup, err)
 	}
 	return nil
 }
@@ -427,7 +427,7 @@ func (s *Service) deleteBackupFromS3(backup *Backup) error {
 func (s *Service) syncBackups() error {
 	// Wait if there is an ongoing backup
 	if len(s.ongoingBackups) > 0 {
-		slog.Debug("Skipping synchronization due to ongoing backup operations.")
+		slog.Debug("skipping synchronization due to ongoing backup operations.")
 		return nil
 	}
 
@@ -445,8 +445,8 @@ func (s *Service) syncBackups() error {
 	for _, backup := range s.backups {
 		backupMap[backup.Name] = backup
 
-		// NIL out HA and Drive
-		// This will delete the backup from the map if it's not found in HA or Drive during the sync
+		// NIL out HA and S3
+		// This will delete the backup from the map if it's not found in HA or S3 during the sync
 		// Unsure if this is wanted behavior but sticking to it for now
 		backup.HA = nil
 		backup.S3 = nil
@@ -457,18 +457,17 @@ func (s *Service) syncBackups() error {
 		return err
 	}
 
-	// Keep Drive backups up to date
+	// Keep s3 backups up to date
 	if err := s.updateOrDeleteBackupsInBackend(backupMap); err != nil {
 		return err
 	}
 
-	// Delete backups from the addon after making sure ha and drive are up to date
+	// Delete backups from the addon after making sure ha and s3 are up to date
 	s.deleteBackupFromAddon()
 
-	// Update statuses and sync backups to drive if needed
+	// Update statuses and sync backups to s3 if needed
 	backupsInS3 := s.updateBackupStatuses()
 	if s.config.BackupsInS3 == 0 || (len(s.backups) > backupsInS3 && backupsInS3 < s.config.BackupsInS3) {
-		slog.Debug("syncing backups to Drive")
 		if err := s.ensureS3Backups(backupsInS3); err != nil {
 			return err
 		}
@@ -528,9 +527,9 @@ func (s *Service) ensureS3Backups(backupsInS3 int) error {
 
 // syncBackupToDriveAndLog encapsulates the sync logic with logging.
 func (s *Service) syncBackupToDriveAndLog(backup *Backup) error {
-	slog.Debug("Syncing backup to S3", "name", backup.Name)
+	slog.Debug("syncing backup to s3", "name", backup.Name)
 	if err := s.syncBackupToDrive(backup); err != nil {
-		slog.Error("Error syncing backup to S3", "name", backup.Name, "error", err)
+		slog.Error("error syncing backup to s3", "name", backup.Name, "error", err)
 		return err
 	}
 	return nil
@@ -544,7 +543,7 @@ func (s *Service) updateOrDeleteHABackup(backupMap map[string]*Backup) error {
 	}
 
 	if len(haBackups) == 0 {
-		slog.Debug("No backups found in Home Assistant")
+		slog.Debug("no backups found in home assistant")
 		return nil
 	}
 
@@ -555,7 +554,7 @@ func (s *Service) updateOrDeleteHABackup(backupMap map[string]*Backup) error {
 		}
 
 		if _, exists := backupMap[haBackup.Name]; !exists {
-			slog.Info("Found untracked backup in Home Assistant", "name", haBackup.Name)
+			slog.Info("found untracked backup in home assistant", "name", haBackup.Name)
 			backup := s.initializeBackup(haBackup.Name)
 			s.updateHABackupDetails(backup, haBackup)
 
@@ -570,7 +569,7 @@ func (s *Service) updateOrDeleteHABackup(backupMap map[string]*Backup) error {
 
 					backupMap[haBackup.Name].HA = nil
 
-					slog.Info("Deleted backup from Home Assistant", "name", haBackup.Name)
+					slog.Info("deleted backup from home assistant", "name", haBackup.Name)
 				}
 			} else {
 				backupMap[haBackup.Name].HA = haBackup
@@ -579,7 +578,7 @@ func (s *Service) updateOrDeleteHABackup(backupMap map[string]*Backup) error {
 	}
 
 	if upToDate {
-		slog.Debug("Home Assistant backups up to date, no action taken")
+		slog.Debug("home assistant backups up to date, no action taken")
 	}
 
 	return nil
@@ -591,7 +590,7 @@ func (s *Service) updateOrDeleteBackupsInBackend(backupMap map[string]*Backup) e
 	objectCh := s.s3Client.ListObjects(context.Background(), s.config.S3.Bucket, minio.ListObjectsOptions{})
 	for object := range objectCh {
 		if object.Err != nil {
-			slog.Error("could not list objects in S3: %v", "error", object.Err)
+			slog.Error("could not list objects in s3: %v", "error", object.Err)
 			return fmt.Errorf("could not list objects: %v", object.Err)
 		}
 
@@ -603,7 +602,7 @@ func (s *Service) updateOrDeleteBackupsInBackend(backupMap map[string]*Backup) e
 	}
 
 	if len(s3Backups) == 0 {
-		slog.Debug("no backups found in S3")
+		slog.Debug("no backups found in s3")
 		return nil
 	}
 
@@ -612,7 +611,7 @@ func (s *Service) updateOrDeleteBackupsInBackend(backupMap map[string]*Backup) e
 		name := strings.TrimSuffix(s3Backup.Key, ".tar")
 
 		if _, exists := backupMap[name]; !exists {
-			slog.Info("found untracked backup in S3", "name", s3Backup.Key)
+			slog.Info("found untracked backup in s3", "name", s3Backup.Key)
 			backup := s.initializeBackup(strings.TrimSuffix(s3Backup.Key, ".tar"))
 
 			backup.S3 = s3Backup
@@ -637,7 +636,7 @@ func (s *Service) updateOrDeleteBackupsInBackend(backupMap map[string]*Backup) e
 	}
 
 	if noUpdateNeeded {
-		slog.Debug("backups in S3 up to date, no actions taken")
+		slog.Debug("backups in s3 up to date, no actions taken")
 	}
 
 	return nil
@@ -717,7 +716,7 @@ func (s *Service) updateHABackupDetails(backup *Backup, haBackup *hassio.Backup)
 
 // updateS3BackupDetails updates the backup with information from S3
 func (s *Service) updateS3BackupDetails(backup *Backup, s3Backup *s3.Object) error {
-	slog.Debug("fetching backup attributes from S3", "name", backup.Name)
+	slog.Debug("fetching backup attributes from s3", "name", backup.Name)
 
 	objectName := backup.Name + ".tar"
 	object, err := s.s3Client.StatObject(context.Background(), s.config.S3.Bucket, objectName, minio.StatObjectOptions{})
@@ -820,7 +819,7 @@ func (s *Service) startBackupSyncScheduler() {
 		for {
 			select {
 			case <-s.syncTicker.C:
-				slog.Debug("performing scheduled backup sync")
+				slog.Info("performing scheduled backup sync")
 
 				if err := s.syncBackups(); err != nil {
 					slog.Error("error performing backup sync", "error", err)
