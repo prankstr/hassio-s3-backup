@@ -509,8 +509,14 @@ func (s *Service) syncBackups() error {
 	if nothingToDo {
 		slog.Info("nothing to do")
 	}
+
 	// Sort and save backups
-	return s.sortAndSaveBackups()
+	s.sortAndSaveBackups()
+
+	// Reset timer
+	s.resetTimerForNextBackup()
+
+	return nil
 }
 
 // ensureS3Backups syncs the required number of backups to the drive.
