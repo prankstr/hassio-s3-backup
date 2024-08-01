@@ -653,7 +653,7 @@ func (s *Service) updateOrDeleteS3Backups(backupMap map[string]*Backup) (bool, e
 	}
 
 	if !updated {
-		slog.Debug("backups in s3 up to date, no actions taken")
+		slog.Debug("s3 backups up to date, no actions taken")
 	}
 
 	return updated, nil
@@ -742,25 +742,25 @@ func (s *Service) updateS3BackupDetails(backup *Backup, s3Backup *s3.Object) err
 
 // markExcessBackupsForDeletion marks the oldest excess backups for deletion based on the given limit and returns true if anything was marked for deletion
 func (s *Service) markExcessBackupsForDeletion() bool {
-	// Get non-pinned backups
-	nonPinnedBackups := []*Backup{}
+	// Get backups that aren't pinned or failed
+	backups := []*Backup{}
 
 	for _, backup := range s.backups {
-		if !backup.Pinned {
-			nonPinnedBackups = append(nonPinnedBackups, backup)
+		if !backup.Pinned && backup.Status != StatusFailed {
+			backups = append(backups, backup)
 		}
 	}
 
 	// Sort non-pinned backups by date, oldest first
-	sort.Slice(nonPinnedBackups, func(i, j int) bool {
-		return nonPinnedBackups[i].Date.Before(nonPinnedBackups[j].Date)
+	sort.Slice(backups, func(i, j int) bool {
+		return backups[i].Date.Before(backups[j].Date)
 	})
 
 	// Mark excess backups in HA for deletion
 	deleted := false
 	if s.config.BackupsInHA > 0 {
 		haBackups := []*Backup{}
-		for _, backup := range nonPinnedBackups {
+		for _, backup := range backups {
 			if backup.HA != nil {
 				haBackups = append(haBackups, backup)
 			}
@@ -781,10 +781,11 @@ func (s *Service) markExcessBackupsForDeletion() bool {
 	if s.config.BackupsInS3 > 0 {
 		// Retain the most recent S3 backups
 		// Consider all backups as they will be synced to S3
-		if len(nonPinnedBackups) > s.config.BackupsInS3 {
+		if len(backups) > s.config.BackupsInS3 {
 			// Mark the oldest S3 backups for deletion
-			for i := 0; i < len(nonPinnedBackups)-s.config.BackupsInS3; i++ {
-				nonPinnedBackups[i].KeepInS3 = false
+			for i := 0; i < len(backups)-s.config.BackupsInS3; i++ {
+				backups[i].KeepInS3 = false
+				deleted = true
 			}
 		}
 	} else {
