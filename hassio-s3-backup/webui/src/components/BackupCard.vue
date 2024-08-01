@@ -32,7 +32,7 @@
               color="red"
               class="pb-1"
               size="20"
-              :v-tooltip="backup.errorMessage"
+              v-tooltip="backup.errorMessage"
             ></v-icon>
           </div>
           <div v-else class="text-white text-body-1">
