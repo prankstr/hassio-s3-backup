@@ -107,13 +107,13 @@ func NewService(s3Client *minio.Client, configService *config.Service) *Service 
 		ongoingBackups: make(map[string]struct{}),
 	}
 
-	// Initial load and sync of backups
-	service.loadBackupsFromFile()
-	service.syncBackups()
-
 	// Initialize backupTimer with a dummy duration
 	service.backupTimer = time.NewTimer(time.Hour)
 	service.backupTimer.Stop()
+
+	// Initial load and sync of backups
+	service.loadBackupsFromFile()
+	service.syncBackups()
 
 	// Start scheduled backups and syncs
 	go service.startBackupScheduler()
