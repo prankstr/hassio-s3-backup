@@ -514,6 +514,7 @@ func (s *Service) syncBackups() error {
 	s.sortAndSaveBackups()
 
 	// Reset timer
+	s.mutex.Unlock()
 	s.resetTimerForNextBackup()
 
 	return nil
