@@ -276,7 +276,7 @@ watch(
 
     if (status === "FAILED") {
       snackbar.show({
-        message: `⚠️ Backup failed: ${props.backup.errorMessage}`,
+        message: `⚠️ Backup failed: "${props.backup.errorMessage}"`,
       });
     }
   },
