@@ -435,9 +435,12 @@ func (s *Service) syncBackups() error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
+	// Define nothingToDo
+	nothingToDo := true
+
 	// Mark backups for deletion if needed
-	if err := s.markExcessBackupsForDeletion(); err != nil {
-		return err
+	if s.markExcessBackupsForDeletion() {
+		nothingToDo = false
 	}
 
 	// Create a map of backups for easy access
@@ -453,34 +456,37 @@ func (s *Service) syncBackups() error {
 	}
 
 	// Keep HA backups up to date
-	if err := s.updateOrDeleteHABackup(backupMap); err != nil {
+	updated, err := s.updateOrDeleteHABackups(backupMap)
+	if err != nil {
 		return err
 	}
+	if updated {
+		nothingToDo = false
+	}
 
-	// Keep s3 backups up to date
-	if err := s.updateOrDeleteBackupsInBackend(backupMap); err != nil {
+	// Keep S3 backups up to date
+	updated, err = s.updateOrDeleteS3Backups(backupMap)
+	if err != nil {
 		return err
+	}
+	if updated {
+		nothingToDo = false
 	}
 
 	// Delete backups from the addon after making sure ha and s3 are up to date
-	s.deleteBackupFromAddon()
-
-	// Update statuses and sync backups to s3 if needed
-	backupsInS3 := s.updateBackupStatuses()
-	if s.config.BackupsInS3 == 0 || (len(s.backups) > backupsInS3 && backupsInS3 < s.config.BackupsInS3) {
-		if err := s.ensureS3Backups(backupsInS3); err != nil {
-			return err
+	backupsToKeep := []*Backup{}
+	for _, backup := range s.backups {
+		if backup.HA != nil || backup.S3 != nil {
+			if backup.KeepInHA || backup.KeepInS3 {
+				backupsToKeep = append(backupsToKeep, backup)
+			}
 		}
 	}
 
-	// Sort and save backups
-	return s.sortAndSaveBackups()
-}
+	s.backups = backupsToKeep
 
-// updateBackupStatuses sets the status for each backup and counts backups on Drive.
-func (s *Service) updateBackupStatuses() int {
+	// Update statuses and sync backups to s3 if needed
 	backupsInS3 := 0
-
 	for _, backup := range s.backups {
 		backupInHA, backupInS3 := backup.HA != nil, backup.S3 != nil
 		if backupInHA && backupInS3 {
@@ -494,7 +500,18 @@ func (s *Service) updateBackupStatuses() int {
 		}
 	}
 
-	return backupsInS3
+	if s.config.BackupsInS3 == 0 || (len(s.backups) > backupsInS3 && backupsInS3 < s.config.BackupsInS3) {
+		nothingToDo = false
+		if err := s.ensureS3Backups(backupsInS3); err != nil {
+			return err
+		}
+	}
+
+	if nothingToDo {
+		slog.Info("nothing to do")
+	}
+	// Sort and save backups
+	return s.sortAndSaveBackups()
 }
 
 // ensureS3Backups syncs the required number of backups to the drive.
@@ -527,7 +544,7 @@ func (s *Service) ensureS3Backups(backupsInS3 int) error {
 
 // syncBackupToDriveAndLog encapsulates the sync logic with logging.
 func (s *Service) syncBackupToDriveAndLog(backup *Backup) error {
-	slog.Debug("syncing backup to s3", "name", backup.Name)
+	slog.Info("syncing backup to s3", "name", backup.Name)
 	if err := s.syncBackupToDrive(backup); err != nil {
 		slog.Error("error syncing backup to s3", "name", backup.Name, "error", err)
 		return err
@@ -536,18 +553,18 @@ func (s *Service) syncBackupToDriveAndLog(backup *Backup) error {
 }
 
 // addHABackupsToMap adds Home Assistant backups to the backup map if it doesn't find one by name
-func (s *Service) updateOrDeleteHABackup(backupMap map[string]*Backup) error {
+func (s *Service) updateOrDeleteHABackups(backupMap map[string]*Backup) (bool, error) {
 	haBackups, err := s.hassioClient.ListBackups()
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if len(haBackups) == 0 {
 		slog.Debug("no backups found in home assistant")
-		return nil
+		return false, nil
 	}
 
-	upToDate := true
+	updated := true
 	for _, haBackup := range haBackups {
 		if haBackup.Type == "partial" {
 			continue // Skip partial backups
@@ -559,12 +576,12 @@ func (s *Service) updateOrDeleteHABackup(backupMap map[string]*Backup) error {
 			s.updateHABackupDetails(backup, haBackup)
 
 			backupMap[haBackup.Name] = backup
-			upToDate = false
+			updated = false
 		} else {
 			if !backupMap[haBackup.Name].KeepInHA {
 				if !backupMap[haBackup.Name].Pinned {
 					if err := s.hassioClient.DeleteBackup(haBackup.Slug); err != nil {
-						return err
+						return false, err
 					}
 
 					backupMap[haBackup.Name].HA = nil
@@ -577,21 +594,21 @@ func (s *Service) updateOrDeleteHABackup(backupMap map[string]*Backup) error {
 		}
 	}
 
-	if upToDate {
+	if updated {
 		slog.Debug("home assistant backups up to date, no action taken")
 	}
 
-	return nil
+	return updated, nil
 }
 
 // addDriveBackupsToMap adds backups found on the S3 to the backup map if it doesn't find one by name
-func (s *Service) updateOrDeleteBackupsInBackend(backupMap map[string]*Backup) error {
+func (s *Service) updateOrDeleteS3Backups(backupMap map[string]*Backup) (bool, error) {
 	s3Backups := []*s3.Object{}
 	objectCh := s.s3Client.ListObjects(context.Background(), s.config.S3.Bucket, minio.ListObjectsOptions{})
 	for object := range objectCh {
 		if object.Err != nil {
 			slog.Error("could not list objects in s3: %v", "error", object.Err)
-			return fmt.Errorf("could not list objects: %v", object.Err)
+			return false, fmt.Errorf("could not list objects: %v", object.Err)
 		}
 
 		s3Backups = append(s3Backups, &s3.Object{
@@ -603,10 +620,10 @@ func (s *Service) updateOrDeleteBackupsInBackend(backupMap map[string]*Backup) e
 
 	if len(s3Backups) == 0 {
 		slog.Debug("no backups found in s3")
-		return nil
+		return false, nil
 	}
 
-	noUpdateNeeded := true
+	updated := false
 	for _, s3Backup := range s3Backups {
 		name := strings.TrimSuffix(s3Backup.Key, ".tar")
 
@@ -618,12 +635,12 @@ func (s *Service) updateOrDeleteBackupsInBackend(backupMap map[string]*Backup) e
 			backup.Date = s3Backup.Modified
 			backup.Size = s3Backup.Size
 
-			noUpdateNeeded = false
+			updated = true
 		} else {
 			if !backupMap[name].KeepInS3 {
 				if !backupMap[name].Pinned {
 					if err := s.s3Client.RemoveObject(context.Background(), s.config.S3.Bucket, s3Backup.Key, minio.RemoveObjectOptions{}); err != nil {
-						return err
+						return false, err
 					}
 
 					backupMap[name].S3 = nil
@@ -635,27 +652,11 @@ func (s *Service) updateOrDeleteBackupsInBackend(backupMap map[string]*Backup) e
 		}
 	}
 
-	if noUpdateNeeded {
+	if updated {
 		slog.Debug("backups in s3 up to date, no actions taken")
 	}
 
-	return nil
-}
-
-// deleteBackupFromAddon deletes a backup from the addon if it's not marked to be kept
-func (s *Service) deleteBackupFromAddon() error {
-	backupsToKeep := []*Backup{}
-	for _, backup := range s.backups {
-		if backup.HA != nil || backup.S3 != nil {
-			if backup.KeepInHA || backup.KeepInS3 {
-				backupsToKeep = append(backupsToKeep, backup)
-			}
-		}
-	}
-
-	s.backups = backupsToKeep
-
-	return nil
+	return updated, nil
 }
 
 // sortAndSaveBackups sorts the backup array by date, latest first and saves the state to file
@@ -739,8 +740,9 @@ func (s *Service) updateS3BackupDetails(backup *Backup, s3Backup *s3.Object) err
 	return nil
 }
 
-// markExcessBackupsForDeletion marks the oldest excess backups for deletion based on the given limit
-func (s *Service) markExcessBackupsForDeletion() error { // Get non-pinned backups
+// markExcessBackupsForDeletion marks the oldest excess backups for deletion based on the given limit and returns true if anything was marked for deletion
+func (s *Service) markExcessBackupsForDeletion() bool {
+	// Get non-pinned backups
 	nonPinnedBackups := []*Backup{}
 
 	for _, backup := range s.backups {
@@ -755,6 +757,7 @@ func (s *Service) markExcessBackupsForDeletion() error { // Get non-pinned backu
 	})
 
 	// Mark excess backups in HA for deletion
+	deleted := false
 	if s.config.BackupsInHA > 0 {
 		haBackups := []*Backup{}
 		for _, backup := range nonPinnedBackups {
@@ -767,6 +770,7 @@ func (s *Service) markExcessBackupsForDeletion() error { // Get non-pinned backu
 		if len(haBackups) > s.config.BackupsInHA {
 			for i := 0; i < len(haBackups)-s.config.BackupsInHA; i++ {
 				haBackups[i].KeepInHA = false
+				deleted = true
 			}
 		}
 	} else {
@@ -787,7 +791,7 @@ func (s *Service) markExcessBackupsForDeletion() error { // Get non-pinned backu
 		slog.Debug("skipping deletion for S3 backups; limit is set to 0.")
 	}
 
-	return nil
+	return deleted
 }
 
 // startBackupScheduler starts a go routine that will perform backups on a timer

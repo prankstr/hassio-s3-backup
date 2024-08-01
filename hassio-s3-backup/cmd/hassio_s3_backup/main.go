@@ -21,8 +21,12 @@ func main() {
 	c := cs.Config
 
 	// Set LogLevel
-	h := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: c.LogLevel})
-	slog.SetDefault(slog.New(h))
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	}
+
+	handler := slog.NewTextHandler(os.Stdout, opts)
+	slog.SetDefault(slog.New(handler))
 
 	// Initalize S3
 	s3, err := s3.NewClient(cs)
