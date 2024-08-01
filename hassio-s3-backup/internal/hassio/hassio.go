@@ -56,6 +56,15 @@ type Client struct {
 	url    string
 }
 
+type RequestError struct {
+	Err        error
+	StatusCode int
+}
+
+func (r *RequestError) Error() string {
+	return fmt.Sprintf("status %d: %v", r.StatusCode, r.Err)
+}
+
 // NewService initializes and returns a new Hassio Client
 func NewService(token string) *Client {
 	return &Client{
@@ -83,7 +92,10 @@ func handleResponse(resp *http.Response, data interface{}) error {
 
 	// Check if the result is "ok"
 	if baseResponse.Result != "ok" {
-		return fmt.Errorf("error from home assistant: %s", baseResponse.Message)
+		return &RequestError{
+			StatusCode: resp.StatusCode,
+			Err:        errors.New(baseResponse.Message),
+		}
 	}
 
 	// If result is not nil, decode the specific response
