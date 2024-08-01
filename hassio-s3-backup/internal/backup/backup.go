@@ -430,10 +430,6 @@ func (s *Service) syncBackups() error {
 		return nil
 	}
 
-	// Get lock
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
 	// Define nothingToDo
 	nothingToDo := true
 
@@ -514,7 +510,6 @@ func (s *Service) syncBackups() error {
 	s.sortAndSaveBackups()
 
 	// Reset timer
-	s.mutex.Unlock()
 	s.resetTimerForNextBackup()
 
 	return nil
