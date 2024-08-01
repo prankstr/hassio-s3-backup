@@ -27,18 +27,13 @@
         <v-col>
           <div v-if="backup.status == 'FAILED'" class="text-white text-body-1">
             {{ translateStatus(backup.status) }}
-            <v-tooltip
-              open-delay="400"
-              location="bottom"
-              :text="backup.errorMessage"
-            >
-              <v-icon
-                icon="mdi-help-circle-outline"
-                color="red"
-                class="pb-1"
-                size="20"
-              ></v-icon>
-            </v-tooltip>
+            <v-icon
+              icon="mdi-help-circle-outline"
+              color="red"
+              class="pb-1"
+              size="20"
+              :v-tooltip="backup.errorMessage"
+            ></v-icon>
           </div>
           <div v-else class="text-white text-body-1">
             {{ translateStatus(backup.status) }}

@@ -129,7 +129,6 @@ func (s *Service) PerformBackup(name string) error {
 
 	// Track ongoing backups to avoid syncing or any other manipulation in the meantime
 	s.ongoingBackups[backup.ID] = struct{}{}
-	slog.Debug("backup started", "name", backup.Name)
 
 	// Create backup in Home Assistant
 	backup.UpdateStatus(StatusRunning)
