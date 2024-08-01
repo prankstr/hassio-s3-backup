@@ -20,14 +20,11 @@
             <v-col
               cols="12"
               md="6"
-              v-for="(backup, i) in bs.nonPinnedBackups"
+              v-for="backup in bs.nonPinnedBackups"
               :key="backup.id"
             >
               <div class="d-flex flex-column align-center">
-                <BackupCard
-                  @backupsChanges="bs.fetchBackups"
-                  :backup="backup"
-                ></BackupCard>
+                <BackupCard :backup="backup"></BackupCard>
               </div>
             </v-col>
           </v-row>
@@ -44,7 +41,7 @@
             <v-col
               cols="12"
               md="6"
-              v-for="(backup, i) in bs.pinnedBackups"
+              v-for="backup in bs.pinnedBackups"
               key="backup.id"
             >
               <div class="d-flex flex-column align-center">

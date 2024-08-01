@@ -239,7 +239,6 @@ const loading = ref(false);
 const revealRestore = ref(false);
 const revealDelete = ref(false);
 const revealDownload = ref(false);
-const emit = defineEmits(["change"]);
 
 const props = defineProps({
   backup: Object,
@@ -274,6 +273,12 @@ watch(
       status !== "FAILED" &&
       status !== "HAONLY" &&
       status !== "S3ONLY";
+
+    if (status === "FAILED") {
+      snackbar.show({
+        message: `⚠️ Backup failed: ${props.backup.errorMessage}`,
+      });
+    }
   },
   { immediate: true },
 );
