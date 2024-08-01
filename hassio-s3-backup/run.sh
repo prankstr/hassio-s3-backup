@@ -13,5 +13,4 @@ export S3_SECRET_ACCESS_KEY=$(bashio::config 's3_secret_access_key')
 
 # Start application
 bashio::log.info "Starting Home Assistant Proton Drive Backup"
-env
 ./hassio_s3_backup

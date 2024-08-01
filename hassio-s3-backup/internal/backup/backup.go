@@ -564,7 +564,7 @@ func (s *Service) updateOrDeleteHABackups(backupMap map[string]*Backup) (bool, e
 		return false, nil
 	}
 
-	updated := true
+	updated := false
 	for _, haBackup := range haBackups {
 		if haBackup.Type == "partial" {
 			continue // Skip partial backups
@@ -576,7 +576,7 @@ func (s *Service) updateOrDeleteHABackups(backupMap map[string]*Backup) (bool, e
 			s.updateHABackupDetails(backup, haBackup)
 
 			backupMap[haBackup.Name] = backup
-			updated = false
+			updated = true
 		} else {
 			if !backupMap[haBackup.Name].KeepInHA {
 				if !backupMap[haBackup.Name].Pinned {
@@ -594,7 +594,7 @@ func (s *Service) updateOrDeleteHABackups(backupMap map[string]*Backup) (bool, e
 		}
 	}
 
-	if updated {
+	if !updated {
 		slog.Debug("home assistant backups up to date, no action taken")
 	}
 
@@ -652,7 +652,7 @@ func (s *Service) updateOrDeleteS3Backups(backupMap map[string]*Backup) (bool, e
 		}
 	}
 
-	if updated {
+	if !updated {
 		slog.Debug("backups in s3 up to date, no actions taken")
 	}
 

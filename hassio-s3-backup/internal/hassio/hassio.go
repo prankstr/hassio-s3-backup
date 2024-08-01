@@ -305,7 +305,5 @@ func GetIngressEntry(token string) (string, error) {
 		return "", errors.New("missing or invalid ingress_entry in response")
 	}
 
-	fmt.Println("Ingress Entry: ", ingressEntry)
-
 	return ingressEntry, nil
 }

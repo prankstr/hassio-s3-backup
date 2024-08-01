@@ -22,7 +22,7 @@ func main() {
 
 	// Set LogLevel
 	opts := &slog.HandlerOptions{
-		Level: slog.LevelDebug,
+		Level: c.LogLevel,
 	}
 
 	handler := slog.NewTextHandler(os.Stdout, opts)
