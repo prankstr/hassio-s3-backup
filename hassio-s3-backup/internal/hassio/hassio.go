@@ -69,10 +69,6 @@ func NewService(token string) *Client {
 // handleResponse is a helper function to handle the response and error checking
 func handleResponse(resp *http.Response, data interface{}) error {
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("unexpected status code: %d, response: %s", resp.StatusCode, respBody)
-	}
 
 	// Read the response body
 	respBody, err := io.ReadAll(resp.Body)
@@ -87,7 +83,7 @@ func handleResponse(resp *http.Response, data interface{}) error {
 
 	// Check if the result is "ok"
 	if baseResponse.Result != "ok" {
-		return fmt.Errorf("error from API: %s", baseResponse.Message)
+		return fmt.Errorf("error from home assistant: %s", baseResponse.Message)
 	}
 
 	// If result is not nil, decode the specific response
