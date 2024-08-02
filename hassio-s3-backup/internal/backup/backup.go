@@ -442,7 +442,6 @@ func (s *Service) syncBackups() error {
 	backupMap := make(map[string]*Backup)
 	for _, backup := range s.backups {
 		backupMap[backup.Name] = backup
-
 		// NIL out HA and S3
 		// This will delete the backup from the map if it's not found in HA or S3 during the sync
 		// Unsure if this is wanted behavior but sticking to it for now
@@ -471,10 +470,8 @@ func (s *Service) syncBackups() error {
 	// Delete backups from the addon after making sure ha and s3 are up to date
 	backupsToKeep := []*Backup{}
 	for _, backup := range s.backups {
-		if backup.HA != nil || backup.S3 != nil {
-			if backup.KeepInHA || backup.KeepInS3 {
-				backupsToKeep = append(backupsToKeep, backup)
-			}
+		if (backup.HA != nil && backup.KeepInHA) || (backup.S3 != nil && backup.KeepInS3) || backup.Status == StatusFailed {
+			backupsToKeep = append(backupsToKeep, backup)
 		}
 	}
 
