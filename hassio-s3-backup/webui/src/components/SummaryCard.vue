@@ -11,23 +11,111 @@
     </v-card-item>
 
     <v-card-text>
-      <v-row class="pt-0">
-        <v-col cols="5" class="pr-0 pt-0">
-          <div class="text-white text-subtitle-1">S3</div>
+      <v-row class="pl-3">
+        <div class="text-white font-weight-bold text-subtitle-1">S3:</div>
+      </v-row>
+      <v-row class="mt-0">
+        <v-col cols="3" class="pr-0">
+          <div class="text-white text-body-2 pl-3">Backups:</div>
+          <div
+            v-if="bs.pinnedS3BackupsCount > 0"
+            class="text-white text-body-2 pl-3"
+          >
+            Pinned:
+          </div>
+          <div
+            v-if="bs.pinnedS3BackupsCount > 0"
+            class="text-white text-body-2 pl-3"
+          >
+            Total:
+          </div>
         </v-col>
-        <v-col class="pr-0 pt-0">
-          <div class="text-white text-subtitle-1">
-            {{ bs.s3BackupsCount }} / {{ backupsInS3 }} ({{ bs.s3BackupsSize }})
+        <v-col cols="2" class="pl-0 pr-0">
+          <div class="text-white text-body-2">
+            {{ bs.s3BackupsCount }} / {{ backupsInS3 }}
+          </div>
+          <div
+            v-if="bs.pinnedS3BackupsCount > 0"
+            class="text-white text-body-2"
+          >
+            {{ bs.pinnedS3BackupsCount }}
+          </div>
+          <div
+            v-if="bs.pinnedS3BackupsCount > 0"
+            class="text-white text-body-2"
+          >
+            {{ bs.totalS3BackupsCount }}
+          </div>
+        </v-col>
+        <v-col class="pl-0">
+          <div class="text-white text-body-2">({{ bs.s3BackupsSize }})</div>
+          <div
+            v-if="bs.pinnedS3BackupsCount > 0"
+            class="text-white text-body-2"
+          >
+            ({{ bs.pinnedS3BackupsSize }})
+          </div>
+
+          <div
+            v-if="bs.pinnedS3BackupsCount > 0"
+            class="text-white text-body-2"
+          >
+            ({{ bs.totalS3BackupsSize }})
           </div>
         </v-col>
       </v-row>
-      <v-row class="pt-0 mt-0">
-        <v-col cols="5" class="pr-0 pt-0">
-          <div class="text-white text-subtitle-1">Home Assistant:</div>
+      <v-row class="pl-3">
+        <div class="text-white font-weight-bold text-subtitle-1">
+          Home Assistant:
+        </div>
+      </v-row>
+      <v-row class="mt-0">
+        <v-col cols="3" class="pr-0">
+          <div class="text-white text-body-2 pl-3">Backups:</div>
+          <div
+            v-if="bs.pinnedHABackupsCount > 0"
+            class="text-white text-body-2 pl-3"
+          >
+            Pinned:
+          </div>
+          <div
+            v-if="bs.pinnedHABackupsCount > 0"
+            class="text-white text-body-2 pl-3"
+          >
+            Total:
+          </div>
         </v-col>
-        <v-col class="pr-0 pt-0">
-          <div class="text-white text-subtitle-1">
-            {{ bs.haBackupsCount }} / {{ backupsInHA }} ({{ bs.haBackupsSize }})
+        <v-col cols="2" class="pl-0 pr-0">
+          <div class="text-white text-body-2">
+            {{ bs.haBackupsCount }} / {{ backupsInHA }}
+          </div>
+          <div
+            v-if="bs.pinnedHABackupsCount > 0"
+            class="text-white text-body-2"
+          >
+            {{ bs.pinnedHABackupsCount }}
+          </div>
+          <div
+            v-if="bs.pinnedHABackupsCount > 0"
+            class="text-white text-body-2"
+          >
+            {{ bs.totalHABackupsCount }}
+          </div>
+        </v-col>
+        <v-col class="pl-0">
+          <div class="text-white text-body-2">({{ bs.haBackupsSize }})</div>
+          <div
+            v-if="bs.pinnedHABackupsCount > 0"
+            class="text-white text-body-2"
+          >
+            ({{ bs.pinnedHABackupsSize }})
+          </div>
+
+          <div
+            v-if="bs.pinnedHABackupsCount > 0"
+            class="text-white text-body-2"
+          >
+            ({{ bs.totalHABackupsSize }})
           </div>
         </v-col>
       </v-row>

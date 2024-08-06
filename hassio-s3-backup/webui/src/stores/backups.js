@@ -22,20 +22,71 @@ export const useBackupsStore = defineStore("backups", {
       );
     },
     s3BackupsCount() {
+      return this.s3Backups.filter((backup) => !backup.pinned).length;
+    },
+
+    pinnedS3BackupsCount() {
+      return this.s3Backups.filter((backup) => backup.pinned).length;
+    },
+    totalS3BackupsCount() {
       return this.s3Backups.length;
     },
     haBackupsCount() {
+      return this.haBackups.filter((backup) => !backup.pinned).length;
+    },
+    pinnedHABackupsCount() {
+      return this.haBackups.filter((backup) => backup.pinned).length;
+    },
+
+    totalHABackupsCount() {
       return this.haBackups.length;
     },
-    s3BackupsSizeInMB() {
-      return this.s3Backups.reduce((acc, backup) => acc + backup.size, 0);
-    },
-    s3BackupsSizeInGB() {
-      return (this.s3BackupsSizeInMB / 1024).toFixed(1);
-    },
     s3BackupsSize() {
+      const totalSizeMB = this.s3Backups.reduce((acc, backup) => {
+        if (!backup.pinned) {
+          return acc + backup.s3.size;
+        }
+        return acc;
+      }, 0);
+
+      let displaySize;
+      let suffix;
+
+      if (totalSizeMB < 1000) {
+        displaySize = totalSizeMB.toFixed(1);
+        suffix = "MB";
+      } else {
+        displaySize = (totalSizeMB / 1024).toFixed(1);
+        suffix = "GB";
+      }
+
+      return `${displaySize} ${suffix}`;
+    },
+    pinnedS3BackupsSize() {
+      const totalSizeMB = this.s3Backups.reduce((acc, backup) => {
+        if (backup.pinned) {
+          return acc + backup.s3.size;
+        }
+        return acc;
+      }, 0);
+
+      let displaySize;
+      let suffix;
+
+      if (totalSizeMB < 1000) {
+        displaySize = totalSizeMB.toFixed(1);
+        suffix = "MB";
+      } else {
+        displaySize = (totalSizeMB / 1024).toFixed(1);
+        suffix = "GB";
+      }
+
+      return `${displaySize} ${suffix}`;
+    },
+
+    totalS3BackupsSize() {
       const totalSizeMB = this.s3Backups.reduce(
-        (acc, backup) => acc + backup.size,
+        (acc, backup) => acc + backup.s3.size,
         0,
       );
 
@@ -53,8 +104,50 @@ export const useBackupsStore = defineStore("backups", {
       return `${displaySize} ${suffix}`;
     },
     haBackupsSize() {
+      const totalSizeMB = this.haBackups.reduce((acc, backup) => {
+        if (!backup.pinned) {
+          return acc + backup.ha.size;
+        }
+        return acc;
+      }, 0);
+
+      let displaySize;
+      let suffix;
+
+      if (totalSizeMB < 1000) {
+        displaySize = totalSizeMB.toFixed(1);
+        suffix = "MB";
+      } else {
+        displaySize = (totalSizeMB / 1024).toFixed(1);
+        suffix = "GB";
+      }
+
+      return `${displaySize} ${suffix}`;
+    },
+    pinnedHABackupsSize() {
+      const totalSizeMB = this.haBackups.reduce((acc, backup) => {
+        if (backup.pinned) {
+          return acc + backup.ha.size;
+        }
+        return acc;
+      }, 0);
+
+      let displaySize;
+      let suffix;
+
+      if (totalSizeMB < 1000) {
+        displaySize = totalSizeMB.toFixed(1);
+        suffix = "MB";
+      } else {
+        displaySize = (totalSizeMB / 1024).toFixed(1);
+        suffix = "GB";
+      }
+
+      return `${displaySize} ${suffix}`;
+    },
+    totalHABackupsSize() {
       const totalSizeMB = this.haBackups.reduce(
-        (acc, backup) => acc + backup.size,
+        (acc, backup) => acc + backup.ha.size,
         0,
       );
 
@@ -107,7 +200,8 @@ export const useBackupsStore = defineStore("backups", {
           this.fetchBackups();
           return { success: true };
         } else {
-          throw new Error("Failed to create backup");
+          const errorText = await response.text();
+          throw new Error(errorText);
         }
       } catch (error) {
         console.error("Failed to create backup:", error);
@@ -127,7 +221,8 @@ export const useBackupsStore = defineStore("backups", {
           this.backups = this.backups.filter((backup) => backup.id !== id);
           return { success: true };
         } else {
-          throw new Error("Failed to delete backup");
+          const errorText = await response.text();
+          throw new Error(errorText);
         }
       } catch (error) {
         console.error("Failed to delete backup:", error);
@@ -146,7 +241,8 @@ export const useBackupsStore = defineStore("backups", {
         if (response.status === 200) {
           return { success: true };
         } else {
-          throw new Error("Failed to download backup");
+          const errorText = await response.text();
+          throw new Error(errorText);
         }
       } catch (error) {
         console.error("Failed to download backup:", error);
@@ -165,7 +261,8 @@ export const useBackupsStore = defineStore("backups", {
         if (response.status === 202) {
           return { success: true };
         } else {
-          throw new Error("Failed to restore backup");
+          const errorText = await response.text();
+          throw new Error(errorText);
         }
       } catch (error) {
         console.error("Failed to restore backup:", error);
@@ -186,7 +283,8 @@ export const useBackupsStore = defineStore("backups", {
           backup.pinned = true;
           return { success: true };
         } else {
-          throw new Error("Failed to pin backup");
+          const errorText = await response.text();
+          throw new Error(errorText);
         }
       } catch (error) {
         console.error("Failed to pin backup:", error);
@@ -207,7 +305,8 @@ export const useBackupsStore = defineStore("backups", {
           backup.pinned = false;
           return { success: true };
         } else {
-          throw new Error("Failed to unpin backup");
+          const errorText = await response.text();
+          throw new Error(errorText);
         }
       } catch (error) {
         console.error("Failed to unpin backup:", error);
@@ -227,7 +326,8 @@ export const useBackupsStore = defineStore("backups", {
           this.backup = [];
           return { success: true };
         } else {
-          throw new Error("Failed to reset data");
+          const errorText = await response.text();
+          throw new Error(errorText);
         }
       } catch (error) {
         console.error("Failed to reset data:", error);

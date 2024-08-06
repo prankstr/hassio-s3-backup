@@ -86,12 +86,12 @@ function generateBackupName() {
 function triggerBackup() {
   bs.createBackup(backupName.value).then(({ success, error }) => {
     if (!success) {
-      snackbar.show({ message: "⚠️ error.message" });
+      snackbar.show({ message: `⚠️ ${error}` });
+    } else {
+      snackbar.show({ message: "🚀 Awesome! New backup created" });
     }
 
     dialog.value = false;
-    snackbar.show({ message: "🚀 Awesome! New backup created" });
   });
 }
 </script>
-

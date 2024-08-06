@@ -13,9 +13,9 @@ import (
 )
 
 type Object struct {
-	Modified time.Time
-	Key      string `json:"key"`
-	Size     float64
+	Modified time.Time `json:"modified"`
+	Key      string    `json:"key"`
+	Size     float64   `json:"size"`
 }
 
 type Credentials struct {

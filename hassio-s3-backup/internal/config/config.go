@@ -14,16 +14,13 @@ import (
 type Options struct {
 	Timezone         *time.Location
 	S3               S3Options
-	DataDirectory    string
 	SupervisorToken  string
-	BackupNameFormat string `json:"backupNameFormat"`
 	IngressPath      string
-	Hostname         string
+	BackupNameFormat string `json:"backupNameFormat"`
 	LogLevel         slog.Level
 	BackupInterval   int `json:"backupInterval"`
 	BackupsInHA      int `json:"backupsInHA"`
 	BackupsInS3      int `json:"backupsInS3"`
-	Debug            bool
 }
 
 // S3Options represents the S3 options
@@ -50,20 +47,15 @@ var logLevels map[string]slog.Level = map[string]slog.Level{
 
 // NewConfigService returns a new ConfigService
 func NewConfigService() *Service {
-	// Read saved configuration from file
 	config, err := readConfigFromFile("/data/config.json")
 	if err != nil {
-		// Handle error. This could be logging the error and continuing with defaults
-		slog.Error("Error reading config file: ", err)
 		config = &Options{} // Initialize with an empty config
 	}
 
 	// Set defaults or override with environment variables if they are set
-	config.Hostname = getEnvOrDefault("HOSTNAME", config.Hostname, "localhost:9101")
-	config.SupervisorToken = getEnvOrDefault("SUPERVISOR_TOKEN", config.SupervisorToken, "")
-	config.DataDirectory = getEnvOrDefault("DATA_DIRECTORY", config.DataDirectory, "/data")
-	config.BackupsInHA = getEnvOrDefaultInt("BACKUPS_IN_HA", config.BackupsInHA, 0)
+	config.SupervisorToken = getEnvOrDefault("SUPERVISOR_TOKEN", "", "")
 	config.BackupNameFormat = getEnvOrDefault("BACKUP_NAME_FORMAT", config.BackupNameFormat, "Full Backup {year}-{month}-{day} {hr24}:{min}:{sec}")
+	config.BackupsInHA = getEnvOrDefaultInt("BACKUPS_IN_HA", config.BackupsInHA, 0)
 	config.BackupsInS3 = getEnvOrDefaultInt("BACKUPS_IN_S3", config.BackupsInS3, 0)
 	config.BackupInterval = getEnvOrDefaultInt("BACKUP_INTERVAL", config.BackupInterval, 3)
 
@@ -83,17 +75,9 @@ func NewConfigService() *Service {
 		config.LogLevel = logLevels["Info"]
 	}
 
-	debugStr := getEnvOrDefault("DEBUG", strconv.FormatBool(config.Debug), "true")
-	debug, err := strconv.ParseBool(debugStr)
-	if err == nil {
-		config.Debug = debug
-	} else {
-		slog.Error("Cannot parse the DEBUG variable")
-	}
-
 	// S3 Config
-	config.S3.AccessKeyID = getEnvOrDefault("S3_ACCESS_KEY_ID", config.S3.AccessKeyID, "")
-	config.S3.SecretAccessKey = getEnvOrDefault("S3_SECRET_ACCESS_KEY", config.S3.SecretAccessKey, "")
+	config.S3.AccessKeyID = getEnvOrDefault("S3_ACCESS_KEY_ID", "", "")
+	config.S3.SecretAccessKey = getEnvOrDefault("S3_SECRET_ACCESS_KEY", "", "")
 	config.S3.Bucket = getEnvOrDefault("S3_BUCKET_NAME", config.S3.Bucket, "")
 	config.S3.Endpoint = getEnvOrDefault("S3_ENDPOINT", config.S3.Endpoint, "")
 
@@ -119,7 +103,7 @@ func NewConfigService() *Service {
 
 // NotifyConfigChange sends a new config to the configChangeChan
 func (s *Service) NotifyConfigChange(newConfig *Options) {
-	slog.Info("Config updated, notifying")
+	slog.Debug("Config updated, notifying")
 	s.ConfigChangeChan <- newConfig
 }
 
@@ -144,9 +128,11 @@ func getEnvOrDefault(key string, currentValue, defaultValue string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
 	}
+
 	if currentValue != "" {
 		return currentValue
 	}
+
 	return defaultValue
 }
 
@@ -157,9 +143,11 @@ func getEnvOrDefaultInt(key string, currentValue, defaultValue int) int {
 			return intValue
 		}
 	}
+
 	if currentValue != 0 {
 		return currentValue
 	}
+
 	return defaultValue
 }
 
@@ -170,6 +158,7 @@ func stringFromSlogLevel(level slog.Level) string {
 			return k
 		}
 	}
+
 	return "Debug" // default if not found
 }
 
@@ -182,7 +171,7 @@ func writeConfigToFile(config *Options) error {
 	}
 
 	// Write JSON data to file
-	err = os.WriteFile(fmt.Sprintf("%s/%s", config.DataDirectory, "config.json"), data, 0644)
+	err = os.WriteFile("/data/config.json", data, 0644)
 	if err != nil {
 		return err
 	}

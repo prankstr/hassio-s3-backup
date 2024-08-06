@@ -115,7 +115,6 @@ const cs = useConfigStore();
 const bs = useBackupsStore();
 const snackbar = useSnackbarStore();
 
-const show = ref(false);
 const dialog = ref(false);
 const revealResetData = ref(false);
 const localConfig = ref({});
@@ -129,7 +128,7 @@ watch(dialog, (newVal) => {
 function saveChanges() {
   cs.saveConfig(localConfig.value).then(({ success, error }) => {
     if (!success) {
-      snackbar.show({ message: "⚠️ error.message" });
+      snackbar.show({ message: `⚠️ ${error}` });
       return;
     }
 
@@ -142,7 +141,7 @@ function saveChanges() {
 function resetData() {
   bs.resetData().then(({ success, error }) => {
     if (!success) {
-      snackbar.show({ message: "⚠️ error.message" });
+      snackbar.show({ message: `⚠️ ${error}` });
       return;
     }
     revealResetData.value = false;

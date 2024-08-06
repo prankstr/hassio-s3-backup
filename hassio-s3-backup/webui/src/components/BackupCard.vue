@@ -2,6 +2,7 @@
   <v-card
     max-width="450"
     width="100%"
+    height="170"
     class="pr-0"
     color="primary"
     variant="tonal"
@@ -38,13 +39,19 @@
           <div v-else class="text-white text-body-1">
             {{ translateStatus(backup.status) }}
           </div>
-          <div class="text-white text-body-1">
-            {{ translateSize(backup.size) }}
+          <div
+            v-if="backup.status == 'SYNCED' || backup.status == 'HAONLY'"
+            class="text-white text-body-1"
+          >
+            {{ translateSize(backup.ha.size) }}
+          </div>
+          <div v-if="backup.status == 'S3ONLY'" class="text-white text-body-1">
+            {{ translateSize(backup.s3.size) }}
           </div>
         </v-col>
       </v-row>
     </v-card-text>
-    <v-card-actions>
+    <v-card-actions class="mt-auto">
       <v-tooltip
         v-if="!backup.pinned"
         open-delay="400"
@@ -172,7 +179,7 @@
         <v-card-text style="height: 60px" class="pb-0">
           <p>
             This will delete the backup "{{ backup.name }}" from Home Assistant
-            and Proton Drive
+            and S3
           </p>
         </v-card-text>
         <v-card-actions class="pb-0 align-end">
