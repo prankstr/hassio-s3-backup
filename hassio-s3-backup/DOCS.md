@@ -1,27 +1,36 @@
+# Home Assistant S3 Backup
+
+Find all the available information over at [GitHub](https://github.com/prankstr/hassio-s3-backup)
+
+## Installation
+
+1. **Add Repository to Home Assistant:**
+
+[![Add repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_add-on_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_add-on_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fprankstr%2Fhassio-s3-backup)
+Click the big blue button.
+
+Or manually:
+
+- Navigate to the Add-on Store in your Home Assistant UI: `Settings` -> `Add-ons` -> `Add-on Store`.
+- Click the 3-dots in the upper right corner, select `Repositories`, and paste in this URL: [https://github.com/prankstr/hassio-s3-backup](https://github.com/prankstr/hassio-s3-backup).
+
+2. **Install Home Assistant S3 Backup**
+   - Refresh the page
+   - Find Home Assistant S3 Backup in the list of available add-ons, open it and click 'Install'.
+
 ## Configuration
 
-Configure the add-on through the Home Assistant UI with the following options:
+Before starting, the add-on needs to be configured with the following settings:
 
 - `log_level`: Set the logging level (options: "Info", "Debug", "Warn", "Error"; default: "Info").
-- `endpoint`: The endpoint for the S3 compatible storage.
-- `bucket`: The directory used for storing backups on Proton Drive(default: "Home Assistant Backups")
-- `access_key_id`: The S3 Access key ID.
-- `secret_access_key`: The S3 Secret Access Key.
+- `s3_bucket`: Name of bucket in S3 where backups will be stored(default: "home-assistant-backups")
+- `s3_endpoint`: The endpoint for the S3 compatible storage.
+- `s3_access_key_id`: The S3 Access key ID.
+- `s3_secret_access_key`: The S3 Secret Access Key.
 
-## Features
+When the add-on is running backup related setting can be configured from the UI. It should be pretty self-explanatory but here's a quick rundown of the settings:
 
-- Creates backups on a configurable schedule.
-- Sync backups to S3.
-- Housekeeping of old backups.
-
-## Limitations
-
-It's still early days so a lot.. Some of the most noteworthy:
-
-- **Only supports full backups and restores.**
-  - All partial backups are ignored for now. Partial restore can be done from Home Assistants own interface if needed.
-- **Handles all full backups, even the ones created outside of the addon.**
-  - Any full backup in home assistant will be recognized by the addon and synced to Proton Drive and it's currently not possible to set a backup to only exist in Home Assistant or Proton Drive.
-- **Doesn't handle orphaned backups in Proton Drive.**
-  - If the addon looses track of a backup in Proton Drive it won't be added back. So it won't be cleaned up by the addon or possible to restore to this backup from the addon, it can however be downloaded manually and restored to of course.
-
+- **Name format**: The format of the name of the backup. Supports placeholders for date and time(default: Full Backup {year}-{month}-{day} {hr24}:{min}:{sec})
+- **Number of backups to keep in S3**: The number of backups to keep in S3 before deleting the oldest ones(default: 0)
+- **Number of backups to keep in Home Assistant**: The number of backups to keep in Home Assistant before deleting the oldest ones(default: 0)
+- **Days between backups:** The number of days between backups(default: 3)

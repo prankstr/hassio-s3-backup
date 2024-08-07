@@ -22,7 +22,7 @@ Home Assistant S3 Backup allows for automated scheduling and synchronization of 
 
 1. **Add Repository to Home Assistant:**
 
-[![Add repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fprankstr%2Fhassio-s3-backup)
+[![Add repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_add-on_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_add-on_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fprankstr%2Fhassio-s3-backup)
 Click the big blue button.
 
 Or manually:
@@ -36,20 +36,20 @@ Or manually:
 
 ## Configuration
 
-Before starting, the addon needs to be configured with the following settings:
+Before starting, the add-on needs to be configured with the following settings:
 
 - `log_level`: Set the logging level (options: "Info", "Debug", "Warn", "Error"; default: "Info").
-- `s3_bucket`: Name of bucket in S3 where backups will be stored(default: "Home Assistant Backups")
+- `s3_bucket`: Name of bucket in S3 where backups will be stored(default: "home-assistant-backups")
 - `s3_endpoint`: The endpoint for the S3 compatible storage.
 - `s3_access_key_id`: The S3 Access key ID.
 - `s3_secret_access_key`: The S3 Secret Access Key.
 
-When the addon is running backup related setting can be configured from the UI. It should be pretty self-explanatory but here's a quick rundown of the settings:
+When the add-on is running backup related setting can be configured from the UI. It should be pretty self-explanatory but here's a quick rundown of the settings:
 
 > [!NOTE]
-> Number of backups to keep is initially set to 0 for both S3 and Home Assistant. This means that no backups will be deleted and is a safe guard to prevent unwanted deletion of backups when enabling the addon for the first time.
+> Number of backups to keep is initially set to 0 for both S3 and Home Assistant. This means that no backups will be deleted and is a safe guard to prevent unwanted deletion of backups when enabling the add-on for the first time.
 >
-> It's recommended to set these to a reasonable value to avoid running out of storage. As soon as you set a number the addon will remove any full backups exceeding this number.
+> It's recommended to set these to a reasonable value to avoid running out of storage. As soon as you set a number the add-on will remove any full backups exceeding this number.
 
 - **Name format**: The format of the name of the backup. Supports placeholders for date and time(default: Full Backup {year}-{month}-{day} {hr24}:{min}:{sec})
 - **Number of backups to keep in S3**: The number of backups to keep in S3 before deleting the oldest ones(default: 0)
@@ -63,10 +63,10 @@ When the addon is running backup related setting can be configured from the UI. 
 It's still early days so a lot.. Some of the most noteworthy:
 
 - **No sensors or monitoring**
-  - The addon doesn't create any sensors in Home Assistant or provide other means for monitoring the backup.
+  - The add-on doesn't create any sensors in Home Assistant or provide other means for monitoring the backup.
 - **No generational backups**
   - Backups can be pinned to prevent deletion but there's no support for generational backups.
 - **Only supports full backups and restores.**
   - All partial backups are ignored for now. Partial restore can be done from Home Assistants own interface if needed.
-- **Handles all full backups, even the ones created outside of the addon.**
-  - Any full backup in home assistant will be recognized by the addon and synced to S3.
+- **Handles all full backups, even the ones created outside of the add-on.**
+  - Any full backup in home assistant will be recognized by the add-on and synced to S3.
