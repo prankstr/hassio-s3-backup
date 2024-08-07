@@ -1,6 +1,6 @@
 name: "Home Assistant S3 Backup"
 description: "Backup your Home Assistant data to S3"
-version: "1.0.0"
+version: "0.1.0"
 slug: "hassio_s3_backup"
 url: "https://github.com/prankstr/hassio-s3-backup"
 init: false

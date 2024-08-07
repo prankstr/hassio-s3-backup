@@ -81,7 +81,7 @@ func init() {
 	backupTimer = time.NewTimer(time.Hour)
 	backupTimer.Stop()
 
-	syncInterval = 1 * time.Minute
+	syncInterval = 1 * time.Hour
 
 	ongoingBackups = make(map[string]struct{})
 }
