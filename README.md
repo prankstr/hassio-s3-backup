@@ -17,6 +17,7 @@ Home Assistant S3 Backup allows for automated scheduling and synchronization of 
 📆 Creates backups on a configurable schedule</br>
 ♻️ Sync backups to S3</br>
 🧹 Housekeeping of old backups</br>
+📌 Pin backups to prevent them from being rolled</br>
 
 ## Installation
 

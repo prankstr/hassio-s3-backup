@@ -10,4 +10,4 @@ Find all the available information over at [GitHub](https://github.com/prankstr/
 📆 Creates backups on a configurable schedule</br>
 ♻️ Sync backups to S3</br>
 🧹 Housekeeping of old backups</br>
-📌 Pin Backups to prevent them from being rolled</br>
+📌 Pin backups to prevent them from being rolled</br>
