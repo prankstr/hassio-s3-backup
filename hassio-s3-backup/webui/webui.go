@@ -22,10 +22,10 @@ func NewHandler(config *config.Options) http.HandlerFunc {
 
 		// Determine the protocol
 		proto := "http"
-		if r.TLS != nil {
-			proto = "https"
-		} else if forwardedProto := r.Header.Get("X-Forwarded-Proto"); forwardedProto != "" {
+		if forwardedProto := r.Header.Get("X-Forwarded-Proto"); forwardedProto != "" {
 			proto = forwardedProto
+		} else if r.TLS != nil {
+			proto = "https"
 		}
 
 		// Extract the host from the incoming request
