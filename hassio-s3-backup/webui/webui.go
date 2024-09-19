@@ -2,13 +2,12 @@ package webui
 
 import (
 	"embed"
-	"fmt"
 	"hassio-proton-drive-backup/internal/config"
-	"io"
 	"io/fs"
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -16,88 +15,15 @@ import (
 //go:embed dist
 var staticFiles embed.FS
 
-func prettyPrintRequest(w http.ResponseWriter, r *http.Request) {
-	// Print the HTTP method
-	fmt.Printf("Method: %s\n", r.Method)
-
-	// Print the scheme (http/https)
-	scheme := "http"
-	if r.TLS != nil {
-		scheme = "https"
-	}
-	fmt.Printf("Scheme: %s\n", scheme)
-
-	// Print the host (authority)
-	fmt.Printf("Host: %s\n", r.Host)
-
-	// Print the full URL
-	fmt.Printf("URL: %s\n", r.URL.String())
-
-	// Print the path
-	fmt.Printf("Path: %s\n", r.URL.Path)
-
-	// Print the query parameters
-	if len(r.URL.RawQuery) > 0 {
-		fmt.Printf("Query Params: %s\n", r.URL.RawQuery)
-	}
-
-	// Print the headers
-	fmt.Println("Headers:")
-	for name, values := range r.Header {
-		// Loop over all headers
-		for _, value := range values {
-			fmt.Printf("  %s: %s\n", name, value)
-		}
-	}
-
-	// Print the body (if available)
-	if r.Body != nil {
-		fmt.Println("Body:")
-		bodyBytes, err := io.ReadAll(r.Body)
-		if err == nil {
-			bodyString := string(bodyBytes)
-			// Print body content up to a reasonable limit to avoid overwhelming output
-			if len(bodyString) > 1000 {
-				bodyString = bodyString[:1000] + "...(truncated)"
-			}
-			fmt.Println(bodyString)
-			// Reset the body for further use since it's already read
-			r.Body = io.NopCloser(strings.NewReader(bodyString))
-		} else {
-			fmt.Println("Error reading body:", err)
-		}
-	}
-
-	// Print information about the remote address and protocol
-	fmt.Printf("Remote Address: %s\n", r.RemoteAddr)
-	fmt.Printf("Protocol: %s\n", r.Proto)
-
-	// Print the content length
-	if r.ContentLength > 0 {
-		fmt.Printf("Content Length: %d bytes\n", r.ContentLength)
-	}
-
-	// Print the cookies
-	fmt.Println("Cookies:")
-	for _, cookie := range r.Cookies() {
-		fmt.Printf("  %s: %s\n", cookie.Name, cookie.Value)
-	}
-}
-
 // NewHandler creates a new handler for serving static content from a given directory
 func NewHandler(config *config.Options) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		prettyPrintRequest(w, r)
 		// Extract the file path after "/assets/"
 		filePath := strings.TrimPrefix(r.URL.Path, "/assets/")
 
-		// Determine the protocol
-		proto := "http"
-		if forwardedProto := r.Header.Get("X-Forwarded-Proto"); forwardedProto != "" {
-			proto = forwardedProto
-		} else if r.TLS != nil {
-			proto = "https"
-		}
+		// Get Proto from referer
+		refererURL, err := url.Parse(r.Header.Get("Referer"))
+		proto := refererURL.Scheme
 
 		// Extract the host from the incoming request
 		host, port, err := net.SplitHostPort(r.Host)
