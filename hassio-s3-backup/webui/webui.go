@@ -21,9 +21,23 @@ func NewHandler(config *config.Options) http.HandlerFunc {
 		// Extract the file path after "/assets/"
 		filePath := strings.TrimPrefix(r.URL.Path, "/assets/")
 
-		// Get Proto from referer
-		refererURL, err := url.Parse(r.Header.Get("Referer"))
-		proto := refererURL.Scheme
+		// Get Proto from referer if present, else x-forwarded or TLS of request
+
+		proto := "http"
+
+		if referer := r.Header.Get("Referer"); referer != "" {
+			refererURL, err := url.Parse(r.Header.Get("Referer"))
+			if err != nil {
+				http.Error(w, "Invalid Referer Header", 400)
+				return
+			}
+
+			proto = refererURL.Scheme
+		} else if forwardedProto := r.Header.Get("X-Forwarded-Proto"); forwardedProto != "" {
+			proto = forwardedProto
+		} else if r.TLS != nil {
+			proto = "https"
+		}
 
 		// Extract the host from the incoming request
 		host, port, err := net.SplitHostPort(r.Host)
