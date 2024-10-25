@@ -1,23 +1,6 @@
 # Home Assistant S3 Backup
 
-![Home Page Preview](images/home.png "Home Assistant S3 Backup")
-
-## Overview
-
-Home Assistant S3 Backup allows for automated scheduling and synchronization of Home Assistant backups to any S3 compatible storage.
-
-> [!WARNING]
-> This plugin is still in early development and should be considered alpha software. While I've been using it in my own Home Assistant installation for a while without issues, please use it at your own risk. It's unclear how much development will go into this plugin.
->
-> If you're just looking for an easy backup solution for Home Assistant and don't mind using Google Drive you probably want to use [Home Assistant Google Drive Backup](https://github.com/sabeechen/hassio-google-drive-backup) in favor of this.
-
-## Features
-
-🌟 Web UI to manage backup and scheduling</br>
-📆 Creates backups on a configurable schedule</br>
-♻️ Sync backups to S3</br>
-🧹 Housekeeping of old backups</br>
-📌 Pin backups to prevent them from being rolled</br>
+Find all the available information over at [GitHub](https://github.com/prankstr/hassio-s3-backup)
 
 ## Installation
 
@@ -56,18 +39,3 @@ When the add-on is running backup related setting can be configured from the UI.
 - **Number of backups to keep in S3**: The number of backups to keep in S3 before deleting the oldest ones(default: 0)
 - **Number of backups to keep in Home Assistant**: The number of backups to keep in Home Assistant before deleting the oldest ones(default: 0)
 - **Days between backups:** The number of days between backups(default: 3)
-
-![Settings preview](images/settings.png "Home Assistant S3 Backup Settings")
-
-## Limitations
-
-It's still early days so a lot.. Some of the most noteworthy:
-
-- **No sensors or monitoring**
-  - The add-on doesn't create any sensors in Home Assistant or provide other means for monitoring the backup.
-- **No generational backups**
-  - Backups can be pinned to prevent deletion but there's no support for generational backups.
-- **Only supports full backups and restores.**
-  - All partial backups are ignored for now. Partial restore can be done from Home Assistants own interface if needed.
-- **Handles all full backups, even the ones created outside of the add-on.**
-  - Any full backup in home assistant will be recognized by the add-on and synced to S3.

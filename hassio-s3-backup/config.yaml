@@ -1,0 +1,29 @@
+name: "Home Assistant S3 Backup"
+description: "Backup your Home Assistant data to S3"
+version: "0.1.0"
+slug: "hassio_s3_backup"
+url: "https://github.com/prankstr/hassio-s3-backup"
+init: false
+panel_title: S3 Backup
+panel_icon: mdi:folder-upload
+arch:
+  - aarch64
+  - amd64
+  - armv7
+hassio_api: true
+hassio_role: "backup"
+ingress: true
+map:
+  - backup:rw
+options:
+  s3_bucket: home-assistant-backups
+  s3_endpoint: null
+  s3_access_key_id: null
+  s3_secret_access_key: null
+  log_level: Info
+schema:
+  s3_bucket: str
+  s3_endpoint: url
+  s3_access_key_id: password
+  s3_secret_access_key: password
+  log_level: match(Info|Debug|Warn|Error)

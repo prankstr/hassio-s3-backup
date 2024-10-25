@@ -1,0 +1,26 @@
+{
+  "name": "Homeassistant Addon Dev Container",
+  "image": "ghcr.io/home-assistant/devcontainer:addons",
+  "appPort": ["9123:8123", "5357:4357"],
+  "postStartCommand": "bash devcontainer_bootstrap",
+  "runArgs": ["-e", "GIT_EDITOR=code --wait", "--privileged"],
+  "containerEnv": {
+    "WORKSPACE_DIRECTORY": "${containerWorkspaceFolder}"
+  },
+  "mounts": [ "type=volume,target=/var/lib/docker"],
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "golang.go",
+        "Vue.volar",
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ]
+    }
+  },
+	"features": {
+		"ghcr.io/devcontainers/features/go:1": {}
+	}
+}
