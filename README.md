@@ -23,7 +23,7 @@ Home Assistant S3 Backup allows for automated scheduling and synchronization of 
 
 1. **Add Repository to Home Assistant:**
 
-[![Add repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_add-on_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_add-on_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fprankstr%2Fhassio-s3-backup)
+[![Add repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fprankstr%2Fhassio-s3-backup)
 Click the big blue button.
 
 Or manually:
