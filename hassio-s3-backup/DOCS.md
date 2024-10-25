@@ -30,6 +30,11 @@ Before starting, the add-on needs to be configured with the following settings:
 
 When the add-on is running backup related setting can be configured from the UI. It should be pretty self-explanatory but here's a quick rundown of the settings:
 
+> [!NOTE]
+> Number of backups to keep is initially set to 0 for both S3 and Home Assistant. This means that no backups will be deleted and is a safe guard to prevent unwanted deletion of backups when enabling the add-on for the first time.
+>
+> It's recommended to set these to a reasonable value to avoid running out of storage. As soon as you set a number the add-on will remove any full backups exceeding this number.
+
 - **Name format**: The format of the name of the backup. Supports placeholders for date and time(default: Full Backup {year}-{month}-{day} {hr24}:{min}:{sec})
 - **Number of backups to keep in S3**: The number of backups to keep in S3 before deleting the oldest ones(default: 0)
 - **Number of backups to keep in Home Assistant**: The number of backups to keep in Home Assistant before deleting the oldest ones(default: 0)
