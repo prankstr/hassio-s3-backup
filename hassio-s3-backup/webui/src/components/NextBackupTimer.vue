@@ -1,7 +1,16 @@
 <template>
-  <v-tooltip open-delay="400" location="bottom" :text="date">
+  <v-tooltip
+    v-model="showTooltip"
+    open-delay="400"
+    location="bottom"
+    :text="date"
+  >
     <template v-slot:activator="{ props }">
-      <p v-if="milliseconds > 0" v-bind="props">
+      <p
+        @click="showTooltip = !showTooltip"
+        v-if="milliseconds > 0"
+        v-bind="props"
+      >
         Next backup in {{ roundedTimer }}
       </p>
 
@@ -17,7 +26,9 @@ import { useBackupsStore } from "@/stores/backups";
 
 const cs = useConfigStore();
 const bs = useBackupsStore();
-let milliseconds = ref(0);
+
+const milliseconds = ref(0);
+const showTooltip = ref(false);
 
 // Fetch timer in milliseconds until next backup
 const fetchTimer = async () => {
@@ -106,4 +117,3 @@ onMounted(() => {
   background: rgba(var(--v-theme-primary), 1) !important;
 }
 </style>
-

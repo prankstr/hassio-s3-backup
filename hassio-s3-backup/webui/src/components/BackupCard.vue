@@ -33,7 +33,11 @@
               color="red"
               class="pb-1"
               size="20"
-              v-tooltip="backup.errorMessage"
+              v-tooltip="{
+                modelValue: errorTooltipVisible,
+                text: backup.errorMessage,
+              }"
+              @click="toggleErrorTooltip"
             ></v-icon>
           </div>
           <div v-else class="text-white text-body-1">
@@ -246,6 +250,7 @@ const loading = ref(false);
 const revealRestore = ref(false);
 const revealDelete = ref(false);
 const revealDownload = ref(false);
+const errorTooltipVisible = ref(false);
 
 const props = defineProps({
   backup: Object,
@@ -289,6 +294,10 @@ watch(
   },
   { immediate: true },
 );
+
+function toggleErrorTooltip() {
+  errorTooltipVisible.value = !errorTooltipVisible.value;
+}
 
 function deleteBackup() {
   revealDelete.value = false;
