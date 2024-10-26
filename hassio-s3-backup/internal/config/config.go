@@ -25,10 +25,10 @@ type Options struct {
 
 // S3Options represents the S3 options
 type S3Options struct {
-	AccessKeyID     string
-	SecretAccessKey string
-	Bucket          string
-	Endpoint        string
+	AccessKey string
+	SecretKey string
+	Bucket    string
+	Endpoint  string
 }
 
 // Service represents the config service
@@ -76,8 +76,8 @@ func NewConfigService() *Service {
 	}
 
 	// S3 Config
-	config.S3.AccessKeyID = getEnvOrDefault("S3_ACCESS_KEY_ID", "", "")
-	config.S3.SecretAccessKey = getEnvOrDefault("S3_SECRET_ACCESS_KEY", "", "")
+	config.S3.AccessKey = getEnvOrDefault("S3_ACCESS_KEY", "", "")
+	config.S3.SecretKey = getEnvOrDefault("S3_SECRET_KEY", "", "")
 	config.S3.Bucket = getEnvOrDefault("S3_BUCKET_NAME", config.S3.Bucket, "")
 	config.S3.Endpoint = getEnvOrDefault("S3_ENDPOINT", config.S3.Endpoint, "")
 
