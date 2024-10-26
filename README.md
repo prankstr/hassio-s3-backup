@@ -42,8 +42,8 @@ Before starting, the add-on needs to be configured with the following settings:
 - `log_level`: Set the logging level (options: "Info", "Debug", "Warn", "Error"; default: "Info").
 - `s3_bucket`: Name of bucket in S3 where backups will be stored(default: "home-assistant-backups")
 - `s3_endpoint`: The endpoint for the S3 compatible storage.
-- `s3_access_key_id`: The S3 Access key ID.
-- `s3_secret_access_key`: The S3 Secret Access Key.
+- `s3_access_key`: The S3 Access key.
+- `s3_secret_key`: The S3 Secret key.
 
 When the add-on is running backup related setting can be configured from the UI. It should be pretty self-explanatory but here's a quick rundown of the settings:
 
