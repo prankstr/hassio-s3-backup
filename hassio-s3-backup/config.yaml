@@ -18,12 +18,12 @@ map:
 options:
   s3_bucket: home-assistant-backups
   s3_endpoint: null
-  s3_access_key_id: null
-  s3_secret_access_key: null
+  s3_access_key: null
+  s3_secret_key: null
   log_level: Info
 schema:
   s3_bucket: str
   s3_endpoint: url
-  s3_access_key_id: password
-  s3_secret_access_key: password
+  s3_access_key: password
+  s3_secret_key: password
   log_level: match(Info|Debug|Warn|Error)
