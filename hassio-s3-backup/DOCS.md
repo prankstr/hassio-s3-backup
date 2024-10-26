@@ -6,7 +6,7 @@ Find all the available information over at [GitHub](https://github.com/prankstr/
 
 1. **Add Repository to Home Assistant:**
 
-[![Add repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fprankstr%2Fhassio-s3-backup) 
+[![Add repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fprankstr%2Fhassio-s3-backup)
 Click the big blue button.
 
 Or manually:
@@ -25,8 +25,8 @@ Before starting, the add-on needs to be configured with the following settings:
 - `log_level`: Set the logging level (options: "Info", "Debug", "Warn", "Error"; default: "Info").
 - `s3_bucket`: Name of bucket in S3 where backups will be stored(default: "home-assistant-backups")
 - `s3_endpoint`: The endpoint for the S3 compatible storage.
-- `s3_access_key_id`: The S3 Access key ID.
-- `s3_secret_access_key`: The S3 Secret Access Key.
+- `s3_access_key`: The S3 Access key.
+- `s3_secret_key`: The S3 Secret key.
 
 When the add-on is running backup related setting can be configured from the UI. It should be pretty self-explanatory but here's a quick rundown of the settings:
 
