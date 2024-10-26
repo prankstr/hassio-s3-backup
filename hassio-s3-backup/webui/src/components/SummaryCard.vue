@@ -122,8 +122,12 @@
       <v-row v-if="backupsInHA > 0 || backupsInS3 > 0" class="pt-0 mt-0">
         <v-col cols="auto" class="pr-1">
           <div
-            v-tooltip:right.contained="status.tooltip"
+            v-tooltip:right.contained="{
+              modelValue: statusTooltipVisible,
+              text: status.tooltip,
+            }"
             :class="['text-subtitle-1', status.textColor]"
+            @click="toggleStatusTooltip"
           >
             {{ status.message }}
 
@@ -148,7 +152,7 @@ const bs = useBackupsStore();
 const cs = useConfigStore();
 
 const about = ref({});
-
+const statusTooltipVisible = ref(false);
 const props = defineProps({
   backups: Array,
 });
@@ -159,6 +163,10 @@ onMounted(() => {
     .then((data) => (about.value = data))
     .catch((err) => console.log(err.message));
 });
+
+function toggleStatusTooltip() {
+  statusTooltipVisible.value = !statusTooltipVisible.value;
+}
 
 const backupsInS3 = computed(() => {
   if (cs.config.backupsInS3 == 0) {
@@ -185,6 +193,16 @@ const status = computed(() => {
     tooltip:
       "The amount of backups in S3 and Home Assistant match the configured amount",
   };
+
+  if (bs.nonPinnedBackups[0].status == "FAILED") {
+    return {
+      icon: "mdi-alert-circle-outline",
+      message: "Last backup failed!",
+      iconColor: "red",
+      textColor: "text-red",
+      tooltip: "Check the logs or the backup status for more information",
+    };
+  }
 
   if (cs.config.backupsInHA > 0 && cs.config.backupsInS3 > 0) {
     if (
