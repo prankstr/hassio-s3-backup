@@ -28,7 +28,7 @@ func NewClient(cs *config.Service) (*minio.Client, error) {
 	c := cs.Config
 	// Get bucket and credentials from config
 	bucket := c.S3.Bucket
-	creds := credentials.NewStaticV4(c.S3.AccessKeyID, c.S3.SecretAccessKey, "")
+	creds := credentials.NewStaticV4(c.S3.AccessKey, c.S3.SecretKey, "")
 
 	// Parse the S3 endpoint URL from the config
 	url, err := url.Parse(c.S3.Endpoint)
