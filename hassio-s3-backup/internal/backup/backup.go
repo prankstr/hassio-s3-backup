@@ -121,6 +121,7 @@ func (s *Service) PerformBackup(name string) error {
 
 	// Track ongoing backups to avoid syncing or any other manipulation in the meantime
 	ongoingBackups[backup.ID] = struct{}{}
+	defer delete(ongoingBackups, backup.ID)
 
 	backup.UpdateStatus(StatusRunning)
 	slug, err := s.hassioClient.BackupFull(backup.Name)
@@ -158,7 +159,8 @@ func (s *Service) DeleteBackup(id string) error {
 
 	// Delete backup from Home Assistant
 	backup.UpdateStatus(StatusDeleting)
-	if backup.HA != nil {
+
+	if backup.HA != nil && *backup.HA != (hassio.Backup{}) {
 		slog.Debug("deleting backup from home assistant", "name", backup.Name)
 		err := s.hassioClient.DeleteBackup(backup.HA.Slug)
 		if err != nil {
@@ -167,7 +169,8 @@ func (s *Service) DeleteBackup(id string) error {
 	}
 
 	// Delete backup from S3
-	if backup.S3 != nil {
+
+	if backup.S3 != nil && *backup.S3 != (s3.Object{}) {
 		slog.Debug("deleting backup from s3", "backup", backup)
 		err := s.s3Client.RemoveObject(context.Background(), s.config.S3.Bucket, backup.S3.Key, minio.RemoveObjectOptions{})
 		if err != nil {
