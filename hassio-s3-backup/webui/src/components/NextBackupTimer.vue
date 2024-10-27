@@ -85,21 +85,30 @@ const date = computed(() => {
     "November",
     "December",
   ];
-  const suffixes = ["th", "st", "nd", "rd"];
 
-  const date = new Date(Date.now() + milliseconds.value);
-  const day = date.getDate();
-  let daySuffix;
-
-  if (day % 100 >= 11 && day % 100 <= 20) {
-    daySuffix = "th";
-  } else {
-    daySuffix = suffixes[Math.min(day % 10, 3)] || "th";
+  function getDaySuffix(day) {
+    if (day % 100 >= 11 && day % 100 <= 13) {
+      return "th";
+    }
+    switch (day % 10) {
+      case 1:
+        return "st";
+      case 2:
+        return "nd";
+      case 3:
+        return "rd";
+      default:
+        return "th";
+    }
   }
 
-  const month = months[date.getMonth()];
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
+  const currentDate = new Date(Date.now() + milliseconds.value);
+  const day = currentDate.getDate();
+  const daySuffix = getDaySuffix(day);
+
+  const month = months[currentDate.getMonth()];
+  const hours = currentDate.getHours().toString().padStart(2, "0");
+  const minutes = currentDate.getMinutes().toString().padStart(2, "0");
 
   return `${month} ${day}${daySuffix}, ${hours}:${minutes}`;
 });
