@@ -165,16 +165,17 @@ func (s *Service) DeleteBackup(id string) error {
 		err := s.hassioClient.DeleteBackup(backup.HA.Slug)
 		if err != nil {
 			slog.Error("failed to delete backup in home assistant", "name", backup.Name, "error", err)
+			return err
 		}
 	}
 
 	// Delete backup from S3
-
 	if backup.S3 != nil && *backup.S3 != (s3.Object{}) {
 		slog.Debug("deleting backup from s3", "backup", backup)
 		err := s.s3Client.RemoveObject(context.Background(), s.config.S3.Bucket, backup.S3.Key, minio.RemoveObjectOptions{})
 		if err != nil {
-			return handleBackupError(s, "failed to delete backup from s3", backup, err)
+			slog.Error("failed to delete backup in s3", "name", backup.Name, "error", err)
+			return err
 		}
 	}
 
@@ -630,7 +631,7 @@ func (s *Service) syncBackupToS3(backup *Backup) error {
 			return err
 		}
 
-		return handleBackupError(s, "failed to sync backup to s3", backup, err)
+		return err
 	}
 
 	s.updateS3BackupDetails(backup)
@@ -655,17 +656,6 @@ func (s *Service) uploadBackupToS3(backup *Backup) (string, error) {
 	}
 
 	return info.Key, nil
-}
-
-// handleBackupError takes a standard set of actions when a backup error occurs
-func handleBackupError(s *Service, errMsg string, backup *Backup, err error) error {
-	slog.Error(errMsg, "error", err)
-	if backup != nil {
-		backup.UpdateStatus(StatusFailed)
-		backup.ErrorMessage = err.Error()
-		s.saveBackupsToFile() // Best effort to save state
-	}
-	return fmt.Errorf("%s: %v", errMsg, err)
 }
 
 // startBackupScheduler starts a goroutine that will perform backups on a timer
